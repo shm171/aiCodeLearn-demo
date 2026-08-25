@@ -6,6 +6,13 @@
     <!-- 渐变遮罩，让粒子和背景融合 -->
     <div class="overlay"></div>
 
+    <!-- 右侧装饰：发光能量球 -->
+    <div class="decoration">
+      <div class="energy-ball"></div>
+      <div class="energy-ring ring1"></div>
+      <div class="energy-ring ring2"></div>
+    </div>
+
     <el-card class="login-card">
       <el-tabs v-model="activeTab" stretch class="login-tabs">
         <!-- 登录Tab -->
@@ -278,6 +285,66 @@ async function handleRegister() {
   background: linear-gradient(to right, rgba(15, 12, 41, 0.7) 0%, rgba(15, 12, 41, 0.3) 40%, transparent 100%);
   z-index: 2;
   pointer-events: none;
+}
+
+/* 右侧装饰：发光能量球 */
+.decoration {
+  position: absolute;
+  right: 10%;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 400px;
+  height: 400px;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.energy-ball {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(102, 126, 234, 0.6) 0%, rgba(118, 75, 162, 0.3) 40%, transparent 70%);
+  box-shadow: 0 0 60px rgba(102, 126, 234, 0.5), 0 0 120px rgba(118, 75, 162, 0.3);
+  animation: pulse 4s ease-in-out infinite;
+}
+
+.energy-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 1px solid rgba(100, 180, 255, 0.3);
+}
+
+.ring1 {
+  width: 280px;
+  height: 280px;
+  animation: rotate 20s linear infinite;
+  border-top-color: rgba(100, 180, 255, 0.6);
+  border-right-color: transparent;
+}
+
+.ring2 {
+  width: 360px;
+  height: 360px;
+  animation: rotate 30s linear infinite reverse;
+  border-bottom-color: rgba(118, 75, 162, 0.5);
+  border-left-color: transparent;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+  50% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+}
+
+@keyframes rotate {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
 }
 
 /* 登录卡片：毛玻璃效果 */
