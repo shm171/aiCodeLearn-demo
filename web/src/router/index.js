@@ -11,20 +11,19 @@ const routes = [
     meta: { title: '登录', requiresAuth: false },
   },
 
-  // 主布局（带导航栏），子页面都需要登录
+  // 主布局（带导航栏），首页公开，其他页面按需加 requiresAuth
   {
     path: '/',
     component: MainLayout,
-    meta: { requiresAuth: true }, // 父路由标记需要登录，子路由继承
     children: [
-      // 首页
+      // 首页：公开，不需要登录
       {
         path: '',
         name: 'home',
         component: () => import('../views/HomeView.vue'),
-        meta: { title: '首页' },
+        meta: { title: '首页', requiresAuth: false },
       },
-      // 以后加新页面在 children 里照着加
+      // 以后加需要登录的页面，单独加 meta: { requiresAuth: true }
     ],
   },
 
