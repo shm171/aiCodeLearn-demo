@@ -304,12 +304,12 @@ async function handleRegister() {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 240px;
-  height: 240px;
+  width: 220px;
+  height: 220px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(102, 126, 234, 0.25) 0%, rgba(118, 75, 162, 0.12) 40%, transparent 70%);
-  box-shadow: 0 0 40px rgba(102, 126, 234, 0.2), 0 0 80px rgba(118, 75, 162, 0.1);
-  animation: pulse 6s ease-in-out infinite;
+  background: radial-gradient(circle, rgba(100, 180, 255, 0.35) 0%, rgba(102, 126, 234, 0.2) 35%, rgba(118, 75, 162, 0.1) 60%, transparent 75%);
+  box-shadow: 0 0 50px rgba(100, 180, 255, 0.25), 0 0 100px rgba(102, 126, 234, 0.15);
+  animation: pulse 5s ease-in-out infinite;
 }
 
 .energy-ring {
@@ -318,28 +318,28 @@ async function handleRegister() {
   left: 50%;
   transform: translate(-50%, -50%);
   border-radius: 50%;
-  border: 1px solid rgba(100, 180, 255, 0.12);
+  border: 1px solid rgba(100, 180, 255, 0.2);
 }
 
 .ring1 {
-  width: 320px;
-  height: 320px;
-  animation: rotate 25s linear infinite;
-  border-top-color: rgba(100, 180, 255, 0.25);
+  width: 300px;
+  height: 300px;
+  animation: rotate 20s linear infinite;
+  border-top-color: rgba(100, 180, 255, 0.4);
   border-right-color: transparent;
 }
 
 .ring2 {
-  width: 400px;
-  height: 400px;
-  animation: rotate 35s linear infinite reverse;
-  border-bottom-color: rgba(118, 75, 162, 0.2);
+  width: 380px;
+  height: 380px;
+  animation: rotate 30s linear infinite reverse;
+  border-bottom-color: rgba(118, 75, 162, 0.35);
   border-left-color: transparent;
 }
 
 @keyframes pulse {
-  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.6; }
-  50% { transform: translate(-50%, -50%) scale(1.08); opacity: 0.9; }
+  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.7; }
+  50% { transform: translate(-50%, -50%) scale(1.05); opacity: 1; }
 }
 
 @keyframes rotate {
