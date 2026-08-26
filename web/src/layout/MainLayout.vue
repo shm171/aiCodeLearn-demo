@@ -16,7 +16,7 @@
       <!-- 右侧：根据登录状态显示不同内容 -->
       <div class="header-right">
         <template v-if="userStore.isLoggedIn">
-          <span class="username">你好，{{ userStore.username }}</span>
+          <span class="username">你好，{{ userStore.email }}</span>
           <el-button link type="primary" @click="handleLogout">退出登录</el-button>
         </template>
         <template v-else>

@@ -5,7 +5,7 @@ export const useUserStore = defineStore('user', {
   // 从localStorage读初始值，刷新页面不丢失登录状态
   state: () => ({
     token: localStorage.getItem('token') || '',
-    username: localStorage.getItem('username') || '',
+    email: localStorage.getItem('email') || '',
   }),
 
   getters: {
@@ -13,20 +13,20 @@ export const useUserStore = defineStore('user', {
   },
 
   actions: {
-    // 登录成功后调用：保存token和用户名
-    setLoginInfo(token, username) {
+    // 登录成功后调用：保存token和邮箱
+    setLoginInfo(token, email) {
       this.token = token
-      this.username = username
+      this.email = email
       localStorage.setItem('token', token)
-      localStorage.setItem('username', username)
+      localStorage.setItem('email', email)
     },
 
     // 退出登录：清空信息
     logout() {
       this.token = ''
-      this.username = ''
+      this.email = ''
       localStorage.removeItem('token')
-      localStorage.removeItem('username')
+      localStorage.removeItem('email')
     },
   },
 })

@@ -1,69 +1,115 @@
-<!-- 登录页：粒子背景 + 毛玻璃卡片 + 登录/注册Tab -->
+<!-- 登录/注册页：左侧品牌介绍区 + 右侧表单区 -->
 <template>
   <div class="login-page">
-    <!-- 粒子背景画布 -->
-    <canvas ref="canvasRef" class="particle-canvas"></canvas>
-    <!-- 渐变遮罩，让粒子和背景融合 -->
-    <div class="overlay"></div>
+    <!-- ===== 左侧：品牌介绍区 ===== -->
+    <div class="brand-panel">
+      <!-- 顶部：logo + 平台名 -->
+      <div class="brand-top">
+        <img src="../assets/logo.png" alt="logo" class="logo" />
+        <span class="brand-name">EduCode</span>
+      </div>
 
-    <!-- 右侧装饰：发光能量球 -->
-    <div class="decoration">
-      <div class="energy-ball"></div>
-      <div class="energy-ring ring1"></div>
-      <div class="energy-ring ring2"></div>
+      <!-- 主标语 + 功能亮点 -->
+      <div class="brand-main">
+        <h1 class="brand-title">让每一次学习<br />都更高效</h1>
+        <p class="brand-desc">上传代码，AI 智能批改，帮你发现编程错误，提升编程能力。</p>
+
+        <div class="brand-features">
+          <div class="feature-item">
+            <el-icon class="feature-icon"><Upload /></el-icon>
+            <div>
+              <div class="feature-title">AI 智能批改</div>
+              <div class="feature-desc">提交代码，秒级反馈</div>
+            </div>
+          </div>
+          <div class="feature-item">
+            <el-icon class="feature-icon"><Notebook /></el-icon>
+            <div>
+              <div class="feature-title">我的错题本</div>
+              <div class="feature-desc">历史错误，针对性复习</div>
+            </div>
+          </div>
+          <div class="feature-item">
+            <el-icon class="feature-icon"><TrendCharts /></el-icon>
+            <div>
+              <div class="feature-title">学习报告</div>
+              <div class="feature-desc">数据可视化，掌握薄弱点</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 代码窗口：展示核心功能（AI 批改代码），带语法高亮 -->
+      <div class="code-window">
+        <div class="code-bar">
+          <span class="code-dot dot-red"></span>
+          <span class="code-dot dot-yellow"></span>
+          <span class="code-dot dot-green"></span>
+          <span class="code-filename">homework.py</span>
+        </div>
+        <pre class="code-content"><span class="code-comment"># 提交作业：Python 基础练习</span>
+<span class="code-keyword">def</span> <span class="code-func">fibonacci</span>(n):
+    <span class="code-keyword">if</span> n &lt;= 1:
+        <span class="code-keyword">return</span> n
+    <span class="code-keyword">return</span> fibonacci(n - 1) + fibonacci(n - 2)<span class="code-cursor">|</span></pre>
+        <!-- AI 批改结果标签 -->
+        <div class="ai-badge">
+          <el-icon><CircleCheck /></el-icon>
+          <span>AI 批改通过 · 95 分</span>
+        </div>
+      </div>
     </div>
 
-    <el-card class="login-card">
-      <el-tabs v-model="activeTab" stretch class="login-tabs">
-        <!-- 登录Tab -->
-        <el-tab-pane label="登录" name="login">
-          <el-form :model="loginForm" :rules="loginRules" ref="loginFormRef">
-            <el-form-item prop="email">
-              <el-input v-model="loginForm.email" placeholder="请输入邮箱" size="large" prefix-icon="Message" />
-            </el-form-item>
-            <el-form-item prop="password">
-              <el-input v-model="loginForm.password" type="password" placeholder="请输入密码" size="large" show-password prefix-icon="Lock" />
-            </el-form-item>
-            <el-button type="primary" size="large" class="submit-btn" :loading="loginLoading" @click="handleLogin">登 录</el-button>
-          </el-form>
-        </el-tab-pane>
+    <!-- ===== 右侧：登录/注册表单区 ===== -->
+    <div class="form-panel">
+      <el-card class="login-card">
+        <el-tabs v-model="activeTab" stretch class="login-tabs">
+          <!-- 登录Tab -->
+          <el-tab-pane label="登录" name="login">
+            <el-form :model="loginForm" :rules="loginRules" ref="loginFormRef">
+              <el-form-item prop="email">
+                <el-input v-model="loginForm.email" placeholder="请输入邮箱" size="large" prefix-icon="Message" />
+              </el-form-item>
+              <el-form-item prop="password">
+                <el-input v-model="loginForm.password" type="password" placeholder="请输入密码" size="large" show-password prefix-icon="Lock" />
+              </el-form-item>
+              <el-button type="primary" size="large" class="submit-btn" :loading="loginLoading" @click="handleLogin">登 录</el-button>
+            </el-form>
+          </el-tab-pane>
 
-        <!-- 注册Tab -->
-        <el-tab-pane label="注册" name="register">
-          <el-form :model="registerForm" :rules="registerRules" ref="registerFormRef">
-            <el-form-item prop="email">
-              <el-input v-model="registerForm.email" placeholder="请输入邮箱" size="large" prefix-icon="Message" />
-            </el-form-item>
-            <el-form-item prop="username">
-              <el-input v-model="registerForm.username" placeholder="请输入用户名" size="large" prefix-icon="User" />
-            </el-form-item>
-            <el-form-item prop="password">
-              <el-input v-model="registerForm.password" type="password" placeholder="请输入密码（8-16位）" size="large" show-password prefix-icon="Lock" />
-            </el-form-item>
-            <el-form-item prop="confirmPassword">
-              <el-input v-model="registerForm.confirmPassword" type="password" placeholder="请再次输入密码" size="large" show-password prefix-icon="Lock" />
-            </el-form-item>
-            <el-form-item prop="role">
-              <el-select v-model="registerForm.role" size="large" class="role-select">
-                <el-option label="学员" value="STUDENT" />
-                <el-option label="老师" value="TEACHER" />
-              </el-select>
-            </el-form-item>
-            <el-button type="primary" size="large" class="submit-btn" :loading="registerLoading" @click="handleRegister">注 册</el-button>
-          </el-form>
-        </el-tab-pane>
-      </el-tabs>
-    </el-card>
-
-    <div class="slogan">
-      <p class="slogan-title">EduCode 智能学习平台</p>
-      <p class="slogan-sub">让每一次学习，都更高效</p>
+          <!-- 注册Tab -->
+          <el-tab-pane label="注册" name="register">
+            <el-form :model="registerForm" :rules="registerRules" ref="registerFormRef">
+              <el-form-item prop="email">
+                <el-input v-model="registerForm.email" placeholder="请输入邮箱" size="large" prefix-icon="Message" />
+              </el-form-item>
+              <el-form-item prop="username">
+                <el-input v-model="registerForm.username" placeholder="请输入用户名" size="large" prefix-icon="User" />
+              </el-form-item>
+              <el-form-item prop="password">
+                <el-input v-model="registerForm.password" type="password" placeholder="请输入密码（8-16位）" size="large" show-password prefix-icon="Lock" />
+              </el-form-item>
+              <el-form-item prop="confirmPassword">
+                <el-input v-model="registerForm.confirmPassword" type="password" placeholder="请再次输入密码" size="large" show-password prefix-icon="Lock" />
+              </el-form-item>
+              <el-form-item prop="role">
+                <el-select v-model="registerForm.role" size="large" class="role-select">
+                  <el-option label="学员" value="STUDENT" />
+                  <el-option label="老师" value="TEACHER" />
+                </el-select>
+              </el-form-item>
+              <el-button type="primary" size="large" class="submit-btn" :loading="registerLoading" @click="handleRegister">注 册</el-button>
+            </el-form>
+          </el-tab-pane>
+        </el-tabs>
+      </el-card>
+      <p class="copyright">© 2026 EduCode 智能学习平台</p>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, onUnmounted } from 'vue'
+import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '../stores/user'
@@ -72,104 +118,6 @@ import { loginApi, registerApi } from '../api/user'
 const router = useRouter()
 const userStore = useUserStore()
 const activeTab = ref('login')
-
-// ========== 粒子背景 ==========
-const canvasRef = ref(null)
-let animationId = null
-let particles = []
-const PARTICLE_COUNT = 70 // 粒子数量，手机端会减半
-
-// 初始化粒子
-function initParticles(canvas) {
-  const count = window.innerWidth < 768 ? PARTICLE_COUNT / 2 : PARTICLE_COUNT
-  particles = []
-  for (let i = 0; i < count; i++) {
-    particles.push({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
-      vx: (Math.random() - 0.5) * 0.5, // 水平速度
-      vy: (Math.random() - 0.5) * 0.5, // 垂直速度
-      radius: Math.random() * 2 + 1,   // 粒子大小
-    })
-  }
-}
-
-// 绘制粒子和连线
-function drawParticles(canvas, ctx) {
-  ctx.clearRect(0, 0, canvas.width, canvas.height)
-
-  // 绘制粒子
-  particles.forEach((p) => {
-    p.x += p.vx
-    p.y += p.vy
-    // 碰到边界反弹
-    if (p.x < 0 || p.x > canvas.width) p.vx *= -1
-    if (p.y < 0 || p.y > canvas.height) p.vy *= -1
-
-    ctx.beginPath()
-    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2)
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)'
-    ctx.fill()
-  })
-
-  // 绘制连线（距离近的粒子之间连线）
-  for (let i = 0; i < particles.length; i++) {
-    for (let j = i + 1; j < particles.length; j++) {
-      const dx = particles[i].x - particles[j].x
-      const dy = particles[i].y - particles[j].y
-      const dist = Math.sqrt(dx * dx + dy * dy)
-      if (dist < 120) {
-        ctx.beginPath()
-        ctx.moveTo(particles[i].x, particles[i].y)
-        ctx.lineTo(particles[j].x, particles[j].y)
-        ctx.strokeStyle = `rgba(100, 180, 255, ${1 - dist / 120})`
-        ctx.lineWidth = 0.5
-        ctx.stroke()
-      }
-    }
-  }
-}
-
-// 动画循环
-function animate(canvas, ctx) {
-  drawParticles(canvas, ctx)
-  animationId = requestAnimationFrame(() => animate(canvas, ctx))
-}
-
-onMounted(() => {
-  const canvas = canvasRef.value
-  const ctx = canvas.getContext('2d')
-  // 设置画布大小为窗口大小
-  canvas.width = window.innerWidth
-  canvas.height = window.innerHeight
-  initParticles(canvas)
-  animate(canvas, ctx)
-
-  // 窗口大小改变时重新设置画布
-  const handleResize = () => {
-    canvas.width = window.innerWidth
-    canvas.height = window.innerHeight
-    initParticles(canvas)
-  }
-  window.addEventListener('resize', handleResize)
-
-  // 页面不可见时暂停动画，节省资源
-  const handleVisibility = () => {
-    if (document.hidden) {
-      cancelAnimationFrame(animationId)
-    } else {
-      animate(canvas, ctx)
-    }
-  }
-  document.addEventListener('visibilitychange', handleVisibility)
-
-  // 清理函数
-  onUnmounted(() => {
-    cancelAnimationFrame(animationId)
-    window.removeEventListener('resize', handleResize)
-    document.removeEventListener('visibilitychange', handleVisibility)
-  })
-})
 
 // ========== 登录 ==========
 const loginForm = reactive({ email: '', password: '' })
@@ -257,196 +205,249 @@ async function handleRegister() {
 </script>
 
 <style scoped>
+/* 品牌主色：靛蓝。改这里整页的Element Plus组件（按钮/输入框/下拉框）都会跟着变 */
 .login-page {
-  position: relative;
+  --el-color-primary: #4f46e5;
+  --el-color-primary-light-3: #7c74f0;
+  --el-color-primary-light-5: #a5a0f5;
+  --el-color-primary-light-7: #cdcafa;
+  --el-color-primary-light-8: #e0defb;
+  --el-color-primary-light-9: #eeedfd;
+  --el-color-primary-dark-2: #4338ca;
+}
+
+.login-page {
   height: 100%;
   display: flex;
-  align-items: center;
-  padding-left: 8%;
+  padding: 20px; /* 四周留白，让左右两栏整体像一张大卡片 */
+  background: #eef2f7; /* 页面底色，比卡片深一点，衬托出卡片轮廓 */
   overflow: hidden;
-  /* 深蓝紫渐变背景 */
-  background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
 }
 
-/* 粒子画布铺满整个屏幕 */
-.particle-canvas {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 1;
-}
-
-/* 渐变遮罩：让粒子和背景融合，左侧稍暗保证卡片清晰 */
-.overlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to right, rgba(15, 12, 41, 0.7) 0%, rgba(15, 12, 41, 0.3) 40%, transparent 100%);
-  z-index: 2;
-  pointer-events: none;
-}
-
-/* 右侧装饰：发光能量球 */
-.decoration {
-  position: absolute;
-  right: 10%;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 400px;
-  height: 400px;
-  z-index: 1;
-  pointer-events: none;
-}
-
-.energy-ball {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 220px;
-  height: 220px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(100, 180, 255, 0.35) 0%, rgba(102, 126, 234, 0.2) 35%, rgba(118, 75, 162, 0.1) 60%, transparent 75%);
-  box-shadow: 0 0 50px rgba(100, 180, 255, 0.25), 0 0 100px rgba(102, 126, 234, 0.15);
-  animation: pulse 5s ease-in-out infinite;
-}
-
-.energy-ring {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-  border: 1px solid rgba(100, 180, 255, 0.2);
-}
-
-.ring1 {
-  width: 300px;
-  height: 300px;
-  animation: rotate 20s linear infinite;
-  border-top-color: rgba(100, 180, 255, 0.4);
-  border-right-color: transparent;
-}
-
-.ring2 {
-  width: 380px;
-  height: 380px;
-  animation: rotate 30s linear infinite reverse;
-  border-bottom-color: rgba(118, 75, 162, 0.35);
-  border-left-color: transparent;
-}
-
-@keyframes pulse {
-  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.7; }
-  50% { transform: translate(-50%, -50%) scale(1.05); opacity: 1; }
-}
-
-@keyframes rotate {
-  from { transform: translate(-50%, -50%) rotate(0deg); }
-  to { transform: translate(-50%, -50%) rotate(360deg); }
-}
-
-/* 登录卡片：毛玻璃效果 */
-.login-card {
+/* ===== 左侧品牌区 ===== */
+.brand-panel {
+  flex: 1.1;
   position: relative;
-  z-index: 3;
-  width: 420px;
-  padding: 24px 28px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 44px 52px;
+  background-color: #1e1b4b;
+  /* 细网格纹理：像编程用的稿纸 */
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+  background-size: 40px 40px;
+  border-radius: 20px 0 0 20px; /* 左边两个角圆角 */
+  overflow: hidden;
 }
 
-/* Tab样式 */
-.login-tabs :deep(.el-tabs__item) {
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 16px;
-}
-.login-tabs :deep(.el-tabs__item.is-active) {
-  color: #fff;
-}
-.login-tabs :deep(.el-tabs__active-bar) {
-  background-color: #64b4ff;
+.brand-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
-/* 输入框：深色背景适配 */
-:deep(.el-input__wrapper) {
-  background: rgba(255, 255, 255, 0.1);
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+.logo {
+  height: 40px;
 }
-:deep(.el-input__wrapper:hover) {
-  box-shadow: 0 0 0 1px rgba(100, 180, 255, 0.5) inset;
-}
-:deep(.el-input__wrapper.is-focus) {
-  box-shadow: 0 0 0 1px #64b4ff inset, 0 0 8px rgba(100, 180, 255, 0.3);
-}
-:deep(.el-input__inner) {
+
+.brand-name {
   color: #fff;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 1px;
 }
-:deep(.el-input__inner::placeholder) {
+
+.brand-title {
+  color: #fff;
+  font-size: 42px;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: 0.03em;
+  margin-bottom: 16px;
+}
+
+.brand-desc {
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 15px;
+  line-height: 1.7;
+  max-width: 420px;
+  margin-bottom: 36px;
+}
+
+/* 功能亮点列表 */
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.feature-icon {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #a5b4fc;
+  font-size: 20px;
+}
+
+.feature-title {
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.feature-desc {
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 13px;
+  margin-top: 2px;
+}
+
+/* 代码窗口 */
+.code-window {
+  position: relative;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+}
+
+.code-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.code-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+.dot-red { background: #f87171; }
+.dot-yellow { background: #fbbf24; }
+.dot-green { background: #34d399; }
+
+.code-filename {
+  margin-left: 8px;
   color: rgba(255, 255, 255, 0.5);
-}
-:deep(.el-input__prefix-inner) {
-  color: rgba(255, 255, 255, 0.6);
+  font-size: 12px;
 }
 
-/* 下拉框 */
-.role-select :deep(.el-input__wrapper) {
-  background: rgba(255, 255, 255, 0.1);
+.code-content {
+  margin: 0;
+  padding: 14px 16px;
+  font-family: 'JetBrains Mono', Consolas, 'Courier New', monospace;
+  font-size: 13px;
+  line-height: 1.8;
+  color: #e2e8f0;
+  overflow-x: auto;
+}
+
+/* 语法高亮配色 */
+.code-comment { color: #94a3b8; }
+.code-keyword { color: #c4b5fd; }
+.code-func { color: #93c5fd; }
+
+/* 闪烁光标 */
+.code-cursor {
+  display: inline-block;
+  color: #93c5fd;
+  animation: blink 1s step-end infinite;
+}
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
+/* AI 批改结果标签：浮在代码窗口右下角 */
+.ai-badge {
+  position: absolute;
+  right: 14px;
+  bottom: -12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #fff;
+  color: #4f46e5;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 999px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+}
+
+/* ===== 右侧表单区 ===== */
+.form-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #f8fafc;
+  border-radius: 0 20px 20px 0; /* 右边两个角圆角，和左栏拼成完整的大卡片 */
+}
+
+/* 白色卡片，干净利落 */
+.login-card {
+  width: 420px;
+  padding: 32px 32px 24px;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 10px 40px rgba(15, 23, 42, 0.06);
+  background: #fff;
+}
+
+/* Tab 文字稍大一点 */
+.login-tabs :deep(.el-tabs__item) {
+  font-size: 16px;
+  font-weight: 600;
 }
 
 /* 提交按钮 */
 .submit-btn {
   width: 100%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border: none;
-  transition: all 0.3s;
+  height: 44px;
+  font-size: 16px;
+  letter-spacing: 2px;
+  border-radius: 10px;
+  transition: all 0.25s;
 }
 .submit-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(79, 70, 229, 0.35);
 }
 
-/* 右下角品牌标语 */
-.slogan {
-  position: absolute;
-  right: 40px;
-  bottom: 40px;
-  text-align: right;
-  z-index: 3;
-}
-.slogan-title {
-  font-size: 26px;
-  font-weight: bold;
-  color: #fff;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-  margin-bottom: 8px;
-}
-.slogan-sub {
-  font-size: 15px;
-  color: rgba(255, 255, 255, 0.9);
-  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.4);
+/* 角色下拉框 */
+.role-select {
+  width: 100%;
 }
 
-/* 手机端适配 */
+.copyright {
+  margin-top: 20px;
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+/* 屏幕较窄时隐藏左侧品牌区，只留表单 */
+@media (max-width: 900px) {
+  .brand-panel {
+    display: none;
+  }
+  .form-panel {
+    border-radius: 20px; /* 左栏隐藏后，右侧变成完整的圆角卡片 */
+  }
+}
+
+/* 手机端 */
 @media (max-width: 768px) {
   .login-page {
-    padding-left: 0;
-    justify-content: center;
+    padding: 12px; /* 小屏幕少留一点边 */
   }
   .login-card {
-    width: 90%;
-  }
-  .slogan {
-    right: 16px;
-    bottom: 16px;
-  }
-  .slogan-title {
-    font-size: 18px;
+    width: 100%;
   }
 }
 </style>
