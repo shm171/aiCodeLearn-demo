@@ -5,7 +5,7 @@ import lombok.Getter;
 
 /**
  * 饼图/柱状图的单个切片。{label, value} 结构，前端直接渲染。
- */
+ *///
 @Getter
 @AllArgsConstructor
 public class ChartSliceDto {

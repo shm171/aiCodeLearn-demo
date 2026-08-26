@@ -6,7 +6,7 @@ package com.mylab.ailearn.base.global.configs;
  * <p>由 base 模块实现，core 模块依赖此接口获取 ownerUserId。
  *
  * <p>TODO: 正式实现应从 JWT 解析 userId 并注入 SecurityContext。
- *
+ *//
   **/
 public interface CurrentUserResolver {
 

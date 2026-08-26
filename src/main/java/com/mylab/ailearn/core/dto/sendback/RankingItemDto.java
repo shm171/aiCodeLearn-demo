@@ -5,7 +5,7 @@ import lombok.Getter;
 
 /**
  * 易错知识点排行单条记录。
- */
+ *///
 @Getter
 @AllArgsConstructor
 public class RankingItemDto {
