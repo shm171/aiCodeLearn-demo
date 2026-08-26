@@ -8,14 +8,19 @@ echo ============================================
 echo.
 
 REM 1. 依赖缺失时先安装
-if not exist "node_modules" (
-  echo [1/2] 正在安装依赖，请稍候...
+if not exist "node_modules\vite\package.json" (
+  echo [1/2] 正在安装依赖，请稍候（首次约1-2分钟）...
   call pnpm install
   if errorlevel 1 (
-    echo.
-    echo [错误] 依赖安装失败，请检查网络后重新运行本脚本。
-    pause
-    exit /b 1
+    REM pnpm 可能因“可选平台包下载失败/构建脚本”返回非零，但主要依赖已装好
+    if exist "node_modules\vite\package.json" (
+      echo [提示] 主要依赖已安装（存在少量非致命警告），继续启动...
+    ) else (
+      echo.
+      echo [错误] 依赖安装失败，请检查网络后重新运行本脚本。
+      pause
+      exit /b 1
+    )
   )
 )
 
