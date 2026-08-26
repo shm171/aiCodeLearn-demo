@@ -29,3 +29,7 @@ yarn-error.log*
 # env & secrets
 .env.local
 .env.*.local
+# 本地常驻服务器运行时文件
+server.log
+server.err.log
+server.pid
