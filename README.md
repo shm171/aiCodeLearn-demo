@@ -106,3 +106,44 @@ git push -u origin feature/web-teacher
 - 管理端页面：按 `meta.roles: ['ADMIN']` 增加 `/admin` 路由与页面（复用同一套 Layout 与请求层）。
 - 接口类型：后端 `/v3/api-docs` 就绪后，用 `openapi-typescript` 生成 `src/api/schema.d.ts` 替换 `schema.ts`。
 - 学生/教师/管理员细粒度授权：后端权限规则由项目负责人统一后接入。
+
+
+## 教师端数据如何与学生端打通（Mock → 真实数据）
+
+当前教师端所有数据来自本地 Mock（`src/api/mock.ts`），与学生端没有关联。真实联调时，**教师端和学生端共用同一个后端数据库**，前端只通过后端接口按 ID 取数，**不硬编码任何学生数据**。
+
+### 1. 数据关联字段（与后端约定）
+| 字段 | 含义 |
+| --- | --- |
+| `studentId` | 学生稳定 ID（不用姓名 / 邮箱关联，遵守 README 第七节规范） |
+| `questionId` | 题目 / 作业 ID |
+| `submissionId` | 学生提交记录 ID |
+| `ownerUserId` | 数据归属账号 ID（core 模块只存这个） |
+
+教师端页面全部通过 id 调用接口（如 `/teacher/submissions/{id}`、`/teacher/students/{id}/report`），学生端产生的提交记录、错题、报告都由后端按这些 ID 聚合后返回，前端无需知道“这个学生是谁的学生”。
+
+### 2. 切换步骤
+1. 后端启动后，从 Swagger（`http://localhost:8080/swagger-ui.html`）确认真实接口路径与字段（前端工程师 A、B 一起对）。
+2. 把 `.env.development` 中 `VITE_USE_MOCK` 改为 `false`。
+3. 修改 `src/api/auth.ts`、`src/api/teacher.ts`、`src/api/dashboard.ts` 中的接口路径（当前为示例路径）。
+4. 按 Swagger 实际字段更新 `src/api/schema.ts`（或用 openapi-typescript 生成 `schema.d.ts` 替换）。
+5. 页面代码**不需要大改**：它们只调用 api 函数，不直接读写数据。
+
+### 3. 各页面数据来源对照
+| 页面 | 当前 Mock（src/api/mock.ts） | 应替换的真实接口（示例） |
+| --- | --- | --- |
+| 数据看板 | `mockGetDashboardStats` | `GET /teacher/dashboard/stats` |
+| 题目与作业 | `mockGetQuestionList / mockCreateQuestion / mockUpdateQuestion / mockUpdateQuestionStatus / mockDeleteQuestion` | `/core/question/list`、`/core/question`、`/core/question/{id}`、`/core/question/{id}/status` |
+| 提交审阅列表 | `mockGetSubmissionList` | `GET /teacher/submissions` |
+| 审阅详情 | `mockGetReviewDetail` | `GET /teacher/submissions/{id}` |
+| 人工复核 | `mockSubmitReview` | `POST /teacher/submissions/{id}/review` |
+| 错题管理 | `mockGetWrongQuestions / mockExportWrongQuestions` | `/teacher/wrong-questions`、`/teacher/wrong-questions/export` |
+| 学生列表 | `mockGetStudentList` | `GET /teacher/students` |
+| 学习报告 | `mockGetStudentReport` | `GET /teacher/students/{id}/report` |
+| 登录 | `mockLogin` | `POST /login` |
+| 个人档案 | `mockGetProfile / mockUpdateProfile` | `GET/PUT /user/profile` |
+
+### 4. 联调后注意事项
+- 学生端（A）产生的数据会通过后端出现在教师端，前提是后端已实现对应聚合接口；在此之前教师端先用 Mock 演示。
+- 切到真实接口后若页面空白或报错，按顺序检查：后端是否启动 → Network 请求是否带 `Authorization: Bearer <token>` → 响应字段与 `schema.ts` 是否一致 → 401 是否自动跳登录。
+- 接口字段一律以 Swagger 为准，不要在前端猜测字段。
