@@ -1,0 +1,73 @@
+:root {
+  --app-primary: #409eff;
+  --app-bg: #f0f2f5;
+  --app-sidebar-bg: #001529;
+  --app-sidebar-text: rgba(255, 255, 255, 0.68);
+  --app-card-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family:
+    'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB',
+    'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
+  font-size: 14px;
+  color: #303133;
+  background-color: var(--app-bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+.page-container {
+  padding: 16px;
+}
+
+.page-card {
+  border-radius: 8px;
+  box-shadow: var(--app-card-shadow);
+}
+
+.table-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.table-toolbar .spacer {
+  flex: 1;
+}
+
+.pagination-wrap {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.mono {
+  font-family: 'JetBrains Mono', Consolas, 'Courier New', monospace;
+}
+
+// 滚动条美化
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}

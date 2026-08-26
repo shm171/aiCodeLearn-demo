@@ -1,0 +1,11 @@
+nodeLinker: hoisted
+shamefullyHoist: true
+confirmModulesPurge: false
+onlyBuiltDependencies:
+  - esbuild
+  - '@parcel/watcher'
+  - vue-demi
+allowBuilds:
+  '@parcel/watcher': set this to true or false
+  esbuild: set this to true or false
+  vue-demi: set this to true or false
