@@ -23,6 +23,13 @@ const routes = [
         component: () => import('../views/HomeView.vue'),
         meta: { title: '首页', requiresAuth: false },
       },
+      // 提交作业：需要登录
+      {
+        path: 'submit',
+        name: 'submit',
+        component: () => import('../views/student/SubmitView.vue'),
+        meta: { title: '提交作业', requiresAuth: true },
+      },
       // 以后加需要登录的页面，单独加 meta: { requiresAuth: true }
     ],
   },

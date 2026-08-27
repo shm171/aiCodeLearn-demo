@@ -135,15 +135,16 @@ const platformFeatures = [
 
 // 点击功能卡片
 function handleFeatureClick(item) {
-  // 这些页面还没做，先提示
-  if (item.path) {
+  if (item.path === '/submit') {
+    router.push(item.path)
+  } else if (item.path) {
     ElMessage.info(`${item.title}功能开发中，敬请期待`)
   }
 }
 
 // 跳转到提交作业页
 function goToSubmit() {
-  ElMessage.info('提交作业功能开发中，敬请期待')
+  router.push('/submit')
 }
 </script>
 
