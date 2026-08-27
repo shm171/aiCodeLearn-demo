@@ -37,6 +37,13 @@ const routes = [
         component: () => import('../views/student/ProfileView.vue'),
         meta: { title: '个人中心', requiresAuth: true },
       },
+      // 学习报告：需要登录
+      {
+        path: 'report',
+        name: 'report',
+        component: () => import('../views/student/ReportView.vue'),
+        meta: { title: '学习报告', requiresAuth: true },
+      },
       // 以后加需要登录的页面，单独加 meta: { requiresAuth: true }
     ],
   },

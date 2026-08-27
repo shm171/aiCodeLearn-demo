@@ -170,7 +170,7 @@ const platformFeatures = [
 ]
 
 function handleFeatureClick(item) {
-  if (item.path === '/submit') {
+  if (item.path === '/submit' || item.path === '/report') {
     router.push(item.path)
   } else if (item.path) {
     ElMessage.info(`${item.title}功能开发中，敬请期待`)
