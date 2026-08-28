@@ -68,10 +68,10 @@
           <el-tab-pane label="登录" name="login">
             <el-form :model="loginForm" :rules="loginRules" ref="loginFormRef">
               <el-form-item prop="email">
-                <el-input v-model="loginForm.email" placeholder="请输入邮箱" size="large" prefix-icon="Message" />
+                <el-input v-model="loginForm.email" placeholder="请输入邮箱" size="large" prefix-icon="Message" autocomplete="off" />
               </el-form-item>
               <el-form-item prop="password">
-                <el-input v-model="loginForm.password" type="password" placeholder="请输入密码" size="large" show-password prefix-icon="Lock" />
+                <el-input v-model="loginForm.password" type="password" placeholder="请输入密码" size="large" show-password prefix-icon="Lock" autocomplete="current-password" />
               </el-form-item>
               <el-button type="primary" size="large" class="submit-btn" :loading="loginLoading" @click="handleLogin">登 录</el-button>
             </el-form>
@@ -81,16 +81,16 @@
           <el-tab-pane label="注册" name="register">
             <el-form :model="registerForm" :rules="registerRules" ref="registerFormRef">
               <el-form-item prop="email">
-                <el-input v-model="registerForm.email" placeholder="请输入邮箱" size="large" prefix-icon="Message" />
+                <el-input v-model="registerForm.email" placeholder="请输入邮箱" size="large" prefix-icon="Message" autocomplete="off" />
               </el-form-item>
               <el-form-item prop="username">
-                <el-input v-model="registerForm.username" placeholder="请输入用户名" size="large" prefix-icon="User" />
+                <el-input v-model="registerForm.username" placeholder="请输入用户名" size="large" prefix-icon="User" autocomplete="off" name="new-username" />
               </el-form-item>
               <el-form-item prop="password">
-                <el-input v-model="registerForm.password" type="password" placeholder="请输入密码（8-16位）" size="large" show-password prefix-icon="Lock" />
+                <el-input v-model="registerForm.password" type="password" placeholder="请输入密码（8-16位）" size="large" show-password prefix-icon="Lock" autocomplete="new-password" />
               </el-form-item>
               <el-form-item prop="confirmPassword">
-                <el-input v-model="registerForm.confirmPassword" type="password" placeholder="请再次输入密码" size="large" show-password prefix-icon="Lock" />
+                <el-input v-model="registerForm.confirmPassword" type="password" placeholder="请再次输入密码" size="large" show-password prefix-icon="Lock" autocomplete="new-password" />
               </el-form-item>
               <el-form-item prop="role">
                 <el-select v-model="registerForm.role" size="large" class="role-select">
