@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EduCode 前端项目理解地图</title>
+<style>
+  :root {
+    --primary: #4f46e5;
+    --primary-dark: #1e1b4b;
+    --violet: #764ba2;
+    --bg: #f4f5fb;
+    --card: #ffffff;
+    --ink: #1e293b;
+    --sub: #64748b;
+    --line: #e2e8f0;
+    --green: #10b981;
+    --amber: #f59e0b;
+    --red: #ef4444;
+    --sky: #06b6d4;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.7;
+  }
+
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ===== 顶部 Hero ===== */
+  .hero {
+    background: linear-gradient(135deg, #1e1b4b 0%, #312e81 55%, #4c1d95 100%);
+    color: #fff;
+    padding: 56px 24px 48px;
+    text-align: center;
+    margin-bottom: 40px;
+  }
+  .hero .badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.18);
+    padding: 6px 16px; border-radius: 999px;
+    font-size: 13px; margin-bottom: 18px;
+  }
+  .hero h1 { font-size: 36px; font-weight: 800; letter-spacing: 1px; }
+  .hero p { color: rgba(255,255,255,0.75); font-size: 16px; margin-top: 12px; }
+  .hero .meta { margin-top: 20px; font-size: 13px; color: rgba(255,255,255,0.55); }
+
+  /* ===== 章节 ===== */
+  section { margin-bottom: 48px; }
+  .sec-title {
+    display: flex; align-items: center; gap: 12px;
+    font-size: 24px; font-weight: 800; margin-bottom: 6px;
+  }
+  .sec-title .num {
+    width: 38px; height: 38px; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--primary), var(--violet));
+    color: #fff; border-radius: 10px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .sec-sub { color: var(--sub); font-size: 14px; margin-bottom: 22px; margin-left: 50px; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 4px 20px rgba(30,41,59,0.05);
+  }
+
+  /* ===== 技术栈徽章 ===== */
+  .stack { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 16px; }
+  .stack span {
+    background: #eef2ff; color: #4338ca; border: 1px solid #c7d2fe;
+    padding: 8px 16px; border-radius: 999px; font-size: 14px; font-weight: 600;
+  }
+  .stack span small { font-weight: 400; color: #6366f1; margin-left: 4px; }
+
+  /* ===== 一句话 ===== */
+  .oneline {
+    display: flex; align-items: flex-start; gap: 16px;
+    background: linear-gradient(135deg, #eef2ff, #faf5ff);
+    border: 1px solid #c7d2fe;
+    border-radius: 14px; padding: 20px 24px;
+  }
+  .oneline .big { font-size: 34px; }
+  .oneline p { font-size: 16px; color: #312e81; font-weight: 500; }
+  .oneline .label { font-size: 12px; color: #7c74f0; font-weight: 700; letter-spacing: 1px; }
+
+  /* ===== 全站动线路线图 ===== */
+  .flow { display: flex; flex-direction: column; gap: 8px; }
+  .flow-row {
+    display: flex; align-items: center; gap: 12px;
+    flex-wrap: wrap; justify-content: center;
+  }
+  .node {
+    background: #fff; border: 2px solid var(--line); border-radius: 14px;
+    padding: 14px 18px; min-width: 150px; text-align: center;
+    font-size: 14px; font-weight: 600; position: relative;
+  }
+  .node .ic { font-size: 26px; display: block; margin-bottom: 4px; }
+  .node small { display: block; font-weight: 400; color: var(--sub); font-size: 12px; margin-top: 2px; }
+  .node.login { border-color: var(--primary); background: #eef2ff; }
+  .node.home { border-color: var(--green); background: #ecfdf5; }
+  .node.need { border-color: var(--amber); background: #fffbeb; }
+  .node.err { border-color: var(--red); background: #fef2f2; }
+  .arrow { color: var(--primary); font-size: 22px; font-weight: 700; }
+  .flow-note { text-align: center; color: var(--sub); font-size: 13px; margin-top: 10px; }
+
+  /* ===== 页面地图卡片 ===== */
+  .pages { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+  .page-card {
+    background: #fff; border: 1px solid var(--line); border-radius: 16px;
+    overflow: hidden; display: flex; flex-direction: column;
+    transition: transform .2s, box-shadow .2s;
+  }
+  .page-card:hover { transform: translateY(-4px); box-shadow: 0 12px 28px rgba(30,41,59,0.1); }
+  .page-head { padding: 18px 20px; color: #fff; }
+  .page-head .prow { display: flex; align-items: center; gap: 10px; }
+  .page-head .ic { font-size: 26px; }
+  .page-head h3 { font-size: 18px; font-weight: 700; flex: 1; }
+  .page-head .url {
+    font-family: Consolas, monospace; font-size: 12px;
+    background: rgba(255,255,255,0.18); padding: 2px 10px; border-radius: 999px;
+  }
+  .tag {
+    display: inline-block; font-size: 12px; font-weight: 600;
+    padding: 2px 10px; border-radius: 999px; margin-top: 10px;
+  }
+  .tag.open { background: rgba(255,255,255,0.25); color: #fff; }
+  .tag.lock { background: #fde68a; color: #92400e; }
+  .pg-green { background: linear-gradient(135deg, #11998e, #38ef7d); }
+  .pg-indigo { background: linear-gradient(135deg, #667eea, #764ba2); }
+  .pg-amber { background: linear-gradient(135deg, #f59e0b, #ef4444); }
+  .pg-sky { background: linear-gradient(135deg, #0ea5e9, #6366f1); }
+  .pg-red { background: linear-gradient(135deg, #ef4444, #b91c1c); }
+  .pg-slate { background: linear-gradient(135deg, #475569, #1e293b); }
+
+  .page-body { padding: 16px 20px 20px; font-size: 14px; }
+  .page-body .desc { color: #334155; margin-bottom: 12px; }
+  .page-body .block { margin-bottom: 10px; }
+  .page-body .block b { font-size: 13px; color: var(--primary-dark); display: block; margin-bottom: 4px; }
+  .page-body .block p, .page-body .block li { font-size: 13px; color: #475569; }
+  .page-body ul { padding-left: 18px; }
+  .page-body .mini-flow {
+    display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+    background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 10px;
+    padding: 10px 12px; margin-top: 8px; font-size: 12px;
+  }
+  .page-body .mini-flow .step { background: #fff; border: 1px solid var(--line); padding: 4px 10px; border-radius: 999px; font-weight: 500; }
+  .page-body .mini-flow .ar { color: var(--primary); }
+  .note-flag {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #fffbeb; border: 1px solid #fde68a; color: #92400e;
+    font-size: 12px; padding: 4px 10px; border-radius: 8px; margin-top: 6px;
+  }
+
+  /* ===== 幕后助手 ===== */
+  .helpers { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+  .helper {
+    background: #fff; border: 1px solid var(--line); border-radius: 16px;
+    padding: 22px; display: flex; gap: 14px;
+  }
+  .helper .ic {
+    width: 52px; height: 52px; flex-shrink: 0; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center; font-size: 26px; color: #fff;
+  }
+  .helper h4 { font-size: 16px; margin-bottom: 4px; }
+  .helper .code { font-family: Consolas, monospace; font-size: 12px; color: #7c3aed; background: #f5f3ff; padding: 1px 8px; border-radius: 6px; }
+  .helper p { font-size: 13px; color: #475569; }
+
+  /* ===== 数据流向图 ===== */
+  .pipeline { display: flex; align-items: stretch; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  .pipe {
+    background: #fff; border: 2px solid var(--line); border-radius: 14px;
+    padding: 14px 16px; text-align: center; flex: 1; min-width: 120px;
+  }
+  .pipe .ic { font-size: 28px; }
+  .pipe b { display: block; font-size: 14px; margin-top: 6px; }
+  .pipe span { font-size: 12px; color: var(--sub); }
+  .pipe.pipe1 { border-color: #a5b4fc; background: #eef2ff; }
+  .pipe.pipe2 { border-color: #fde68a; background: #fffbeb; }
+  .pipe.pipe3 { border-color: #6ee7b7; background: #ecfdf5; }
+  .pipe.pipe4 { border-color: #fca5a5; background: #fef2f2; }
+  .pipe-arrow { display: flex; align-items: center; color: var(--primary); font-size: 22px; font-weight: 700; }
+  .legend { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-top: 14px; font-size: 13px; color: var(--sub); }
+
+  /* ===== 表格 ===== */
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+  th { background: #eef2ff; color: #312e81; font-weight: 700; }
+  tr:hover td { background: #fafaff; }
+  td .mono { font-family: Consolas, monospace; color: #7c3aed; background: #f5f3ff; padding: 1px 8px; border-radius: 6px; font-size: 13px; }
+  .pill { display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 10px; border-radius: 999px; }
+  .pill.real { background: #dcfce7; color: #166534; }
+  .pill.mock { background: #fef3c7; color: #92400e; }
+
+  /* ===== 注意点 ===== */
+  .tips { list-style: none; }
+  .tips li {
+    display: flex; gap: 12px; padding: 14px 0;
+    border-bottom: 1px dashed var(--line); font-size: 14px;
+  }
+  .tips li:last-child { border-bottom: none; }
+  .tips .tic { font-size: 20px; flex-shrink: 0; }
+  .tips b { color: var(--primary-dark); }
+
+  /* ===== 启动命令 ===== */
+  .cmd {
+    background: #1e293b; color: #e2e8f0; border-radius: 12px;
+    padding: 16px 20px; font-family: Consolas, monospace; font-size: 14px;
+    line-height: 2; margin-top: 12px; overflow-x: auto;
+  }
+  .cmd .c { color: #93c5fd; }
+  .cmd .cmt { color: #64748b; }
+
+  footer { text-align: center; color: var(--sub); font-size: 13px; margin-top: 40px; }
+
+  @media (max-width: 640px) {
+    .hero h1 { font-size: 26px; }
+    .sec-title { font-size: 20px; }
+    .sec-sub { margin-left: 0; }
+    .pages, .helpers { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="badge">🧭 项目理解地图 · 给队友和自己看的"人话说明书"</div>
+  <h1>EduCode 前端项目地图</h1>
+  <p>不用看懂每一行代码，看完这张图，你就知道整个网站是怎么转起来的。</p>
+  <div class="meta">项目目录：D:\ai-learn\aiCodeLearn-demo\web ｜ 更新日期：2026-08-28</div>
+</div>
+
+<div class="wrap">
+
+  <!-- ============ 第 1 章 ============ -->
+  <section>
+    <div class="sec-title"><span class="num">1</span> 这个网站是干什么的？</div>
+    <p class="sec-sub">先搞懂"产品是什么"，再搞懂"代码怎么组织的"。</p>
+
+    <div class="oneline">
+      <div class="big">🤖</div>
+      <div>
+        <div class="label">一句话版</div>
+        <p>这是一个「AI 帮你批改编程作业」的学习平台——<b>学员</b>上传代码文件（.cpp / .java），系统交给 AI 批改打分、指出错误，再通过图表展示学习情况。</p>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+      <div style="font-weight:700;margin-bottom:8px;">🛠️ 用到的"积木"（技术栈）</div>
+      <div class="stack">
+        <span>Vue 3 <small>页面框架</small></span>
+        <span>Vite <small>开发工具</small></span>
+        <span>Vue Router <small>网址导航</small></span>
+        <span>Pinia <small>全局记事本</small></span>
+        <span>Axios <small>发请求的快递员</small></span>
+        <span>Element Plus <small>现成 UI 组件</small></span>
+        <span>ECharts <small>画图表</small></span>
+      </div>
+      <div style="font-size:13px;color:var(--sub);margin-top:12px;">
+        💡 翻译成人话：这些"积木"都不用你自己造，Vue 负责搭页面、Router 负责换网址页面、Pinia 负责记住登录状态、Element Plus 负责好看的按钮和表单、ECharts 负责画饼图折线图。
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 第 2 章 ============ -->
+  <section>
+    <div class="sec-title"><span class="num">2</span> 整条使用路线图（用户动线）</div>
+    <p class="sec-sub">用户从打开网站到使用完，会经过哪些页面，哪些页面要"门票"（登录）。</p>
+
+    <div class="card">
+      <div class="flow">
+        <div class="flow-row">
+          <div class="node"><span class="ic">🌐</span>打开网站<small>地址栏输入网址</small></div>
+          <div class="arrow">→</div>
+          <div class="node err"><span class="ic">🔀</span>访问不存在网址？<small>自动兜底</small></div>
+          <div class="arrow">→</div>
+          <div class="node err"><span class="ic">⁉️</span>404 页面<small>点按钮回首页</small></div>
+        </div>
+        <div class="flow-row">
+          <div class="node login"><span class="ic">🔑</span>登录 / 注册页<small>第一次来的"大门"</small></div>
+          <div class="arrow">→ 登录成功自动带上"门票" →</div>
+          <div class="node home"><span class="ic">🏠</span>首页<small>宣传 + 功能入口 + 最近提交</small></div>
+        </div>
+        <div class="flow-row">
+          <div class="arrow">⬇️ 点卡片或菜单跳转</div>
+        </div>
+        <div class="flow-row">
+          <div class="node need"><span class="ic">📤</span>提交作业<small>上传代码给 AI 批改</small></div>
+          <div class="arrow">→</div>
+          <div class="node home"><span class="ic">✅</span>提交成功提示<small>显示作业编号，AI 批改中</small></div>
+          <div class="arrow">→</div>
+          <div class="node home"><span class="ic">🔁</span>继续提交 / 回首页</div>
+        </div>
+        <div class="flow-row">
+          <div class="node need"><span class="ic">📊</span>学习报告<small>看图表：语言、错误、趋势、知识点</small></div>
+          <div class="arrow">↔</div>
+          <div class="node need"><span class="ic">👤</span>个人中心<small>改昵称、看账号安全和学习数据</small></div>
+        </div>
+      </div>
+      <div class="flow-note">
+        🛡️ 黄色边框的页面要"门票"（必须登录才能进）；没登录点进去，会被自动送回登录页。
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 第 3 章 ============ -->
+  <section>
+    <div class="sec-title"><span class="num">3</span> 每个页面的"人话版"思路卡</div>
+    <p class="sec-sub">每个有用的页面一张卡：它是干嘛的、能看到什么、点了按钮会发生什么。</p>
+
+    <div class="pages">
+
+      <!-- 登录页 -->
+      <div class="page-card">
+        <div class="page-head pg-indigo">
+          <div class="prow"><span class="ic">🔑</span><h3>登录 / 注册页</h3><span class="url">/login</span></div>
+          <span class="tag open">🆓 不用登录就能进</span>
+        </div>
+        <div class="page-body">
+          <div class="desc">全站的"大门"。左边是品牌介绍（AI 批改、错题本、学习报告三大亮点），右边是表单。访问需要登录的页面但没登录时，会被自动送到这里。</div>
+          <div class="block"><b>📝 能操作</b>
+            <ul>
+              <li><b>登录</b>：填邮箱 + 密码</li>
+              <li><b>注册</b>：邮箱 + 用户名 + 密码(8-16位) + 确认密码 + 选角色（学员/老师）</li>
+            </ul>
+          </div>
+          <div class="block"><b>🔍 背后的逻辑</b>
+            <div class="mini-flow">
+              <span class="step">📝 填表单</span><span class="ar">→</span>
+              <span class="step">✔️ 前端校验(格式/两次密码)</span><span class="ar">→</span>
+              <span class="step">📦 发给后端</span><span class="ar">→</span>
+              <span class="step">✅ 登录成功：存"门票"token</span><span class="ar">→</span>
+              <span class="step">🏠 跳首页</span>
+            </div>
+            <div style="margin-top:8px;">注册成功后会自动切回"登录"标签，并帮你把邮箱填好，直接输密码就能登录。失败时：密码错提示"邮箱或密码错误"，邮箱被注册过提示"该邮箱已被注册"。</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 首页 -->
+      <div class="page-card">
+        <div class="page-head pg-green">
+          <div class="prow"><span class="ic">🏠</span><h3>首页</h3><span class="url">/</span></div>
+          <span class="tag open">🆓 谁都能看</span>
+        </div>
+        <div class="page-body">
+          <div class="desc">全站"前台"，从上到下分 5 块：欢迎横幅 → 数据概览 → 核心功能入口 → 最近提交记录 → 平台特色。</div>
+          <div class="block"><b>📝 能操作</b>
+            <ul>
+              <li>横幅按钮：已登录显示"立即提交作业"→ 去提交页；未登录显示"开始使用"→ 去登录页</li>
+              <li>核心功能卡片：提交作业→/submit、学习报告→/report；错题本、历史提交→提示"开发中"</li>
+              <li>已登录还能看到：4 个数据卡片 + 最近提交表格</li>
+            </ul>
+          </div>
+          <div class="block"><b>🔍 背后的逻辑</b>
+            <div class="mini-flow">
+              <span class="step">🧩 判断有没有登录</span><span class="ar">→</span>
+              <span class="step">🔀 有 → 显示数据/作业入口</span><span class="ar">↔</span>
+              <span class="step">🔀 没有 → 只显示宣传内容</span>
+            </div>
+            <div class="note-flag">⚠️ 提示：数据卡片和最近提交表格目前是<b>写死的假数据</b>（演示用），等后端接口好了再接真数据。</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 提交作业 -->
+      <div class="page-card">
+        <div class="page-head pg-amber">
+          <div class="prow"><span class="ic">📤</span><h3>提交作业</h3><span class="url">/submit</span></div>
+          <span class="tag lock">🔒 要登录</span>
+        </div>
+        <div class="page-body">
+          <div class="desc">核心功能页：上传代码文件，交给 AI 批改。</div>
+          <div class="block"><b>📝 能操作</b>
+            <ul>
+              <li>把文件拖进来，或点一下选择文件（只能选 1 个，支持 .cpp / .java，单文件 ≤ 10MB）</li>
+              <li>选好后会显示文件名和大小，可"移除"重新选</li>
+              <li>点"提交作业"按钮 → 上传 → 显示成功/失败结果</li>
+            </ul>
+          </div>
+          <div class="block"><b>🔍 背后的逻辑</b>
+            <div class="mini-flow">
+              <span class="step">📎 选文件</span><span class="ar">→</span>
+              <span class="step">🖱️ 点提交</span><span class="ar">→</span>
+              <span class="step">📦 带上"门票"把文件发给后端</span><span class="ar">→</span>
+              <span class="step">✅ 成功：显示作业编号，提示"AI 正在批改中"</span>
+            </div>
+            <div style="margin-top:8px;">成功后可"继续提交"（清空重来）或"返回首页"。失败会弹出后端返回的具体原因。</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 学习报告 -->
+      <div class="page-card">
+        <div class="page-head pg-sky">
+          <div class="prow"><span class="ic">📊</span><h3>学习报告</h3><span class="url">/report</span></div>
+          <span class="tag lock">🔒 要登录</span>
+        </div>
+        <div class="page-body">
+          <div class="desc">用图表展示你的学习情况，从上到下：4 个数据卡片 → 图表区 → 学习建议。</div>
+          <div class="block"><b>📊 4 张图表</b>
+            <ul>
+              <li>🥧 编程语言分布（饼图：Python / C++）</li>
+              <li>🥧 错误类型分布（饼图：语法 / 逻辑 / 内存 / 算法）</li>
+              <li>📈 近 7 天提交趋势（折线图）</li>
+              <li>📊 知识点掌握度（横向柱状图：递归、指针较弱）</li>
+            </ul>
+          </div>
+          <div class="block"><b>🔍 背后的逻辑</b>
+            <div class="mini-flow">
+              <span class="step">📦 准备数据</span><span class="ar">→</span>
+              <span class="step">🎨 ECharts 画图</span><span class="ar">→</span>
+              <span class="step">🪟 窗口大小变了就重画</span><span class="ar">→</span>
+              <span class="step">🚪 离开页面时销毁图表</span>
+            </div>
+            <div class="note-flag">⚠️ 提示：图表里的数据目前也是<b>写死的</b>，底部"学习建议"卡片同样写死。</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 个人中心 -->
+      <div class="page-card">
+        <div class="page-head pg-indigo">
+          <div class="prow"><span class="ic">👤</span><h3>个人中心</h3><span class="url">/profile</span></div>
+          <span class="tag lock">🔒 要登录</span>
+        </div>
+        <div class="page-body">
+          <div class="desc">看自己的信息 + 改资料 + 看学习数据。头像是一个圆圈，里面显示邮箱的第一个字母（大写）。</div>
+          <div class="block"><b>📝 能操作</b>
+            <ul>
+              <li><b>基本信息</b>：邮箱只读不能改，昵称可以改，点"保存修改"</li>
+              <li><b>账号安全</b>："修改密码"目前提示开发中；"绑定邮箱"显示已绑定</li>
+              <li><b>学习数据</b>：提交次数、通过次数、正确率、学习天数（写死）</li>
+            </ul>
+          </div>
+          <div class="block"><b>🔍 背后的逻辑</b>
+            <div class="mini-flow">
+              <span class="step">✏️ 改昵称</span><span class="ar">→</span>
+              <span class="step">✔️ 不为空就保存</span><span class="ar">→</span>
+              <span class="step">💾 先存到浏览器本地</span><span class="ar">→</span>
+              <span class="step">✅ 提示"保存成功"</span>
+            </div>
+            <div class="note-flag">⚠️ 提示：昵称目前存在浏览器本地（localStorage），代码注释写了"等后端接口好了再对接"。</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 404 -->
+      <div class="page-card">
+        <div class="page-head pg-red">
+          <div class="prow"><span class="ic">⁉️</span><h3>404 页面</h3><span class="url">/随便输一个网址</span></div>
+          <span class="tag open">🆓 不用登录</span>
+        </div>
+        <div class="page-body">
+          <div class="desc">"走错路了"的兜底页。网址栏输入任何不存在的地址，都会显示这个页面，避免出现一片空白。</div>
+          <div class="block"><b>📝 能操作</b>
+            <ul>
+              <li>只有一个按钮：🔙 回到首页</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- 主布局 -->
+      <div class="page-card">
+        <div class="page-head pg-slate">
+          <div class="prow"><span class="ic">🧭</span><h3>主布局（网站外壳）</h3><span class="url">所有页面的"衣服"</span></div>
+          <span class="tag open">🆓 公共部分</span>
+        </div>
+        <div class="page-body">
+          <div class="desc">除登录页外，其他页面都"穿"着同一件衣服：顶部一条导航栏，下面换内容。它不是一个网址，而是挂在所有页面外面的壳。</div>
+          <div class="block"><b>🧩 导航栏里有什么</b>
+            <ul>
+              <li>左：🏷️ logo + "EduCode 智能学习平台"（点它回首页）</li>
+              <li>中：菜单——首页、提交作业（提交作业只有登录后才显示）</li>
+              <li>右：已登录 → 头像下拉（个人中心 / 退出登录）；未登录 → "登录/注册"按钮</li>
+            </ul>
+          </div>
+          <div class="block"><b>🔍 背后的逻辑</b>
+            <div class="mini-flow">
+              <span class="step">🧩 读取登录状态</span><span class="ar">→</span>
+              <span class="step">🔀 登录了 → 显示菜单+头像</span><span class="ar">↔</span>
+              <span class="step">🔀 没登录 → 显示登录按钮</span><span class="ar">→</span>
+              <span class="step">🚪 点"退出登录"→ 清空门票 → 回登录页</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============ 第 4 章 ============ -->
+  <section>
+    <div class="sec-title"><span class="num">4</span> 幕后小助手（代码是怎么协作的）</div>
+    <p class="sec-sub">这些不是页面，而是帮页面干活的后台模块。都用"人话比喻"讲。</p>
+
+    <div class="helpers">
+      <div class="helper">
+        <div class="ic" style="background:linear-gradient(135deg,#667eea,#764ba2)">🚀</div>
+        <div>
+          <h4>点火开关 <span class="code">main.js</span></h4>
+          <p>整个项目的"开机程序"。它创建应用，并装上三样东西：导航（Router）、全局记事本（Pinia）、UI 组件库（Element Plus）。装好后把应用挂载到网页上。</p>
+        </div>
+      </div>
+
+      <div class="helper">
+        <div class="ic" style="background:linear-gradient(135deg,#0ea5e9,#6366f1)">🗺️</div>
+        <div>
+          <h4>导航地图 + 保安 <span class="code">router/index.js</span></h4>
+          <p>一张"网址 ↔ 页面"的对照表。同时还是个<b>保安</b>：去需要登录的页面，先查你有没有"门票"（token），没有就把你请到登录页；已经登录还去看登录页，会直接送你回首页。</p>
+        </div>
+      </div>
+
+      <div class="helper">
+        <div class="ic" style="background:linear-gradient(135deg,#11998e,#38ef7d)">📔</div>
+        <div>
+          <h4>全局记事本 <span class="code">stores/user.js</span></h4>
+          <p>记录登录信息（token、邮箱），所有页面都能读。登录成功就写进去，退出就清空。它把信息同步存到浏览器本地（localStorage），所以<b>刷新页面也不会掉线</b>。</p>
+        </div>
+      </div>
+
+      <div class="helper">
+        <div class="ic" style="background:linear-gradient(135deg,#f59e0b,#f5576c)">📦</div>
+        <div>
+          <h4>快递员 <span class="code">utils/request.js</span></h4>
+          <p>所有发给后端的请求都走它：自动在包裹上贴"门票"（token），超时 10 秒自动放弃。它是前后端之间的统一通道，页面不用自己拼地址。</p>
+        </div>
+      </div>
+
+      <div class="helper">
+        <div class="ic" style="background:linear-gradient(135deg,#8b5cf6,#6d28d9)">📋</div>
+        <div>
+          <h4>快递单 <span class="code">api/*.js</span></h4>
+          <p>每个接口一张"快递单"，页面只需要调用写好的函数（比如 <span class="code">loginApi(邮箱, 密码)</span>），不用关心地址怎么写。目前有两张：user.js（登录/注册）、submission.js（上传作业）。</p>
+        </div>
+      </div>
+
+      <div class="helper">
+        <div class="ic" style="background:linear-gradient(135deg,#475569,#1e293b)">🧱</div>
+        <div>
+          <h4>页面积木 <span class="code">views/*.vue</span></h4>
+          <p>每个 .vue 文件 = 一个页面（第 3 章讲的那些）。它们负责"长什么样 + 用户点按钮后干嘛"，需要用数据时就喊快递员去后端取。</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 数据流向 -->
+    <div class="card" style="margin-top:24px;">
+      <div style="font-weight:700;margin-bottom:16px;">🔁 一次完整操作的"数据旅行"（举例：点登录按钮）</div>
+      <div class="pipeline">
+        <div class="pipe pipe1"><span class="ic">🖱️</span><b>① 你点按钮</b><span>登录页</span></div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe pipe2"><span class="ic">📦</span><b>② 快递员出动</b><span>request.js 自动贴门票</span></div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe pipe3"><span class="ic">🖥️</span><b>③ 后端处理</b><span>/api/login 校验账号</span></div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe pipe4"><span class="ic">🎫</span><b>④ 拿到门票</b><span>存进记事本+本地</span></div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe pipe1"><span class="ic">🏠</span><b>⑤ 跳转首页</b><span>带着登录状态</span></div>
+      </div>
+      <div class="legend">
+        <span>💡 前端(浏览器)负责①②④⑤</span>
+        <span>🖥️ 后端(另一台电脑)负责③</span>
+        <span>🌉 开发时通过 /api 代理转发到 localhost:8080</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 第 5 章 ============ -->
+  <section>
+    <div class="sec-title"><span class="num">5</span> 文件夹地图（每个文件是干嘛的）</div>
+    <p class="sec-sub">照着项目目录一个个对照，就再也不怕迷路了。</p>
+
+    <div class="card" style="overflow-x:auto;">
+      <table>
+        <thead><tr><th style="width:220px;">文件 / 文件夹</th><th>作用（人话版）</th></tr></thead>
+        <tbody>
+          <tr><td><span class="mono">main.js</span></td><td>🚀 点火开关：创建应用，装上导航、记事本、组件库</td></tr>
+          <tr><td><span class="mono">App.vue</span></td><td>🔌 总插座：所有页面都显示在它里面的 <b>&lt;router-view&gt;</b> 位置上</td></tr>
+          <tr><td><span class="mono">router/index.js</span></td><td>🗺️ 导航地图 + 登录保安</td></tr>
+          <tr><td><span class="mono">stores/user.js</span></td><td>📔 全局记事本：记 token、邮箱，管登录/退出</td></tr>
+          <tr><td><span class="mono">utils/request.js</span></td><td>📦 快递员：统一发请求、自动贴门票</td></tr>
+          <tr><td><span class="mono">api/user.js</span></td><td>📋 登录、注册的快递单</td></tr>
+          <tr><td><span class="mono">api/submission.js</span></td><td>📋 上传作业的快递单（multipart 文件上传）</td></tr>
+          <tr><td><span class="mono">layout/MainLayout.vue</span></td><td>🧭 网站外壳：顶部导航栏 + 内容区</td></tr>
+          <tr><td><span class="mono">views/LoginView.vue</span></td><td>🔑 登录 / 注册页</td></tr>
+          <tr><td><span class="mono">views/HomeView.vue</span></td><td>🏠 首页</td></tr>
+          <tr><td><span class="mono">views/NotFoundView.vue</span></td><td>⁉️ 404 兜底页</td></tr>
+          <tr><td><span class="mono">views/student/SubmitView.vue</span></td><td>📤 提交作业页</td></tr>
+          <tr><td><span class="mono">views/student/ReportView.vue</span></td><td>📊 学习报告页（ECharts 图表）</td></tr>
+          <tr><td><span class="mono">views/student/ProfileView.vue</span></td><td>👤 个人中心页</td></tr>
+          <tr><td><span class="mono">assets/</span></td><td>🖼️ 图片（logo、登录背景）和全局样式（global.css）</td></tr>
+          <tr><td><span class="mono">vite.config.js</span></td><td>⚙️ 开发配置：把 /api 请求转发到后端 localhost:8080（解决跨域）</td></tr>
+          <tr><td><span class="mono">index.html</span></td><td>📄 唯一的 HTML 壳子，应用挂载在这里</td></tr>
+          <tr><td><span class="mono">AI-开发日志.md</span></td><td>📝 开发过程的详细记录（想深挖可以看这个）</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ 第 6 章 ============ -->
+  <section>
+    <div class="sec-title"><span class="num">6</span> 给队友的"注意事项"</div>
+    <p class="sec-sub">接手的队友最需要知道的几件事，都总结在这里。</p>
+
+    <div class="card">
+      <ul class="tips">
+        <li><span class="tic">🎫</span><div><b>"门票"就是 token：</b>登录后后端返回一个 token，存在浏览器本地（localStorage）。它是"你已登录"的凭证，很多接口都要带上它，后端才认你。</div></li>
+        <li><span class="tic">🧪</span><div><b>哪些是"真接口"，哪些是"假数据"：</b>真正连了后端的只有 3 个——登录、注册、上传作业。首页的数据卡片 / 最近提交、报告页的全部图表、个人中心的学习数据，目前都是写死的演示数据。</div></li>
+        <li><span class="tic">📁</span><div><b>昵称保存是"半成品"：</b>个人中心改昵称目前只存到浏览器本地，代码里留了注释"等后端接口好了再对接"，属于待完成项。</div></li>
+        <li><span class="tic">🚧</span><div><b>几个"开发中"占位：</b>错题本、历史提交、修改密码这几个功能入口/按钮目前点了只弹提示，页面还没做。</div></li>
+        <li><span class="tic">🚀</span><div><b>怎么把网站跑起来：</b>需要先在项目目录装依赖再启动（见下面命令）。注意后端也要在 localhost:8080 跑起来，否则登录/上传会失败。</div></li>
+        <li><span class="tic">🛡️</span><div><b>页面保护机制已经搭好：</b>新加"需要登录的页面"只需在路由里加一行 <span class="mono">meta: { requiresAuth: true }</span>，保安会自动拦人，不用自己写判断。</div></li>
+      </ul>
+
+      <div style="font-weight:700;margin-top:20px;">启动命令</div>
+      <div class="cmd">
+        <span class="cmt"># 第一次或依赖有变化时执行</span><br>
+        <span class="c">npm install</span><br><br>
+        <span class="cmt"># 启动开发服务器，浏览器打开 http://localhost:5173</span><br>
+        <span class="c">npm run dev</span>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    🧭 EduCode 前端项目理解地图 —— 由"豆包"根据项目源码整理，写给看不懂代码但想知道逻辑的你 &amp; 你的队友。<br>
+    发现页面有变化时，记得更新这份地图，让它一直保持"最新版说明书"。
+  </footer>
+
+</div>
+</body>
+</html>
