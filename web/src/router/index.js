@@ -44,6 +44,13 @@ const routes = [
         component: () => import('../views/student/ReportView.vue'),
         meta: { title: '学习报告', requiresAuth: true },
       },
+      // 错题本：需要登录
+      {
+        path: 'wrong-questions',
+        name: 'wrong-questions',
+        component: () => import('../views/student/WrongQuestionsView.vue'),
+        meta: { title: '错题本', requiresAuth: true },
+      },
       // 以后加需要登录的页面，单独加 meta: { requiresAuth: true }
     ],
   },

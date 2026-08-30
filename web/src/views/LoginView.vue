@@ -1,4 +1,4 @@
-<!-- 登录/注册页：左侧品牌介绍区 + 右侧表单区 -->
+<!-- 登录/注册页：左侧品牌介绍区 + 右侧表单区 - 深色玻璃风格 -->
 <template>
   <div class="login-page">
     <!-- ===== 左侧：品牌介绍区 ===== -->
@@ -205,23 +205,48 @@ async function handleRegister() {
 </script>
 
 <style scoped>
-/* 品牌主色：靛蓝。改这里整页的Element Plus组件（按钮/输入框/下拉框）都会跟着变 */
+/* 登录页 - 深色玻璃高级感 */
 .login-page {
-  --el-color-primary: #4f46e5;
-  --el-color-primary-light-3: #7c74f0;
-  --el-color-primary-light-5: #a5a0f5;
-  --el-color-primary-light-7: #cdcafa;
-  --el-color-primary-light-8: #e0defb;
-  --el-color-primary-light-9: #eeedfd;
-  --el-color-primary-dark-2: #4338ca;
+  --el-color-primary: #c4b5fd;
+  --el-color-primary-light-3: #d4c5fe;
+  --el-color-primary-light-5: #e0d5fe;
+  --el-color-primary-light-7: #ece5fe;
+  --el-color-primary-light-8: #f1ecff;
+  --el-color-primary-light-9: #f7f4ff;
+  --el-color-primary-dark-2: #a996f7;
 }
 
 .login-page {
   height: 100%;
   display: flex;
-  padding: 20px; /* 四周留白，让左右两栏整体像一张大卡片 */
-  background: #eef2f7; /* 页面底色，比卡片深一点，衬托出卡片轮廓 */
+  padding: 24px;
+  background: #0a0a0c;
   overflow: hidden;
+  position: relative;
+}
+
+/* 背景光晕 */
+.login-page::before {
+  content: '';
+  position: absolute;
+  top: -20%;
+  left: 10%;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(124, 58, 237, 0.15) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+.login-page::after {
+  content: '';
+  position: absolute;
+  bottom: -20%;
+  right: 10%;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(76, 29, 149, 0.12) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
 }
 
 /* ===== 左侧品牌区 ===== */
@@ -232,48 +257,69 @@ async function handleRegister() {
   flex-direction: column;
   justify-content: space-between;
   padding: 44px 52px;
-  background-color: #1e1b4b;
-  /* 细网格纹理：像编程用的稿纸 */
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
-  background-size: 40px 40px;
-  border-radius: 20px 0 0 20px; /* 左边两个角圆角 */
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-right: none;
+  border-radius: 18px 0 0 18px;
   overflow: hidden;
+  z-index: 1;
+}
+
+/* 细网格纹理 */
+.brand-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
 }
 
 .brand-top {
   display: flex;
   align-items: center;
   gap: 10px;
+  position: relative;
+  z-index: 1;
 }
 
 .logo {
-  height: 40px;
+  height: 36px;
 }
 
 .brand-name {
-  color: #fff;
-  font-size: 22px;
+  color: #f4f4f5;
+  font-size: 20px;
   font-weight: 700;
-  letter-spacing: 1px;
+  letter-spacing: 0.5px;
+}
+
+.brand-main {
+  position: relative;
+  z-index: 1;
 }
 
 .brand-title {
-  color: #fff;
-  font-size: 42px;
+  color: #f4f4f5;
+  font-size: 38px;
   font-weight: 700;
   line-height: 1.3;
-  letter-spacing: 0.03em;
-  margin-bottom: 16px;
+  letter-spacing: -0.3px;
+  margin-bottom: 14px;
 }
 
 .brand-desc {
-  color: rgba(255, 255, 255, 0.65);
-  font-size: 15px;
+  color: #a1a1aa;
+  font-size: 14px;
   line-height: 1.7;
-  max-width: 420px;
-  margin-bottom: 36px;
+  max-width: 400px;
+  margin-bottom: 32px;
 }
 
 /* 功能亮点列表 */
@@ -281,37 +327,41 @@ async function handleRegister() {
   display: flex;
   align-items: center;
   gap: 14px;
-  margin-bottom: 22px;
+  margin-bottom: 18px;
 }
 
 .feature-icon {
-  width: 40px;
-  height: 40px;
+  width: 38px;
+  height: 38px;
   flex-shrink: 0;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.1);
-  color: #a5b4fc;
-  font-size: 20px;
+  border-radius: 10px;
+  background: rgba(196, 181, 253, 0.1);
+  color: #c4b5fd;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .feature-title {
-  color: #fff;
-  font-size: 15px;
+  color: #e4e4e7;
+  font-size: 14px;
   font-weight: 600;
 }
 
 .feature-desc {
-  color: rgba(255, 255, 255, 0.55);
-  font-size: 13px;
+  color: #71717a;
+  font-size: 12px;
   margin-top: 2px;
 }
 
 /* 代码窗口 */
 .code-window {
   position: relative;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
+  z-index: 1;
 }
 
 .code-bar {
@@ -319,7 +369,7 @@ async function handleRegister() {
   align-items: center;
   gap: 6px;
   padding: 10px 14px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .code-dot {
@@ -327,13 +377,13 @@ async function handleRegister() {
   height: 10px;
   border-radius: 50%;
 }
-.dot-red { background: #f87171; }
-.dot-yellow { background: #fbbf24; }
-.dot-green { background: #34d399; }
+.dot-red { background: rgba(248, 113, 113, 0.7); }
+.dot-yellow { background: rgba(251, 191, 36, 0.7); }
+.dot-green { background: rgba(52, 211, 153, 0.7); }
 
 .code-filename {
   margin-left: 8px;
-  color: rgba(255, 255, 255, 0.5);
+  color: #71717a;
   font-size: 12px;
 }
 
@@ -343,12 +393,12 @@ async function handleRegister() {
   font-family: 'JetBrains Mono', Consolas, 'Courier New', monospace;
   font-size: 13px;
   line-height: 1.8;
-  color: #e2e8f0;
+  color: #d4d4d8;
   overflow-x: auto;
 }
 
 /* 语法高亮配色 */
-.code-comment { color: #94a3b8; }
+.code-comment { color: #71717a; }
 .code-keyword { color: #c4b5fd; }
 .code-func { color: #93c5fd; }
 
@@ -362,7 +412,7 @@ async function handleRegister() {
   50% { opacity: 0; }
 }
 
-/* AI 批改结果标签：浮在代码窗口右下角 */
+/* AI 批改结果标签 */
 .ai-badge {
   position: absolute;
   right: 14px;
@@ -370,13 +420,14 @@ async function handleRegister() {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 12px;
-  background: #fff;
-  color: #4f46e5;
+  padding: 6px 14px;
+  background: rgba(196, 181, 253, 0.15);
+  color: #c4b5fd;
   font-size: 12px;
   font-weight: 600;
-  border-radius: 999px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  border-radius: 20px;
+  border: 1px solid rgba(196, 181, 253, 0.25);
+  backdrop-filter: blur(10px);
 }
 
 /* ===== 右侧表单区 ===== */
@@ -386,38 +437,64 @@ async function handleRegister() {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: #f8fafc;
-  border-radius: 0 20px 20px 0; /* 右边两个角圆角，和左栏拼成完整的大卡片 */
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-left: none;
+  border-radius: 0 18px 18px 0;
+  position: relative;
+  z-index: 1;
 }
 
-/* 白色卡片，干净利落 */
+/* 玻璃卡片 */
 .login-card {
-  width: 420px;
+  width: 400px;
   padding: 32px 32px 24px;
   border-radius: 16px;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 10px 40px rgba(15, 23, 42, 0.06);
-  background: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(20px);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
 }
 
-/* Tab 文字稍大一点 */
+/* Tab 样式 */
 .login-tabs :deep(.el-tabs__item) {
   font-size: 16px;
   font-weight: 600;
+  color: #71717a;
+}
+.login-tabs :deep(.el-tabs__item.is-active) {
+  color: #f4f4f5;
+}
+.login-tabs :deep(.el-tabs__active-bar) {
+  background: #c4b5fd;
+}
+.login-tabs :deep(.el-tabs__nav-wrap::after) {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+/* 表单文字颜色 */
+.login-card :deep(.el-form-item__label) {
+  color: #d4d4d8;
 }
 
 /* 提交按钮 */
 .submit-btn {
   width: 100%;
   height: 44px;
-  font-size: 16px;
+  font-size: 15px;
   letter-spacing: 2px;
   border-radius: 10px;
-  transition: all 0.25s;
+  background: #c4b5fd !important;
+  border-color: #c4b5fd !important;
+  color: #0a0a0c !important;
+  font-weight: 600 !important;
+  transition: all 0.2s;
 }
 .submit-btn:hover {
+  background: #d4c5fe !important;
+  border-color: #d4c5fe !important;
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(79, 70, 229, 0.35);
+  box-shadow: 0 6px 20px rgba(196, 181, 253, 0.25);
 }
 
 /* 角色下拉框 */
@@ -427,24 +504,25 @@ async function handleRegister() {
 
 .copyright {
   margin-top: 20px;
-  color: #94a3b8;
+  color: #52525b;
   font-size: 12px;
 }
 
-/* 屏幕较窄时隐藏左侧品牌区，只留表单 */
+/* 屏幕较窄时隐藏左侧品牌区 */
 @media (max-width: 900px) {
   .brand-panel {
     display: none;
   }
   .form-panel {
-    border-radius: 20px; /* 左栏隐藏后，右侧变成完整的圆角卡片 */
+    border-radius: 18px;
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
   }
 }
 
 /* 手机端 */
 @media (max-width: 768px) {
   .login-page {
-    padding: 12px; /* 小屏幕少留一点边 */
+    padding: 12px;
   }
   .login-card {
     width: 100%;
