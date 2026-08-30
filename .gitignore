@@ -12,10 +12,12 @@ target/
 .sts4-cache
 
 ### IntelliJ IDEA ###
-.idea
+# README §4：不要提交 .idea（IDE 本地配置，每个成员机器各不相同）
+.idea/
 *.iws
 *.iml
 *.ipr
+*.hprof
 
 ### NetBeans ###
 /nbproject/private/
