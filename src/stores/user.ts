@@ -24,7 +24,8 @@ export const useUserStore = defineStore('user', () => {
   }
 
   async function updateProfile(data: Partial<Profile>) {
-    profile.value = await apiUpdateProfile(data)
+    if (!profile.value?.id) throw new Error('缺少当前用户 ID')
+    profile.value = await apiUpdateProfile(profile.value.id, data)
   }
 
   function logout() {

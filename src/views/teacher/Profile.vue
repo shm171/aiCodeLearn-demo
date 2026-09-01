@@ -25,12 +25,7 @@
           <el-input :model-value="form.email" disabled />
           <div class="form-tip">邮箱为登录账号，暂不支持修改</div>
         </el-form-item>
-        <el-form-item label="手机号" prop="phone">
-          <el-input v-model="form.phone" placeholder="选填" />
-        </el-form-item>
-        <el-form-item label="个人简介" prop="bio">
-          <el-input v-model="form.bio" type="textarea" :rows="3" placeholder="介绍一下自己（选填）" />
-        </el-form-item>
+
         <el-form-item>
           <el-button type="primary" :loading="saving" @click="onSave">保存修改</el-button>
         </el-form-item>
@@ -52,14 +47,11 @@ const saving = ref(false)
 
 const form = reactive({
   username: '',
-  phone: '',
-  bio: '',
   email: '',
 })
 
 const rules: FormRules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-  phone: [{ pattern: /^1[3-9]\d{9}$/, message: '手机号格式不正确', trigger: 'blur' }],
 }
 
 const roleLabel = computed(() => {
@@ -74,8 +66,6 @@ onMounted(async () => {
     const p = userStore.profile
     if (p) {
       form.username = p.username
-      form.phone = p.phone || ''
-      form.bio = p.bio || ''
       form.email = p.email
     }
   } finally {
@@ -89,7 +79,7 @@ async function onSave() {
   if (!valid) return
   saving.value = true
   try {
-    await userStore.updateProfile({ username: form.username, phone: form.phone, bio: form.bio })
+    await userStore.updateProfile({ username: form.username })
     ElMessage.success('保存成功')
   } finally {
     saving.value = false

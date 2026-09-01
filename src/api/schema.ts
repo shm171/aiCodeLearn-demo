@@ -45,6 +45,8 @@ export interface RegisterReq {
   email: string
   password: string
   username: string
+  /** 后端必填：STUDENT 或 TEACHER */
+  role: 'STUDENT' | 'TEACHER'
 }
 
 export type QuestionType = 'PROGRAMMING' | 'ASSIGNMENT' | 'CHOICE'
