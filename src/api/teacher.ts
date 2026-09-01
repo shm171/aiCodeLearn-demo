@@ -4,10 +4,10 @@ import request from '@/utils/request'
 import type {
   PageResult,
   Question,
+  GradingResult,
   QuestionPayload,
   QuestionQuery,
   ReviewDetail,
-  ReviewPayload,
   Student,
   StudentQuery,
   StudentReport,
@@ -26,7 +26,7 @@ import {
   mockGetStudentReport,
   mockGetSubmissionList,
   mockGetWrongQuestions,
-  mockSubmitReview,
+  mockGradeSubmission,
   mockUpdateQuestion,
   mockUpdateQuestionStatus,
 } from './mock'
@@ -70,9 +70,10 @@ export function getReviewDetail(id: number): Promise<ReviewDetail> {
   return request.get<unknown, ReviewDetail>(`/teacher/submissions/${id}`)
 }
 
-export function submitReview(id: number, data: ReviewPayload): Promise<ReviewDetail> {
-  if (USE_MOCK) return mockSubmitReview(id, data)
-  return request.post<unknown, ReviewDetail>(`/teacher/submissions/${id}/review`, data)
+/** 双层批改（规则校验 + 可选 LLM）——适配 granding 分支 POST /core/submissions/{submissionId}/grade */
+export function gradeSubmission(submissionId: number, enableLLM = false): Promise<GradingResult> {
+  if (USE_MOCK) return mockGradeSubmission(submissionId, enableLLM)
+  return request.post<unknown, GradingResult>(`/core/submissions/${submissionId}/grade`, { enableLLM })
 }
 
 // ---------- 错题管理 ----------

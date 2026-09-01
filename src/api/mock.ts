@@ -6,6 +6,7 @@
 // ============================================================
 import type {
   DashboardStats,
+  GradingResult,
   LoginReq,
   LoginResp,
   PageResult,
@@ -17,6 +18,7 @@ import type {
   StaticIssue,
   ReviewPayload,
   Student,
+  StudentErrorStat,
   StudentQuery,
   StudentReport,
   Submission,
@@ -333,34 +335,54 @@ export function mockGetStudentReport(id: number): Promise<StudentReport> {
 // -------------------- 数据看板 --------------------
 
 export function mockGetDashboardStats(): Promise<DashboardStats> {
-  const dates: string[] = []
-  const submit: number[] = []
-  const accuracy: number[] = []
-  for (let i = 13; i <= 26; i++) {
-    dates.push(`8/${i}`)
-    submit.push(Math.round(20 + Math.sin(i) * 8 + Math.random() * 10))
-    accuracy.push(Math.round(70 + Math.random() * 20))
-  }
+  // 结构对齐后端 TeacherDashboardDto
+  const perStudentStats: StudentErrorStat[] = [
+    { ownerUserId: 11, errorCount: 15, submissionCount: 24, lastActiveAt: '2026-08-26 09:10', attention: true },
+    { ownerUserId: 12, errorCount: 4, submissionCount: 22, lastActiveAt: '2026-08-26 09:05', attention: false },
+    { ownerUserId: 13, errorCount: 12, submissionCount: 19, lastActiveAt: '2026-08-25 22:40', attention: true },
+    { ownerUserId: 14, errorCount: 9, submissionCount: 20, lastActiveAt: '2026-08-25 20:33', attention: false },
+    { ownerUserId: 15, errorCount: 15, submissionCount: 16, lastActiveAt: '2026-08-25 18:20', attention: true },
+    { ownerUserId: 16, errorCount: 10, submissionCount: 21, lastActiveAt: '2026-08-26 08:48', attention: false },
+    { ownerUserId: 17, errorCount: 6, submissionCount: 18, lastActiveAt: '2026-08-25 19:15', attention: false },
+    { ownerUserId: 18, errorCount: 11, submissionCount: 15, lastActiveAt: '2026-08-26 08:30', attention: true },
+  ]
   return delay({
-    studentCount: 86,
-    todaySubmit: 37,
-    pendingReview: 12,
-    avgAccuracy: 81.6,
-    activeStudents: 64,
-    submitTrend: dates.map((date, i) => ({ date, submitCount: submit[i], accuracy: accuracy[i] })),
-    wrongDistribution: [
-      { knowledgePoint: '动态规划', wrongCount: 42 },
-      { knowledgePoint: '链表', wrongCount: 31 },
-      { knowledgePoint: '滑动窗口', wrongCount: 24 },
-      { knowledgePoint: '树 / BFS', wrongCount: 18 },
-      { knowledgePoint: '数组 / 哈希表', wrongCount: 12 },
+    totalSubmissions: 432,
+    totalErrors: 127,
+    classTopicRanking: [
+      { rank: 1, topic: '动态规划', errorCount: 42 },
+      { rank: 2, topic: '链表', errorCount: 31 },
+      { rank: 3, topic: '滑动窗口', errorCount: 24 },
+      { rank: 4, topic: '树 / BFS', errorCount: 18 },
+      { rank: 5, topic: '数组 / 哈希表', errorCount: 12 },
     ],
-    classActivity: [
-      { className: '计算机 2101', submitCount: 128, activeStudents: 28 },
-      { className: '计算机 2102', submitCount: 96, activeStudents: 24 },
-      { className: '计算机 2103', submitCount: 87, activeStudents: 21 },
-      { className: '软件 2101', submitCount: 74, activeStudents: 19 },
+    perStudentStats,
+    classCategoryDistribution: [
+      { label: '命名规范', value: 38 },
+      { label: 'WARNING', value: 29 },
+      { label: '逻辑错误', value: 22 },
+      { label: '数组越界', value: 15 },
+      { label: '内存泄漏', value: 23 },
     ],
-    recentSubmissions: submissions.slice(0, 6),
+    attentionStudentIds: [11, 15, 18],
+  })
+}
+
+// -------------------- 双层批改（自动批改，适配 granding 分支） --------------------
+
+export function mockGradeSubmission(submissionId: number, enableLLM = false): Promise<GradingResult> {
+  return delay<GradingResult>({
+    submissionId,
+    score: enableLLM ? 86 : 74,
+    issues: [
+      { source: 'RULE', severity: 'WARNING', category: '命名规范', lineNumber: 5, message: '变量名 a/b 语义不明确', suggestion: '使用有意义的名称，如 index / seen' },
+      { source: 'RULE', severity: 'INFO', category: '缩进', lineNumber: 12, message: '缩进不一致，影响可读性', suggestion: '统一为 4 空格缩进' },
+      ...(enableLLM
+        ? [{ source: 'LLM' as const, severity: 'ERROR' as const, category: '算法思路', lineNumber: 8, message: '暴力解法时间复杂度 O(n^2)，数据量大时会超时', suggestion: '使用哈希表记录已访问元素，优化到 O(n)' }]
+        : []),
+    ],
+    overallFeedback: enableLLM
+      ? '整体思路正确，建议补充边界条件测试（重复元素、空数组），并优化变量命名。'
+      : '仅运行规则校验，未启用 LLM 深度批改。',
   })
 }

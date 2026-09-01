@@ -121,6 +121,31 @@ export interface StaticIssue {
 }
 
 /** LLM 批改单项 */
+/** 批改问题来源（后端 IssueSource） */
+export type IssueSource = 'RULE' | 'LLM'
+
+/** 批改单条问题（后端 IssueDto） */
+export interface GradingIssue {
+  source: IssueSource
+  severity: 'INFO' | 'WARNING' | 'ERROR'
+  category: string
+  lineNumber: number | null
+  message: string
+  suggestion: string | null
+}
+
+/** 双层批改请求（后端 GradingRequest：{ enableLLM }） */
+export interface GradingRequest {
+  enableLLM: boolean
+}
+
+/** 双层批改结果（后端 GradingResponse） */
+export interface GradingResult {
+  submissionId: number
+  score: number
+  issues: GradingIssue[]
+  overallFeedback: string | null
+}
 export interface GradingItem {
   dimension: string
   score: number
@@ -213,17 +238,36 @@ export interface ClassActivity {
   activeStudents: number
 }
 
-/** 教师数据看板统计 */
+/** 饼图/柱状图单个切片（后端 ChartSliceDto：{label, value}） */
+export interface ChartSlice {
+  label: string
+  value: number
+}
+
+/** 易错知识点排行单条（后端 RankingItemDto） */
+export interface RankingItem {
+  rank: number
+  topic: string
+  errorCount: number
+}
+
+/** 学生错题统计（后端 StudentErrorStatDto） */
+export interface StudentErrorStat {
+  ownerUserId: number
+  errorCount: number
+  submissionCount: number
+  lastActiveAt: string
+  attention: boolean
+}
+
+/** 教师数据看板（适配后端 TeacherDashboardDto） */
 export interface DashboardStats {
-  studentCount: number
-  todaySubmit: number
-  pendingReview: number
-  avgAccuracy: number
-  activeStudents: number
-  submitTrend: TrendPoint[]
-  wrongDistribution: KnowledgePointStat[]
-  classActivity: ClassActivity[]
-  recentSubmissions: Submission[]
+  totalSubmissions: number
+  totalErrors: number
+  classTopicRanking: RankingItem[]
+  perStudentStats: StudentErrorStat[]
+  classCategoryDistribution: ChartSlice[]
+  attentionStudentIds: number[]
 }
 
 /** 学生学习报告 */

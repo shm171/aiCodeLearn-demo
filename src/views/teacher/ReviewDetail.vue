@@ -22,8 +22,8 @@
       </template>
 
       <el-row :gutter="16">
-        <!-- 左列：题目 + 代码 + 静态检查 -->
-        <el-col :xs="24" :lg="14">
+        <!-- 左列：题目 + 代码 -->
+        <el-col :xs="24" :lg="13">
           <el-card shadow="never" class="block-card">
             <template #header><span class="block-title">题目描述</span></template>
             <p class="desc">{{ detail.questionDescription }}</p>
@@ -35,83 +35,72 @@
             </template>
             <pre class="code-block mono">{{ detail.code }}</pre>
           </el-card>
-
-          <el-card shadow="never" class="block-card">
-            <template #header>
-              <span class="block-title">静态代码检查</span>
-              <el-tag v-if="detail.staticIssues.length === 0" type="success" size="small">
-                未发现问题
-              </el-tag>
-            </template>
-            <el-empty v-if="detail.staticIssues.length === 0" description="静态检查全部通过" :image-size="60" />
-            <el-table v-else :data="detail.staticIssues" size="small" border>
-              <el-table-column label="级别" width="80">
-                <template #default="{ row }">
-                  <el-tag :type="severityTag(row.severity)" size="small">{{ row.severity }}</el-tag>
-                </template>
-              </el-table-column>
-              <el-table-column prop="rule" label="规则" width="150" show-overflow-tooltip />
-              <el-table-column label="位置" width="110">
-                <template #default="{ row }">
-                  <span class="mono">{{ row.file }}:{{ row.line }}:{{ row.column }}</span>
-                </template>
-              </el-table-column>
-              <el-table-column prop="message" label="说明" min-width="180" show-overflow-tooltip />
-            </el-table>
-          </el-card>
         </el-col>
 
-        <!-- 右列：LLM 批改 + 人工复核 -->
-        <el-col :xs="24" :lg="10">
-          <el-card shadow="never" class="block-card" v-if="detail.llmGrading">
-            <template #header>
-              <span class="block-title">LLM 深度批改</span>
-            </template>
-            <div class="llm-score">
-              <span class="score-num">{{ detail.llmGrading.totalScore }}</span>
-              <span class="score-max">/ {{ detail.llmGrading.maxScore }}</span>
-            </div>
-            <el-alert type="info" :closable="false" class="summary">
-              <template #title>{{ detail.llmGrading.summary }}</template>
-            </el-alert>
-            <div v-for="item in detail.llmGrading.items" :key="item.dimension" class="grading-item">
-              <div class="grading-head">
-                <span>{{ item.dimension }}</span>
-                <span>{{ item.score }} / {{ item.maxScore }}</span>
-              </div>
-              <el-progress
-                :percentage="Math.round((item.score / item.maxScore) * 100)"
-                :stroke-width="8"
-                :color="progressColor(item.score / item.maxScore)"
-              />
-              <div class="grading-comment">{{ item.comment }}</div>
-            </div>
-          </el-card>
-
+        <!-- 右列：AI 自动批改 -->
+        <el-col :xs="24" :lg="11">
           <el-card shadow="never" class="block-card">
-            <template #header><span class="block-title">人工复核</span></template>
-            <el-form ref="reviewFormRef" :model="reviewForm" :rules="reviewRules" label-width="70px">
-              <el-form-item label="评分" prop="score">
-                <el-input-number v-model="reviewForm.score" :min="0" :max="100" />
-              </el-form-item>
-              <el-form-item label="结论" prop="status">
-                <el-radio-group v-model="reviewForm.status">
-                  <el-radio value="GRADED">通过</el-radio>
-                  <el-radio value="REJECTED">打回重做</el-radio>
-                </el-radio-group>
-              </el-form-item>
-              <el-form-item label="评语" prop="comment">
-                <el-input
-                  v-model="reviewForm.comment"
-                  type="textarea"
-                  :rows="4"
-                  placeholder="填写给学生的评语（可选）"
-                />
-              </el-form-item>
-              <el-button type="primary" :loading="submitting" @click="onSubmitReview">
-                提交复核结果
+            <template #header>
+              <span class="block-title">AI 自动批改</span>
+              <el-tag type="success" size="small" class="auto-tag">规则校验 + LLM 深度批改</el-tag>
+            </template>
+
+            <div class="grade-controls">
+              <el-form label-width="140px">
+                <el-form-item label="启用 LLM 深度批改">
+                  <el-switch v-model="enableLLM" />
+                  <div class="form-tip">关闭时只跑规则校验（更快）；开启后追加 LLM 逻辑/算法点评</div>
+                </el-form-item>
+              </el-form>
+              <el-button type="primary" :icon="MagicStick" :loading="grading" @click="onGrade">
+                开始批改
               </el-button>
-            </el-form>
+            </div>
+
+            <el-divider />
+
+            <div v-if="result">
+              <div class="llm-score">
+                <span class="score-num">{{ result.score }}</span>
+                <span class="score-max">/ 100</span>
+                <span class="score-tip">本次批改得分</span>
+              </div>
+
+              <el-alert
+                v-if="result.overallFeedback"
+                type="info"
+                :closable="false"
+                class="summary"
+              >
+                <template #title>{{ result.overallFeedback }}</template>
+              </el-alert>
+
+              <div class="issue-title">发现问题（{{ result.issues.length }} 条）</div>
+              <el-table :data="result.issues" size="small" border>
+                <el-table-column label="级别" width="80">
+                  <template #default="{ row }">
+                    <el-tag :type="severityTag(row.severity)" size="small">{{ row.severity }}</el-tag>
+                  </template>
+                </el-table-column>
+                <el-table-column label="来源" width="70">
+                  <template #default="{ row }">
+                    <el-tag :type="row.source === 'LLM' ? 'success' : 'primary'" size="small" effect="plain">
+                      {{ row.source }}
+                    </el-tag>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="category" label="分类" width="100" show-overflow-tooltip />
+                <el-table-column label="行号" width="60" align="center">
+                  <template #default="{ row }">
+                    <span>{{ row.lineNumber ?? '--' }}</span>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="message" label="说明" min-width="140" show-overflow-tooltip />
+                <el-table-column prop="suggestion" label="建议" min-width="140" show-overflow-tooltip />
+              </el-table>
+            </div>
+
+            <el-empty v-else description="点击「开始批改」查看自动批改结果" :image-size="70" />
           </el-card>
         </el-col>
       </el-row>
@@ -120,56 +109,38 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { ArrowLeft } from '@element-plus/icons-vue'
-import type { FormInstance, FormRules } from 'element-plus'
-import { getReviewDetail, submitReview } from '@/api/teacher'
-import type { ReviewDetail, ReviewPayload } from '@/api/schema'
+import { ArrowLeft, MagicStick } from '@element-plus/icons-vue'
+import { getReviewDetail, gradeSubmission } from '@/api/teacher'
+import type { GradingResult, ReviewDetail } from '@/api/schema'
 
 const route = useRoute()
 const id = Number(route.params.id)
 
 const loading = ref(false)
-const submitting = ref(false)
+const grading = ref(false)
 const detail = ref<ReviewDetail | null>(null)
-const reviewFormRef = ref<FormInstance>()
-
-const reviewForm = reactive<ReviewPayload>({
-  score: 85,
-  status: 'GRADED',
-  comment: '',
-})
-
-const reviewRules: FormRules = {
-  score: [{ required: true, message: '请输入评分', trigger: 'blur' }],
-  status: [{ required: true, message: '请选择结论', trigger: 'change' }],
-}
+const enableLLM = ref(false)
+const result = ref<GradingResult | null>(null)
 
 onMounted(async () => {
   loading.value = true
   try {
     detail.value = await getReviewDetail(id)
-    if (detail.value.manualScore !== null) reviewForm.score = detail.value.manualScore
-    if (detail.value.manualComment) reviewForm.comment = detail.value.manualComment
-    reviewForm.status = detail.value.status === 'REJECTED' ? 'REJECTED' : 'GRADED'
   } finally {
     loading.value = false
   }
 })
 
-async function onSubmitReview() {
-  if (!reviewFormRef.value) return
-  const valid = await reviewFormRef.value.validate().catch(() => false)
-  if (!valid) return
-  submitting.value = true
+async function onGrade() {
+  grading.value = true
   try {
-    const res = await submitReview(id, { ...reviewForm })
-    detail.value = res
-    ElMessage.success('复核结果已提交')
+    result.value = await gradeSubmission(id, enableLLM.value)
+    ElMessage.success('批改完成')
   } finally {
-    submitting.value = false
+    grading.value = false
   }
 }
 
@@ -192,12 +163,6 @@ const severityMap: Record<string, 'danger' | 'warning' | 'info'> = {
 }
 function severityTag(s: string) {
   return severityMap[s] ?? 'info'
-}
-
-function progressColor(ratio: number) {
-  if (ratio >= 0.8) return '#67c23a'
-  if (ratio >= 0.6) return '#e6a23c'
-  return '#f56c6c'
 }
 </script>
 
@@ -226,6 +191,10 @@ function progressColor(ratio: number) {
   font-weight: 600;
 }
 
+.auto-tag {
+  margin-left: 8px;
+}
+
 .desc {
   color: #606266;
   line-height: 1.7;
@@ -245,6 +214,14 @@ function progressColor(ratio: number) {
   overflow-y: auto;
 }
 
+.grade-controls {
+  .form-tip {
+    font-size: 12px;
+    color: #909399;
+    margin-top: 4px;
+  }
+}
+
 .llm-score {
   margin-bottom: 12px;
 
@@ -258,27 +235,20 @@ function progressColor(ratio: number) {
     color: #909399;
     font-size: 16px;
   }
+
+  .score-tip {
+    margin-left: 10px;
+    color: #909399;
+    font-size: 13px;
+  }
 }
 
 .summary {
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
-.grading-item {
-  margin-bottom: 14px;
-
-  .grading-head {
-    display: flex;
-    justify-content: space-between;
-    color: #303133;
-    font-size: 13px;
-    margin-bottom: 4px;
-  }
-
-  .grading-comment {
-    color: #909399;
-    font-size: 12px;
-    margin-top: 4px;
-  }
+.issue-title {
+  font-weight: 600;
+  margin-bottom: 8px;
 }
 </style>
