@@ -1,0 +1,7 @@
+nodeLinker: hoisted
+shamefullyHoist: true
+confirmModulesPurge: false
+allowBuilds:
+  esbuild: true
+  '@parcel/watcher': true
+  vue-demi: true
