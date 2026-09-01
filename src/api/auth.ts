@@ -26,13 +26,14 @@ export function register(data: RegisterReq): Promise<unknown> {
 
 /**
  * 获取当前登录用户（含角色）
- * ⚠️ 后端目前没有这个接口：现有的是 GET /user/{id}/profile（需要先知道自己的 id），
- * 而 JWT 里只存了邮箱、没有用户 id。需要后端新增 GET /user/me，
- * 带 JWT 返回 { id, email, username, role }。后端加上后，这里即可联调。
+ * 已按后端要求改为：POST /login/validate（校验 JWT）。
+ * ⚠️ 注意：该接口后端返回 boolean（true/false），不会返回 id/用户名/角色；
+ * 因此登录后 role 为空，教师页路由守卫可能会拦回登录页。真正联调还需要
+ * 一个能返回用户信息的接口（如 /user/me）。
  */
 export function getProfile(): Promise<Profile> {
   if (USE_MOCK_AUTH) return mockGetProfile()
-  return request.get<unknown, Profile>('/user/me')
+  return request.post<unknown, Profile>('/login/validate')
 }
 
 /**
