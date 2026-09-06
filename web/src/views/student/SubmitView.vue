@@ -425,38 +425,48 @@ function resetForm() {
   margin-left: auto;
 }
 
-/* 提交方式切换 - 深色风格 */
+/* 提交方式切换 - 深色风格，整体填充 */
 .mode-switch {
   margin-bottom: 20px;
   width: 100%;
+  display: flex;
+}
+.mode-switch :deep(.el-radio-group) {
+  width: 100%;
+  display: flex;
+}
+.mode-switch :deep(.el-radio-button) {
+  flex: 1;
+  width: 50%;
 }
 .mode-switch :deep(.el-radio-button__inner) {
-  width: 50%;
+  width: 100%;
   text-align: center;
   background: rgba(255, 255, 255, 0.04) !important;
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
   color: #a1a1aa !important;
   font-size: 14px;
-  padding: 12px 20px;
+  padding: 14px 20px;
   transition: all 0.2s;
+  box-sizing: border-box;
 }
 .mode-switch :deep(.el-radio-button__inner:hover) {
   color: #d4d4d8 !important;
   background: rgba(255, 255, 255, 0.07) !important;
 }
 .mode-switch :deep(.el-radio-button.is-active .el-radio-button__inner) {
-  background: rgba(196, 181, 253, 0.15) !important;
+  background: rgba(196, 181, 253, 0.18) !important;
   border-color: #c4b5fd !important;
   color: #c4b5fd !important;
   font-weight: 600;
-  box-shadow: 0 0 20px rgba(196, 181, 253, 0.15);
+  box-shadow: 0 0 24px rgba(196, 181, 253, 0.2);
 }
 .mode-switch :deep(.el-radio-button:first-child .el-radio-button__inner) {
-  border-radius: 10px 0 0 10px !important;
+  border-radius: 12px 0 0 12px !important;
+  border-right: none !important;
 }
 .mode-switch :deep(.el-radio-button:last-child .el-radio-button__inner) {
-  border-radius: 0 10px 10px 0 !important;
-  border-left: none !important;
+  border-radius: 0 12px 12px 0 !important;
 }
 
 /* 语言选择 */
