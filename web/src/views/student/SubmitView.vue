@@ -394,6 +394,22 @@ function resetForm() {
 .submit-page {
   max-width: 820px;
   margin: 0 auto;
+  min-height: calc(100vh - 120px);
+}
+
+/* 卡片深色背景 */
+.submit-card {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 18px !important;
+  backdrop-filter: blur(10px);
+}
+.submit-card :deep(.el-card__header) {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+  padding: 20px 24px;
+}
+.submit-card :deep(.el-card__body) {
+  padding: 24px;
 }
 
 .card-header {
@@ -402,13 +418,14 @@ function resetForm() {
   gap: 10px;
   font-size: 18px;
   font-weight: 700;
+  color: #f4f4f5;
 }
 
 .lang-tag {
   margin-left: auto;
 }
 
-/* 提交方式切换 */
+/* 提交方式切换 - 深色风格 */
 .mode-switch {
   margin-bottom: 20px;
   width: 100%;
@@ -416,6 +433,30 @@ function resetForm() {
 .mode-switch :deep(.el-radio-button__inner) {
   width: 50%;
   text-align: center;
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #a1a1aa !important;
+  font-size: 14px;
+  padding: 12px 20px;
+  transition: all 0.2s;
+}
+.mode-switch :deep(.el-radio-button__inner:hover) {
+  color: #d4d4d8 !important;
+  background: rgba(255, 255, 255, 0.07) !important;
+}
+.mode-switch :deep(.el-radio-button.is-active .el-radio-button__inner) {
+  background: rgba(196, 181, 253, 0.15) !important;
+  border-color: #c4b5fd !important;
+  color: #c4b5fd !important;
+  font-weight: 600;
+  box-shadow: 0 0 20px rgba(196, 181, 253, 0.15);
+}
+.mode-switch :deep(.el-radio-button:first-child .el-radio-button__inner) {
+  border-radius: 10px 0 0 10px !important;
+}
+.mode-switch :deep(.el-radio-button:last-child .el-radio-button__inner) {
+  border-radius: 0 10px 10px 0 !important;
+  border-left: none !important;
 }
 
 /* 语言选择 */
@@ -431,9 +472,20 @@ function resetForm() {
   font-weight: 500;
 }
 
-/* 上传区域 */
+/* 上传区域 - 深色风格 */
 .upload-section {
   margin-bottom: 20px;
+}
+.upload-area :deep(.el-upload-dragger) {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 2px dashed rgba(255, 255, 255, 0.12) !important;
+  border-radius: 14px !important;
+  padding: 40px 20px !important;
+  transition: all 0.2s;
+}
+.upload-area :deep(.el-upload-dragger:hover) {
+  background: rgba(196, 181, 253, 0.05) !important;
+  border-color: #c4b5fd !important;
 }
 .upload-icon {
   font-size: 48px;
