@@ -14,20 +14,6 @@
             <el-icon><User /></el-icon>学员
           </el-tag>
         </div>
-        <div class="header-stats">
-          <div class="stat-item">
-            <div class="stat-num">12</div>
-            <div class="stat-label">提交次数</div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-num">78%</div>
-            <div class="stat-label">正确率</div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-num">8</div>
-            <div class="stat-label">学习天数</div>
-          </div>
-        </div>
       </div>
     </el-card>
 
@@ -197,24 +183,6 @@ function handleSave() {
   font-size: 14px;
   color: #a1a1aa;
   margin: 0 0 10px;
-}
-
-.header-stats {
-  display: flex;
-  gap: 40px;
-}
-.stat-item {
-  text-align: center;
-}
-.stat-num {
-  font-size: 28px;
-  font-weight: 700;
-  color: #c4b5fd;
-}
-.stat-label {
-  font-size: 12px;
-  color: #71717a;
-  margin-top: 2px;
 }
 
 .info-card {
