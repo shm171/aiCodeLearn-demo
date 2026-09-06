@@ -1,71 +1,71 @@
-﻿<!-- 涓汉涓績 ProfileView.vue -->
+<!-- 个人中心 ProfileView.vue -->
 <template>
   <div class="profile-page">
-    <!-- 椤堕儴涓汉淇℃伅鍗＄墖 -->
+    <!-- 顶部个人信息卡片 -->
     <el-card class="profile-header" shadow="never">
       <div class="header-content">
         <el-avatar :size="80" class="big-avatar">
           {{ userStore.email ? userStore.email.charAt(0).toUpperCase() : 'U' }}
         </el-avatar>
         <div class="user-detail">
-          <h2>{{ username || '鏈缃樀绉? }}</h2>
+          <h2>{{ username || '未设置昵称' }}</h2>
           <p class="user-email">{{ userStore.email }}</p>
           <el-tag type="primary" effect="light" size="small">
-            <el-icon><User /></el-icon>瀛﹀憳
+            <el-icon><User /></el-icon>学员
           </el-tag>
         </div>
         <div class="header-stats">
           <div class="stat-item">
             <div class="stat-num">12</div>
-            <div class="stat-label">鎻愪氦娆℃暟</div>
+            <div class="stat-label">提交次数</div>
           </div>
           <div class="stat-item">
             <div class="stat-num">78%</div>
-            <div class="stat-label">姝ｇ‘鐜?/div>
+            <div class="stat-label">正确率</div>
           </div>
           <div class="stat-item">
             <div class="stat-num">8</div>
-            <div class="stat-label">瀛︿範澶╂暟</div>
+            <div class="stat-label">学习天数</div>
           </div>
         </div>
       </div>
     </el-card>
 
     <el-row :gutter="24">
-      <!-- 宸︿晶锛氬熀鏈俊鎭?-->
+      <!-- 左侧：基本信息 -->
       <el-col :span="14">
         <el-card class="info-card" shadow="never">
           <template #header>
             <div class="card-title">
               <el-icon><Setting /></el-icon>
-              <span>鍩烘湰淇℃伅</span>
+              <span>基本信息</span>
             </div>
           </template>
 
           <el-form :model="form" label-width="80px" class="info-form">
-            <el-form-item label="閭">
+            <el-form-item label="邮箱">
               <el-input :value="userStore.email" disabled />
             </el-form-item>
-            <el-form-item label="鏄电О">
-              <el-input v-model="form.username" placeholder="璇疯緭鍏ユ樀绉? maxlength="20" show-word-limit />
+            <el-form-item label="昵称">
+              <el-input v-model="form.username" placeholder="请输入昵称" maxlength="20" show-word-limit />
             </el-form-item>
-            <el-form-item label="瑙掕壊">
-              <el-tag type="primary">瀛﹀憳</el-tag>
+            <el-form-item label="角色">
+              <el-tag type="primary">学员</el-tag>
             </el-form-item>
             <el-form-item>
-              <el-button type="primary" @click="handleSave" :loading="saving">淇濆瓨淇敼</el-button>
+              <el-button type="primary" @click="handleSave" :loading="saving">保存修改</el-button>
             </el-form-item>
           </el-form>
         </el-card>
       </el-col>
 
-      <!-- 鍙充晶锛氳处鍙峰畨鍏?-->
+      <!-- 右侧：账号安全 -->
       <el-col :span="10">
         <el-card class="info-card" shadow="never">
           <template #header>
             <div class="card-title">
               <el-icon><Lock /></el-icon>
-              <span>璐﹀彿瀹夊叏</span>
+              <span>账号安全</span>
             </div>
           </template>
 
@@ -73,11 +73,11 @@
             <div class="security-info">
               <el-icon :size="20" color="#6366f1"><Key /></el-icon>
               <div>
-                <div class="security-title">鐧诲綍瀵嗙爜</div>
-                <div class="security-desc">瀹氭湡淇敼瀵嗙爜鏇村畨鍏?/div>
+                <div class="security-title">登录密码</div>
+                <div class="security-desc">定期修改密码更安全</div>
               </div>
             </div>
-            <el-button link type="primary" @click="ElMessage.info('淇敼瀵嗙爜鍔熻兘寮€鍙戜腑')">淇敼</el-button>
+            <el-button link type="primary" @click="ElMessage.info('修改密码功能开发中')">修改</el-button>
           </div>
 
           <el-divider />
@@ -86,37 +86,37 @@
             <div class="security-info">
               <el-icon :size="20" color="#10b981"><Message /></el-icon>
               <div>
-                <div class="security-title">缁戝畾閭</div>
+                <div class="security-title">绑定邮箱</div>
                 <div class="security-desc">{{ userStore.email }}</div>
               </div>
             </div>
-            <el-tag type="success" size="small">宸茬粦瀹?/el-tag>
+            <el-tag type="success" size="small">已绑定</el-tag>
           </div>
         </el-card>
 
-        <!-- 瀛︿範鏁版嵁 -->
+        <!-- 学习数据 -->
         <el-card class="info-card" shadow="never" style="margin-top: 24px">
           <template #header>
             <div class="card-title">
               <el-icon><DataAnalysis /></el-icon>
-              <span>瀛︿範鏁版嵁</span>
+              <span>学习数据</span>
             </div>
           </template>
           <div class="data-item">
-            <span>鎬绘彁浜ゆ鏁?/span>
-            <span class="data-value">12 娆?/span>
+            <span>总提交次数</span>
+            <span class="data-value">12 次</span>
           </div>
           <div class="data-item">
-            <span>閫氳繃娆℃暟</span>
-            <span class="data-value">9 娆?/span>
+            <span>通过次数</span>
+            <span class="data-value">9 次</span>
           </div>
           <div class="data-item">
-            <span>骞冲潎姝ｇ‘鐜?/span>
+            <span>平均正确率</span>
             <span class="data-value success">78%</span>
           </div>
           <div class="data-item">
-            <span>绱瀛︿範澶╂暟</span>
-            <span class="data-value">8 澶?/span>
+            <span>累计学习天数</span>
+            <span class="data-value">8 天</span>
           </div>
         </el-card>
       </el-col>
@@ -139,16 +139,16 @@ const form = ref({
 
 function handleSave() {
   if (!form.value.username.trim()) {
-    ElMessage.warning('鏄电О涓嶈兘涓虹┖')
+    ElMessage.warning('昵称不能为空')
     return
   }
   saving.value = true
-  // 鏆傛椂瀛樺湪鏈湴锛岀瓑鍚庣鎺ュ彛濂戒簡鍐嶅鎺?
+  // 暂时存在本地，等后端接口好了再对接
   setTimeout(() => {
     localStorage.setItem('username', form.value.username)
     username.value = form.value.username
     saving.value = false
-    ElMessage.success('淇濆瓨鎴愬姛')
+    ElMessage.success('保存成功')
   }, 500)
 }
 </script>
@@ -160,64 +160,75 @@ function handleSave() {
 }
 
 .profile-header {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 18px !important;
   margin-bottom: 24px;
-  border-radius: 16px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border: none;
+  backdrop-filter: blur(10px);
 }
 .profile-header :deep(.el-card__body) {
-  padding: 32px;
+  padding: 28px;
 }
 
 .header-content {
   display: flex;
   align-items: center;
   gap: 24px;
-  color: #fff;
 }
 
 .big-avatar {
-  background: rgba(255, 255, 255, 0.2);
-  color: #fff;
+  background: linear-gradient(135deg, #c4b5fd, #a78bfa) !important;
+  color: #0a0a0c !important;
   font-size: 32px;
-  font-weight: 600;
-  border: 3px solid rgba(255, 255, 255, 0.3);
+  font-weight: 700;
+  flex-shrink: 0;
 }
 
+.user-detail {
+  flex: 1;
+}
 .user-detail h2 {
-  font-size: 24px;
-  margin: 0 0 8px;
+  font-size: 22px;
+  font-weight: 700;
+  color: #f4f4f5;
+  margin: 0 0 6px;
 }
-
 .user-email {
   font-size: 14px;
-  opacity: 0.85;
-  margin: 0 0 8px;
+  color: #a1a1aa;
+  margin: 0 0 10px;
 }
 
 .header-stats {
-  margin-left: auto;
   display: flex;
   gap: 40px;
 }
-
 .stat-item {
   text-align: center;
 }
-
 .stat-num {
   font-size: 28px;
   font-weight: 700;
+  color: #c4b5fd;
 }
-
 .stat-label {
-  font-size: 13px;
-  opacity: 0.8;
-  margin-top: 4px;
+  font-size: 12px;
+  color: #71717a;
+  margin-top: 2px;
 }
 
 .info-card {
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 18px !important;
+  backdrop-filter: blur(10px);
+}
+.info-card :deep(.el-card__header) {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+  padding: 18px 24px;
+}
+.info-card :deep(.el-card__body) {
+  padding: 24px;
 }
 
 .card-title {
@@ -225,7 +236,8 @@ function handleSave() {
   align-items: center;
   gap: 8px;
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 700;
+  color: #f4f4f5;
 }
 
 .info-form {
@@ -247,7 +259,7 @@ function handleSave() {
 
 .security-title {
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   color: #f4f4f5;
 }
 
@@ -261,20 +273,18 @@ function handleSave() {
   display: flex;
   justify-content: space-between;
   padding: 12px 0;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   font-size: 14px;
-  color: #64748b;
+  color: #a1a1aa;
 }
 .data-item:last-child {
   border-bottom: none;
 }
-
 .data-value {
   font-weight: 600;
-  color: #f4f4f5;
+  color: #e4e4e7;
 }
 .data-value.success {
-  color: #10b981;
+  color: #34d399;
 }
 </style>
-
