@@ -255,6 +255,8 @@ function goToWrongQuestions() {
 const textColor = '#71717a'
 const splitColor = 'rgba(255,255,255,0.04)'
 const accentColor = '#c4b5fd'
+// 高区分度配色：淡紫、天蓝、翠绿、金黄、橙红
+const chartColors = ['#c4b5fd', '#60a5fa', '#34d399', '#fbbf24', '#f87171', '#a78bfa']
 
 function initCharts() {
   // 销毁旧图表
@@ -290,7 +292,7 @@ function updateCharts(errorList) {
   charts[0].setOption({
     tooltip: { trigger: 'item', backgroundColor: 'rgba(18,18,22,0.97)', borderColor: 'rgba(255,255,255,0.08)', textStyle: { color: '#d4d4d8' } },
     legend: { bottom: 0, textStyle: { color: textColor, fontSize: 11 } },
-    color: [accentColor, '#71717a', '#3f3f46', '#52525b'],
+    color: chartColors,
     series: [{
       type: 'pie', radius: ['45%', '68%'], center: ['50%', '45%'],
       itemStyle: { borderColor: '#0c0c0e', borderWidth: 2 },
@@ -306,7 +308,7 @@ function updateCharts(errorList) {
   charts[1].setOption({
     tooltip: { trigger: 'item', backgroundColor: 'rgba(18,18,22,0.97)', borderColor: 'rgba(255,255,255,0.08)', textStyle: { color: '#d4d4d8' } },
     legend: { bottom: 0, textStyle: { color: textColor, fontSize: 11 } },
-    color: [accentColor, '#71717a', '#52525b', '#3f3f46'],
+    color: chartColors,
     series: [{
       type: 'pie', radius: ['45%', '68%'], center: ['50%', '45%'],
       itemStyle: { borderColor: '#0c0c0e', borderWidth: 2 },
@@ -364,10 +366,12 @@ function updateCharts(errorList) {
       type: 'bar',
       data: knowledgeData.map(k => ({
         value: k.value,
-        itemStyle: { color: k.value < 60 ? accentColor : '#52525b' },
+        itemStyle: {
+          color: k.value < 50 ? '#f87171' : (k.value < 75 ? '#fbbf24' : '#34d399'),
+          borderRadius: [0, 7, 7, 0],
+        },
       })),
-      barWidth: 14,
-      itemStyle: { borderRadius: [0, 7, 7, 0] },
+      barWidth: 16,
     }],
   })
 }
