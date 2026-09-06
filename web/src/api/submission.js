@@ -10,3 +10,9 @@ export function uploadSubmissionApi(file) {
     headers: { 'Content-Type': 'multipart/form-data' },
   })
 }
+
+// 触发AI批改：POST /core/submissions/{submissionId}/grade
+// 返回：得分、错误列表、整体评语
+export function gradeSubmissionApi(submissionId) {
+  return request.post(`/core/submissions/${submissionId}/grade`)
+}
