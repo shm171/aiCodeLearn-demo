@@ -89,6 +89,8 @@
 </template>
 
 <script setup>
+import BarChart from '@/components/charts/BarChart.vue'
+import PieChart from '@/components/charts/PieChart.vue'
 import { computed, onMounted, ref } from "vue";
 import { DocumentChecked, TrendCharts, User, Warning } from "@element-plus/icons-vue";
 import { getDashboardStats } from "@/api/dashboard";

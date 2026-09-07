@@ -6,7 +6,6 @@
         <h1>AI Learn 智能学习平台</h1>
         <p>教师端 · 数据看板与教学管理</p>
       </div>
-
       <el-form
         ref="formRef"
         :model="form"
@@ -37,7 +36,6 @@
           登 录
         </el-button>
       </el-form>
-
       <el-alert type="info" :closable="false" class="demo-tip">
         <template #title>
           演示账号：teacher@ailearn.com / 123456
@@ -47,8 +45,8 @@
     </div>
   </div>
 </template>
-
 <script setup>
+import { Lock, Message } from '@element-plus/icons-vue'
 import { reactive, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { ElMessage } from "element-plus";
@@ -85,9 +83,7 @@ function fillDemo() {
   form.email = "teacher@ailearn.com";
   form.password = "123456";
 }
-
 </script>
-
 <style scoped lang="scss">
 .login-page {
   height: 100vh;
@@ -96,7 +92,6 @@ function fillDemo() {
   justify-content: center;
   background: linear-gradient(135deg, #0f2027 0%, #203a43 45%, #2c5364 100%);
 }
-
 .login-card {
   width: 400px;
   padding: 40px 36px 28px;
@@ -104,29 +99,24 @@ function fillDemo() {
   border-radius: 12px;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
 }
-
 .login-brand {
   text-align: center;
   margin-bottom: 28px;
-
   h1 {
     font-size: 20px;
     margin: 12px 0 6px;
     color: #303133;
   }
-
   p {
     margin: 0;
     color: #909399;
     font-size: 13px;
   }
 }
-
 .login-btn {
   width: 100%;
   margin-top: 4px;
 }
-
 .demo-tip {
   margin-top: 18px;
 }

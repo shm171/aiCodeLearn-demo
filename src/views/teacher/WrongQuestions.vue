@@ -52,6 +52,7 @@
 </template>
 
 <script setup>
+import { Download } from '@element-plus/icons-vue'
 import { onMounted, reactive, ref } from "vue";
 import { ElMessage } from "element-plus";
 import { exportWrongQuestions, getWrongQuestions } from "@/api/teacher";

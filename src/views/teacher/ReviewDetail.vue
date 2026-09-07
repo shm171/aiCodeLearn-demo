@@ -109,6 +109,7 @@
 </template>
 
 <script setup>
+import { MagicStick } from '@element-plus/icons-vue'
 import { onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
 import { ElMessage } from "element-plus";

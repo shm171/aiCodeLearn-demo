@@ -65,6 +65,9 @@
 </template>
 
 <script setup>
+import LineChart from '@/components/charts/LineChart.vue'
+import PieChart from '@/components/charts/PieChart.vue'
+import RadarChart from '@/components/charts/RadarChart.vue'
 import { computed, onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
 import { getStudentReport } from "@/api/teacher";
