@@ -51,59 +51,51 @@
   </el-card>
 </template>
 
-<script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
-import { ElMessage } from 'element-plus'
-import { Download, Search } from '@element-plus/icons-vue'
-import { exportWrongQuestions, getWrongQuestions } from '@/api/teacher'
-import type { WrongQuestion, WrongQuery } from '@/api/schema'
-
-const loading = ref(false)
-const exporting = ref(false)
-const list = ref<WrongQuestion[]>([])
-const total = ref(0)
-const query = reactive<WrongQuery>({ page: 1, size: 10, keyword: '', knowledgePoint: '' })
-
-const knowledgePoints = ['数组 / 哈希表', '链表', '栈', '树 / BFS', '动态规划', '滑动窗口', '排序', '基础语法']
-
+<script setup>
+import { onMounted, reactive, ref } from "vue";
+import { ElMessage } from "element-plus";
+import { exportWrongQuestions, getWrongQuestions } from "@/api/teacher";
+const loading = ref(false);
+const exporting = ref(false);
+const list = ref([]);
+const total = ref(0);
+const query = reactive({ page: 1, size: 10, keyword: "", knowledgePoint: "" });
+const knowledgePoints = ["\u6570\u7EC4 / \u54C8\u5E0C\u8868", "\u94FE\u8868", "\u6808", "\u6811 / BFS", "\u52A8\u6001\u89C4\u5212", "\u6ED1\u52A8\u7A97\u53E3", "\u6392\u5E8F", "\u57FA\u7840\u8BED\u6CD5"];
 async function load() {
-  loading.value = true
+  loading.value = true;
   try {
-    const res = await getWrongQuestions({ ...query })
-    list.value = res.list
-    total.value = res.total
+    const res = await getWrongQuestions({ ...query });
+    list.value = res.list;
+    total.value = res.total;
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
-
 function handleSearch() {
-  query.page = 1
-  load()
+  query.page = 1;
+  load();
 }
-
 function handleReset() {
-  query.keyword = ''
-  query.knowledgePoint = ''
-  query.page = 1
-  load()
+  query.keyword = "";
+  query.knowledgePoint = "";
+  query.page = 1;
+  load();
 }
-
 async function onExport() {
-  exporting.value = true
+  exporting.value = true;
   try {
-    const blob = await exportWrongQuestions()
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `错题统计_${new Date().toISOString().slice(0, 10)}.csv`
-    a.click()
-    URL.revokeObjectURL(url)
-    ElMessage.success('导出成功')
+    const blob = await exportWrongQuestions();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `\u9519\u9898\u7EDF\u8BA1_${(/* @__PURE__ */ new Date()).toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    ElMessage.success("\u5BFC\u51FA\u6210\u529F");
   } finally {
-    exporting.value = false
+    exporting.value = false;
   }
 }
+onMounted(load);
 
-onMounted(load)
 </script>

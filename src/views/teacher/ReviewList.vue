@@ -68,53 +68,46 @@
   </el-card>
 </template>
 
-<script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
-import { Search } from '@element-plus/icons-vue'
-import { getSubmissionList } from '@/api/teacher'
-import type { Submission, SubmissionQuery } from '@/api/schema'
-
-const loading = ref(false)
-const list = ref<Submission[]>([])
-const total = ref(0)
-const query = reactive<SubmissionQuery>({ page: 1, size: 10, keyword: '', status: '' })
-
+<script setup>
+import { onMounted, reactive, ref } from "vue";
+import { getSubmissionList } from "@/api/teacher";
+const loading = ref(false);
+const list = ref([]);
+const total = ref(0);
+const query = reactive({ page: 1, size: 10, keyword: "", status: "" });
 async function load() {
-  loading.value = true
+  loading.value = true;
   try {
-    const res = await getSubmissionList({ ...query })
-    list.value = res.list
-    total.value = res.total
+    const res = await getSubmissionList({ ...query });
+    list.value = res.list;
+    total.value = res.total;
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
-
 function handleSearch() {
-  query.page = 1
-  load()
+  query.page = 1;
+  load();
 }
-
 function handleReset() {
-  query.keyword = ''
-  query.status = ''
-  query.page = 1
-  load()
+  query.keyword = "";
+  query.status = "";
+  query.page = 1;
+  load();
 }
+const statusMap = {
+  PENDING: { label: "\u5F85\u6279\u6539", tag: "warning" },
+  GRADED: { label: "\u5DF2\u6279\u6539", tag: "success" },
+  REJECTED: { label: "\u9700\u590D\u6838", tag: "danger" }
+};
+function statusLabel(s) {
+  return statusMap[s]?.label ?? s;
+}
+function statusTag(s) {
+  return statusMap[s]?.tag ?? "info";
+}
+onMounted(load);
 
-const statusMap: Record<string, { label: string; tag: 'primary' | 'success' | 'danger' | 'warning' | 'info' }> = {
-  PENDING: { label: '待批改', tag: 'warning' },
-  GRADED: { label: '已批改', tag: 'success' },
-  REJECTED: { label: '需复核', tag: 'danger' },
-}
-function statusLabel(s: string) {
-  return statusMap[s]?.label ?? s
-}
-function statusTag(s: string) {
-  return statusMap[s]?.tag ?? 'info'
-}
-
-onMounted(load)
 </script>
 
 <style scoped lang="scss">

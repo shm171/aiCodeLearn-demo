@@ -84,41 +84,36 @@
   </el-container>
 </template>
 
-<script setup lang="ts">
-import { computed, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { ElMessageBox } from 'element-plus'
-import { useUserStore } from '@/stores/user'
-
-const route = useRoute()
-const router = useRouter()
-const userStore = useUserStore()
-const collapsed = ref(false)
-
+<script setup>
+import { computed, ref } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { ElMessageBox } from "element-plus";
+import { useUserStore } from "@/stores/user";
+const route = useRoute();
+const router = useRouter();
+const userStore = useUserStore();
+const collapsed = ref(false);
 const activeMenu = computed(() => {
-  // 详情页高亮所属菜单
-  if (route.path.startsWith('/teacher/review')) return '/teacher/review'
-  if (route.path.startsWith('/teacher/students')) return '/teacher/students'
-  return route.path
-})
-
+  if (route.path.startsWith("/teacher/review")) return "/teacher/review";
+  if (route.path.startsWith("/teacher/students")) return "/teacher/students";
+  return route.path;
+});
 const roleLabel = computed(() => {
-  const map: Record<string, string> = { TEACHER: '教师', ADMIN: '管理员', STUDENT: '学生' }
-  return map[userStore.role] || userStore.role
-})
-
-function onCommand(command: string) {
-  if (command === 'profile') {
-    router.push('/teacher/profile')
-  } else if (command === 'logout') {
-    ElMessageBox.confirm('确定退出登录吗？', '提示', { type: 'warning' })
-      .then(() => {
-        userStore.logout()
-        router.push('/login')
-      })
-      .catch(() => {})
+  const map = { TEACHER: "\u6559\u5E08", ADMIN: "\u7BA1\u7406\u5458", STUDENT: "\u5B66\u751F" };
+  return map[userStore.role] || userStore.role;
+});
+function onCommand(command) {
+  if (command === "profile") {
+    router.push("/teacher/profile");
+  } else if (command === "logout") {
+    ElMessageBox.confirm("\u786E\u5B9A\u9000\u51FA\u767B\u5F55\u5417\uFF1F", "\u63D0\u793A", { type: "warning" }).then(() => {
+      userStore.logout();
+      router.push("/login");
+    }).catch(() => {
+    });
   }
 }
+
 </script>
 
 <style scoped lang="scss">

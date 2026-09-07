@@ -34,57 +34,51 @@
   </el-card>
 </template>
 
-<script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
-import { ElMessage } from 'element-plus'
-import type { FormInstance, FormRules } from 'element-plus'
-import { useUserStore } from '@/stores/user'
-
-const userStore = useUserStore()
-const formRef = ref<FormInstance>()
-const loading = ref(false)
-const saving = ref(false)
-
+<script setup>
+import { computed, onMounted, reactive, ref } from "vue";
+import { ElMessage } from "element-plus";
+import { useUserStore } from "@/stores/user";
+const userStore = useUserStore();
+const formRef = ref();
+const loading = ref(false);
+const saving = ref(false);
 const form = reactive({
-  username: '',
-  email: '',
-})
-
-const rules: FormRules = {
-  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-}
-
+  username: "",
+  email: ""
+});
+const rules = {
+  username: [{ required: true, message: "\u8BF7\u8F93\u5165\u7528\u6237\u540D", trigger: "blur" }]
+};
 const roleLabel = computed(() => {
-  const map: Record<string, string> = { TEACHER: '教师', ADMIN: '管理员', STUDENT: '学生' }
-  return map[userStore.role] || userStore.role
-})
-
+  const map = { TEACHER: "\u6559\u5E08", ADMIN: "\u7BA1\u7406\u5458", STUDENT: "\u5B66\u751F" };
+  return map[userStore.role] || userStore.role;
+});
 onMounted(async () => {
-  loading.value = true
+  loading.value = true;
   try {
-    if (!userStore.profile) await userStore.fetchProfile()
-    const p = userStore.profile
+    if (!userStore.profile) await userStore.fetchProfile();
+    const p = userStore.profile;
     if (p) {
-      form.username = p.username
-      form.email = p.email
+      form.username = p.username;
+      form.email = p.email;
     }
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-})
-
+});
 async function onSave() {
-  if (!formRef.value) return
-  const valid = await formRef.value.validate().catch(() => false)
-  if (!valid) return
-  saving.value = true
+  if (!formRef.value) return;
+  const valid = await formRef.value.validate().catch(() => false);
+  if (!valid) return;
+  saving.value = true;
   try {
-    await userStore.updateProfile({ username: form.username })
-    ElMessage.success('保存成功')
+    await userStore.updateProfile({ username: form.username });
+    ElMessage.success("\u4FDD\u5B58\u6210\u529F");
   } finally {
-    saving.value = false
+    saving.value = false;
   }
 }
+
 </script>
 
 <style scoped lang="scss">

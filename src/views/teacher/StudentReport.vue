@@ -64,63 +64,52 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import { useRoute } from 'vue-router'
-import { ArrowLeft } from '@element-plus/icons-vue'
-import LineChart from '@/components/charts/LineChart.vue'
-import PieChart from '@/components/charts/PieChart.vue'
-import RadarChart from '@/components/charts/RadarChart.vue'
-import { getStudentReport } from '@/api/teacher'
-import type { StudentReport } from '@/api/schema'
-
-const route = useRoute()
-const id = Number(route.params.id)
-
-const loading = ref(false)
-const report = ref<StudentReport | null>(null)
-
+<script setup>
+import { computed, onMounted, ref } from "vue";
+import { useRoute } from "vue-router";
+import { getStudentReport } from "@/api/teacher";
+const route = useRoute();
+const id = Number(route.params.id);
+const loading = ref(false);
+const report = ref(null);
 onMounted(async () => {
-  loading.value = true
+  loading.value = true;
   try {
-    report.value = await getStudentReport(id)
+    report.value = await getStudentReport(id);
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-})
-
-const trendLabels = computed(() => report.value?.trend.map((t) => t.date) ?? [])
+});
+const trendLabels = computed(() => report.value?.trend.map((t) => t.date) ?? []);
 const trendSeries = computed(() => {
-  const r = report.value
-  if (!r) return []
+  const r = report.value;
+  if (!r) return [];
   return [
-    { name: '提交量', data: r.trend.map((t) => t.submitCount) },
-    { name: '正确率(%)', data: r.trend.map((t) => t.accuracy) },
-  ]
-})
-
-const radarIndicators = computed(() => (report.value?.knowledge ?? []).map((k) => ({ name: k.name, max: 100 })))
+    { name: "\u63D0\u4EA4\u91CF", data: r.trend.map((t) => t.submitCount) },
+    { name: "\u6B63\u786E\u7387(%)", data: r.trend.map((t) => t.accuracy) }
+  ];
+});
+const radarIndicators = computed(() => (report.value?.knowledge ?? []).map((k) => ({ name: k.name, max: 100 })));
 const radarSeries = computed(() => {
-  const r = report.value
-  if (!r) return []
-  return [{ name: r.name, value: r.knowledge.map((k) => k.value) }]
-})
+  const r = report.value;
+  if (!r) return [];
+  return [{ name: r.name, value: r.knowledge.map((k) => k.value) }];
+});
+const wrongDistribution = computed(
+  () => (report.value?.wrongDistribution ?? []).map((w) => ({ name: w.knowledgePoint, value: w.wrongCount }))
+);
+const statusMap = {
+  PENDING: { label: "\u5F85\u6279\u6539", tag: "warning" },
+  GRADED: { label: "\u5DF2\u6279\u6539", tag: "success" },
+  REJECTED: { label: "\u9700\u590D\u6838", tag: "danger" }
+};
+function statusLabel(s) {
+  return statusMap[s]?.label ?? s;
+}
+function statusTag(s) {
+  return statusMap[s]?.tag ?? "info";
+}
 
-const wrongDistribution = computed(() =>
-  (report.value?.wrongDistribution ?? []).map((w) => ({ name: w.knowledgePoint, value: w.wrongCount }))
-)
-
-const statusMap: Record<string, { label: string; tag: 'primary' | 'success' | 'danger' | 'warning' | 'info' }> = {
-  PENDING: { label: '待批改', tag: 'warning' },
-  GRADED: { label: '已批改', tag: 'success' },
-  REJECTED: { label: '需复核', tag: 'danger' },
-}
-function statusLabel(s: string) {
-  return statusMap[s]?.label ?? s
-}
-function statusTag(s: string) {
-  return statusMap[s]?.tag ?? 'info'
-}
 </script>
 
 <style scoped lang="scss">

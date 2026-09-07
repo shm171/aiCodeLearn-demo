@@ -63,47 +63,39 @@
   </el-card>
 </template>
 
-<script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
-import { Search } from '@element-plus/icons-vue'
-import { getStudentList } from '@/api/teacher'
-import type { Student, StudentQuery } from '@/api/schema'
-
-const loading = ref(false)
-const list = ref<Student[]>([])
-const total = ref(0)
-const query = reactive<StudentQuery>({ page: 1, size: 10, keyword: '', className: '' })
-
-const classNames = ['计算机 2101', '计算机 2102', '计算机 2103', '软件 2101']
-
+<script setup>
+import { onMounted, reactive, ref } from "vue";
+import { getStudentList } from "@/api/teacher";
+const loading = ref(false);
+const list = ref([]);
+const total = ref(0);
+const query = reactive({ page: 1, size: 10, keyword: "", className: "" });
+const classNames = ["\u8BA1\u7B97\u673A 2101", "\u8BA1\u7B97\u673A 2102", "\u8BA1\u7B97\u673A 2103", "\u8F6F\u4EF6 2101"];
 async function load() {
-  loading.value = true
+  loading.value = true;
   try {
-    const res = await getStudentList({ ...query })
-    list.value = res.list
-    total.value = res.total
+    const res = await getStudentList({ ...query });
+    list.value = res.list;
+    total.value = res.total;
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
-
 function handleSearch() {
-  query.page = 1
-  load()
+  query.page = 1;
+  load();
 }
-
 function handleReset() {
-  query.keyword = ''
-  query.className = ''
-  query.page = 1
-  load()
+  query.keyword = "";
+  query.className = "";
+  query.page = 1;
+  load();
 }
-
-function accuracyColor(v: number) {
-  if (v >= 85) return '#67c23a'
-  if (v >= 70) return '#e6a23c'
-  return '#f56c6c'
+function accuracyColor(v) {
+  if (v >= 85) return "#67c23a";
+  if (v >= 70) return "#e6a23c";
+  return "#f56c6c";
 }
+onMounted(load);
 
-onMounted(load)
 </script>

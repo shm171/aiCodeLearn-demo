@@ -1,20 +1,20 @@
 <!-- 折线图：labels + 多条 series -->
-<script setup lang="ts">
+<template>
+  <BaseChart :option="option" :height="height" />
+</template>
+
+<script setup>
 import { computed } from 'vue'
-import type { EChartsOption } from 'echarts'
 import BaseChart from './BaseChart.vue'
 
-const props = withDefaults(
-  defineProps<{
-    labels: string[]
-    series: Array<{ name: string; data: number[] }>
-    height?: string
-    yName?: string
-  }>(),
-  { height: '320px', yName: '' }
-)
+const props = defineProps({
+  labels: { type: Array, default: () => [] },
+  series: { type: Array, default: () => [] },
+  height: { type: String, default: '320px' },
+  yName: { type: String, default: '' },
+})
 
-const option = computed<EChartsOption>(() => ({
+const option = computed(() => ({
   tooltip: { trigger: 'axis' },
   legend: { data: props.series.map((s) => s.name), top: 0 },
   grid: { left: 16, right: 24, top: 44, bottom: 16, containLabel: true },
@@ -29,7 +29,3 @@ const option = computed<EChartsOption>(() => ({
   })),
 }))
 </script>
-
-<template>
-  <BaseChart :option="option" :height="height" />
-</template>

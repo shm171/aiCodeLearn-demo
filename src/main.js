@@ -14,7 +14,6 @@ app.use(createPinia())
 app.use(router)
 app.use(ElementPlus, { locale: zhCn })
 
-// 全局注册 Element Plus 图标组件（模板中可直接使用 <el-icon><User /></el-icon>）
 for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
   app.component(key, component)
 }

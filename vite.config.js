@@ -2,8 +2,6 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { fileURLToPath, URL } from 'node:url'
 
-// 开发环境代理：/api -> http://localhost:8080（后端 Spring Boot），并去掉 /api 前缀。
-// 若后端接口路径本身带 /api 前缀，可去掉 rewrite。
 export default defineConfig({
   plugins: [vue()],
   resolve: {
@@ -15,7 +13,7 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          'echarts': ['echarts'],
+          echarts: ['echarts'],
           'element-plus': ['element-plus', '@element-plus/icons-vue'],
           'vue-vendor': ['vue', 'vue-router', 'pinia', 'axios'],
         },
@@ -23,7 +21,7 @@ export default defineConfig({
     },
   },
   server: {
-    port: 5173,
+    port: 5174,
     proxy: {
       '/api': {
         target: 'http://localhost:8080',

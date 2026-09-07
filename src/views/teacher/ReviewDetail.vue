@@ -108,62 +108,55 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import { onMounted, ref } from 'vue'
-import { useRoute } from 'vue-router'
-import { ElMessage } from 'element-plus'
-import { ArrowLeft, MagicStick } from '@element-plus/icons-vue'
-import { getReviewDetail, gradeSubmission } from '@/api/teacher'
-import type { GradingResult, ReviewDetail } from '@/api/schema'
-
-const route = useRoute()
-const id = Number(route.params.id)
-
-const loading = ref(false)
-const grading = ref(false)
-const detail = ref<ReviewDetail | null>(null)
-const enableLLM = ref(false)
-const result = ref<GradingResult | null>(null)
-
+<script setup>
+import { onMounted, ref } from "vue";
+import { useRoute } from "vue-router";
+import { ElMessage } from "element-plus";
+import { getReviewDetail, gradeSubmission } from "@/api/teacher";
+const route = useRoute();
+const id = Number(route.params.id);
+const loading = ref(false);
+const grading = ref(false);
+const detail = ref(null);
+const enableLLM = ref(false);
+const result = ref(null);
 onMounted(async () => {
-  loading.value = true
+  loading.value = true;
   try {
-    detail.value = await getReviewDetail(id)
+    detail.value = await getReviewDetail(id);
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-})
-
+});
 async function onGrade() {
-  grading.value = true
+  grading.value = true;
   try {
-    result.value = await gradeSubmission(id, enableLLM.value)
-    ElMessage.success('批改完成')
+    result.value = await gradeSubmission(id, enableLLM.value);
+    ElMessage.success("\u6279\u6539\u5B8C\u6210");
   } finally {
-    grading.value = false
+    grading.value = false;
   }
 }
+const statusMap = {
+  PENDING: { label: "\u5F85\u6279\u6539", tag: "warning" },
+  GRADED: { label: "\u5DF2\u6279\u6539", tag: "success" },
+  REJECTED: { label: "\u9700\u590D\u6838", tag: "danger" }
+};
+function statusLabel(s) {
+  return statusMap[s]?.label ?? s;
+}
+function statusTag(s) {
+  return statusMap[s]?.tag ?? "info";
+}
+const severityMap = {
+  ERROR: "danger",
+  WARNING: "warning",
+  INFO: "info"
+};
+function severityTag(s) {
+  return severityMap[s] ?? "info";
+}
 
-const statusMap: Record<string, { label: string; tag: 'primary' | 'success' | 'danger' | 'warning' | 'info' }> = {
-  PENDING: { label: '待批改', tag: 'warning' },
-  GRADED: { label: '已批改', tag: 'success' },
-  REJECTED: { label: '需复核', tag: 'danger' },
-}
-function statusLabel(s: string) {
-  return statusMap[s]?.label ?? s
-}
-function statusTag(s: string) {
-  return statusMap[s]?.tag ?? 'info'
-}
-
-const severityMap: Record<string, 'danger' | 'warning' | 'info'> = {
-  ERROR: 'danger',
-  WARNING: 'warning',
-  INFO: 'info',
-}
-function severityTag(s: string) {
-  return severityMap[s] ?? 'info'
-}
 </script>
 
 <style scoped lang="scss">

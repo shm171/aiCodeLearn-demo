@@ -1,20 +1,19 @@
 <!-- 饼图 / 环形图 -->
-<script setup lang="ts">
+<template>
+  <BaseChart :option="option" :height="height" />
+</template>
+
+<script setup>
 import { computed } from 'vue'
-import type { EChartsOption } from 'echarts'
 import BaseChart from './BaseChart.vue'
 
-const props = withDefaults(
-  defineProps<{
-    data: Array<{ name: string; value: number }>
-    height?: string
-    /** 是否环形 */
-    ring?: boolean
-  }>(),
-  { height: '320px', ring: true }
-)
+const props = defineProps({
+  data: { type: Array, default: () => [] },
+  height: { type: String, default: '320px' },
+  ring: { type: Boolean, default: true },
+})
 
-const option = computed<EChartsOption>(() => ({
+const option = computed(() => ({
   tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
   legend: { bottom: 0, type: 'scroll' },
   series: [
@@ -30,7 +29,3 @@ const option = computed<EChartsOption>(() => ({
   ],
 }))
 </script>
-
-<template>
-  <BaseChart :option="option" :height="height" />
-</template>

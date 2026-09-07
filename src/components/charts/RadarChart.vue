@@ -1,19 +1,19 @@
 <!-- 雷达图：学习报告知识点掌握度等 -->
-<script setup lang="ts">
+<template>
+  <BaseChart :option="option" :height="height" />
+</template>
+
+<script setup>
 import { computed } from 'vue'
-import type { EChartsOption } from 'echarts'
 import BaseChart from './BaseChart.vue'
 
-const props = withDefaults(
-  defineProps<{
-    indicators: Array<{ name: string; max: number }>
-    series: Array<{ name: string; value: number[] }>
-    height?: string
-  }>(),
-  { height: '320px' }
-)
+const props = defineProps({
+  indicators: { type: Array, default: () => [] },
+  series: { type: Array, default: () => [] },
+  height: { type: String, default: '320px' },
+})
 
-const option = computed<EChartsOption>(() => ({
+const option = computed(() => ({
   tooltip: {},
   legend: { top: 0, data: props.series.map((s) => s.name) },
   radar: {
@@ -29,7 +29,3 @@ const option = computed<EChartsOption>(() => ({
   ],
 }))
 </script>
-
-<template>
-  <BaseChart :option="option" :height="height" />
-</template>

@@ -120,161 +120,144 @@
   </el-card>
 </template>
 
-<script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Search } from '@element-plus/icons-vue'
-import type { FormInstance, FormRules } from 'element-plus'
+<script setup>
+import { onMounted, reactive, ref } from "vue";
+import { ElMessage, ElMessageBox } from "element-plus";
 import {
   createQuestion,
   deleteQuestion,
   getQuestionList,
   updateQuestion,
-  updateQuestionStatus,
-} from '@/api/teacher'
-import type { Question, QuestionPayload, QuestionQuery } from '@/api/schema'
-
-const loading = ref(false)
-const saving = ref(false)
-const list = ref<Question[]>([])
-const total = ref(0)
-const query = reactive<QuestionQuery>({ page: 1, size: 10, keyword: '', type: '', status: '' })
-
-const dialogVisible = ref(false)
-const editingId = ref<number | null>(null)
-const formRef = ref<FormInstance>()
-const form = reactive<QuestionPayload>({
-  title: '',
-  type: 'PROGRAMMING',
-  difficulty: 'EASY',
-  knowledgePoint: '',
-  description: '',
-})
-
-const formRules: FormRules = {
-  title: [{ required: true, message: '请输入标题', trigger: 'blur' }],
-  type: [{ required: true, message: '请选择类型', trigger: 'change' }],
-  difficulty: [{ required: true, message: '请选择难度', trigger: 'change' }],
-  knowledgePoint: [{ required: true, message: '请输入知识点', trigger: 'blur' }],
-  description: [{ required: true, message: '请输入题目描述', trigger: 'blur' }],
-}
-
+  updateQuestionStatus
+} from "@/api/teacher";
+const loading = ref(false);
+const saving = ref(false);
+const list = ref([]);
+const total = ref(0);
+const query = reactive({ page: 1, size: 10, keyword: "", type: "", status: "" });
+const dialogVisible = ref(false);
+const editingId = ref(null);
+const formRef = ref();
+const form = reactive({
+  title: "",
+  type: "PROGRAMMING",
+  difficulty: "EASY",
+  knowledgePoint: "",
+  description: ""
+});
+const formRules = {
+  title: [{ required: true, message: "\u8BF7\u8F93\u5165\u6807\u9898", trigger: "blur" }],
+  type: [{ required: true, message: "\u8BF7\u9009\u62E9\u7C7B\u578B", trigger: "change" }],
+  difficulty: [{ required: true, message: "\u8BF7\u9009\u62E9\u96BE\u5EA6", trigger: "change" }],
+  knowledgePoint: [{ required: true, message: "\u8BF7\u8F93\u5165\u77E5\u8BC6\u70B9", trigger: "blur" }],
+  description: [{ required: true, message: "\u8BF7\u8F93\u5165\u9898\u76EE\u63CF\u8FF0", trigger: "blur" }]
+};
 async function load() {
-  loading.value = true
+  loading.value = true;
   try {
-    const res = await getQuestionList({ ...query })
-    list.value = res.list
-    total.value = res.total
+    const res = await getQuestionList({ ...query });
+    list.value = res.list;
+    total.value = res.total;
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
-
 function handleSearch() {
-  query.page = 1
-  load()
+  query.page = 1;
+  load();
 }
-
 function handleReset() {
-  query.keyword = ''
-  query.type = ''
-  query.status = ''
-  query.page = 1
-  load()
+  query.keyword = "";
+  query.type = "";
+  query.status = "";
+  query.page = 1;
+  load();
 }
-
 function openCreate() {
-  editingId.value = null
+  editingId.value = null;
   Object.assign(form, {
-    title: '',
-    type: 'PROGRAMMING',
-    difficulty: 'EASY',
-    knowledgePoint: '',
-    description: '',
-  })
-  dialogVisible.value = true
-  formRef.value?.clearValidate()
+    title: "",
+    type: "PROGRAMMING",
+    difficulty: "EASY",
+    knowledgePoint: "",
+    description: ""
+  });
+  dialogVisible.value = true;
+  formRef.value?.clearValidate();
 }
-
-function openEdit(row: Question) {
-  editingId.value = row.id
+function openEdit(row) {
+  editingId.value = row.id;
   Object.assign(form, {
     title: row.title,
     type: row.type,
     difficulty: row.difficulty,
     knowledgePoint: row.knowledgePoint,
-    description: row.description,
-  })
-  dialogVisible.value = true
-  formRef.value?.clearValidate()
+    description: row.description
+  });
+  dialogVisible.value = true;
+  formRef.value?.clearValidate();
 }
-
 async function onSave() {
-  if (!formRef.value) return
-  const valid = await formRef.value.validate().catch(() => false)
-  if (!valid) return
-  saving.value = true
+  if (!formRef.value) return;
+  const valid = await formRef.value.validate().catch(() => false);
+  if (!valid) return;
+  saving.value = true;
   try {
     if (editingId.value) {
-      await updateQuestion(editingId.value, { ...form })
-      ElMessage.success('修改成功')
+      await updateQuestion(editingId.value, { ...form });
+      ElMessage.success("\u4FEE\u6539\u6210\u529F");
     } else {
-      await createQuestion({ ...form })
-      ElMessage.success('创建成功')
+      await createQuestion({ ...form });
+      ElMessage.success("\u521B\u5EFA\u6210\u529F");
     }
-    dialogVisible.value = false
-    load()
+    dialogVisible.value = false;
+    load();
   } finally {
-    saving.value = false
+    saving.value = false;
   }
 }
-
-async function onToggleStatus(row: Question, val: boolean) {
-  const status: 0 | 1 = val ? 1 : 0
+async function onToggleStatus(row, val) {
+  const status = val ? 1 : 0;
   try {
-    await updateQuestionStatus(row.id, status)
-    row.status = status
-    ElMessage.success(status === 1 ? '已上架' : '已下架')
+    await updateQuestionStatus(row.id, status);
+    row.status = status;
+    ElMessage.success(status === 1 ? "\u5DF2\u4E0A\u67B6" : "\u5DF2\u4E0B\u67B6");
   } catch {
-    // 失败时由请求层提示，switch 回显由重新加载修正
-    load()
+    load();
   }
 }
+function onDelete(row) {
+  ElMessageBox.confirm(`\u786E\u5B9A\u5220\u9664\u9898\u76EE\u300C${row.title}\u300D\u5417\uFF1F\u5220\u9664\u540E\u4E0D\u53EF\u6062\u590D\u3002`, "\u5220\u9664\u786E\u8BA4", {
+    type: "warning"
+  }).then(async () => {
+    await deleteQuestion(row.id);
+    ElMessage.success("\u5220\u9664\u6210\u529F");
+    load();
+  }).catch(() => {
+  });
+}
+const typeMap = {
+  PROGRAMMING: { label: "\u7F16\u7A0B\u9898", tag: "primary" },
+  ASSIGNMENT: { label: "\u4F5C\u4E1A", tag: "success" },
+  CHOICE: { label: "\u9009\u62E9\u9898", tag: "warning" }
+};
+const difficultyMap = {
+  EASY: { label: "\u7B80\u5355", tag: "success" },
+  MEDIUM: { label: "\u4E2D\u7B49", tag: "warning" },
+  HARD: { label: "\u56F0\u96BE", tag: "danger" }
+};
+function typeLabel(t) {
+  return typeMap[t]?.label ?? t;
+}
+function typeTag(t) {
+  return typeMap[t]?.tag ?? "info";
+}
+function difficultyLabel(t) {
+  return difficultyMap[t]?.label ?? t;
+}
+function difficultyTag(t) {
+  return difficultyMap[t]?.tag ?? "info";
+}
+onMounted(load);
 
-function onDelete(row: Question) {
-  ElMessageBox.confirm(`确定删除题目「${row.title}」吗？删除后不可恢复。`, '删除确认', {
-    type: 'warning',
-  })
-    .then(async () => {
-      await deleteQuestion(row.id)
-      ElMessage.success('删除成功')
-      load()
-    })
-    .catch(() => {})
-}
-
-const typeMap: Record<string, { label: string; tag: 'primary' | 'success' | 'warning' | 'info' }> = {
-  PROGRAMMING: { label: '编程题', tag: 'primary' },
-  ASSIGNMENT: { label: '作业', tag: 'success' },
-  CHOICE: { label: '选择题', tag: 'warning' },
-}
-const difficultyMap: Record<string, { label: string; tag: 'success' | 'warning' | 'danger' }> = {
-  EASY: { label: '简单', tag: 'success' },
-  MEDIUM: { label: '中等', tag: 'warning' },
-  HARD: { label: '困难', tag: 'danger' },
-}
-function typeLabel(t: string) {
-  return typeMap[t]?.label ?? t
-}
-function typeTag(t: string) {
-  return typeMap[t]?.tag ?? 'info'
-}
-function difficultyLabel(t: string) {
-  return difficultyMap[t]?.label ?? t
-}
-function difficultyTag(t: string) {
-  return difficultyMap[t]?.tag ?? 'info'
-}
-
-onMounted(load)
 </script>

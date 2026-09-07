@@ -88,47 +88,39 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import { DocumentChecked, TrendCharts, User, Warning } from '@element-plus/icons-vue'
-import BarChart from '@/components/charts/BarChart.vue'
-import PieChart from '@/components/charts/PieChart.vue'
-import { getDashboardStats } from '@/api/dashboard'
-import type { DashboardStats } from '@/api/schema'
-
-const loading = ref(false)
-const stats = ref<DashboardStats | null>(null)
-
+<script setup>
+import { computed, onMounted, ref } from "vue";
+import { DocumentChecked, TrendCharts, User, Warning } from "@element-plus/icons-vue";
+import { getDashboardStats } from "@/api/dashboard";
+const loading = ref(false);
+const stats = ref(null);
 onMounted(async () => {
-  loading.value = true
+  loading.value = true;
   try {
-    stats.value = await getDashboardStats()
+    stats.value = await getDashboardStats();
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-})
-
+});
 const statCards = computed(() => {
-  const s = stats.value
+  const s = stats.value;
   return [
-    { label: '班级总提交数', value: s?.totalSubmissions ?? 0, icon: DocumentChecked, bg: '#ecf5ff', color: '#409eff' },
-    { label: '班级总错题数', value: s?.totalErrors ?? 0, icon: Warning, bg: '#fef0f0', color: '#f56c6c' },
-    { label: '学生人数', value: s?.perStudentStats.length ?? 0, icon: User, bg: '#f0f9eb', color: '#67c23a' },
-    { label: '待关注学生', value: s?.attentionStudentIds.length ?? 0, icon: TrendCharts, bg: '#fdf6ec', color: '#e6a23c' },
-  ]
-})
+    { label: "\u73ED\u7EA7\u603B\u63D0\u4EA4\u6570", value: s?.totalSubmissions ?? 0, icon: DocumentChecked, bg: "#ecf5ff", color: "#409eff" },
+    { label: "\u73ED\u7EA7\u603B\u9519\u9898\u6570", value: s?.totalErrors ?? 0, icon: Warning, bg: "#fef0f0", color: "#f56c6c" },
+    { label: "\u5B66\u751F\u4EBA\u6570", value: s?.perStudentStats.length ?? 0, icon: User, bg: "#f0f9eb", color: "#67c23a" },
+    { label: "\u5F85\u5173\u6CE8\u5B66\u751F", value: s?.attentionStudentIds.length ?? 0, icon: TrendCharts, bg: "#fdf6ec", color: "#e6a23c" }
+  ];
+});
+const topicLabels = computed(() => stats.value?.classTopicRanking.map((t) => t.topic) ?? []);
+const topicSeries = computed(
+  () => stats.value ? [{ name: "\u9519\u9898\u6570", data: stats.value.classTopicRanking.map((t) => t.errorCount) }] : []
+);
+const categoryDistribution = computed(
+  () => (stats.value?.classCategoryDistribution ?? []).map((c) => ({ name: c.label, value: c.value }))
+);
+const studentStats = computed(() => stats.value?.perStudentStats ?? []);
+const attentionStudents = computed(() => stats.value?.attentionStudentIds ?? []);
 
-const topicLabels = computed(() => stats.value?.classTopicRanking.map((t) => t.topic) ?? [])
-const topicSeries = computed(() =>
-  stats.value ? [{ name: '错题数', data: stats.value.classTopicRanking.map((t) => t.errorCount) }] : []
-)
-
-const categoryDistribution = computed(() =>
-  (stats.value?.classCategoryDistribution ?? []).map((c) => ({ name: c.label, value: c.value }))
-)
-
-const studentStats = computed(() => stats.value?.perStudentStats ?? [])
-const attentionStudents = computed(() => stats.value?.attentionStudentIds ?? [])
 </script>
 
 <style scoped lang="scss">
