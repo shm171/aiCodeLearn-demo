@@ -24,7 +24,7 @@ public class SubmissionResponse {
 
     /**
      * 匹配到的课程章节。
-     * TODO 章节匹配逻辑未实现，当前为占位字段。
+     * TODO 章节匹配逻辑未实现。
      */
     private final String chapter;
 }
