@@ -21,8 +21,7 @@ request.interceptors.response.use(
   (response) => response.data,
   (error) => {
     const status = error.response?.status
-    const msg =
-      error.response?.data?.message || error.response?.data?.error || error.message || '请求失败'
+    const msg = error.response?.data?.message || error.response?.data?.error || error.message || '请求失败'
     if (status === 401) {
       localStorage.removeItem('token')
       if (router.currentRoute.value.path !== '/login') {

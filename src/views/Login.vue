@@ -42,51 +42,45 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import { reactive, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
-import { Lock, Message } from '@element-plus/icons-vue'
-import type { FormInstance, FormRules } from 'element-plus'
-import { useUserStore } from '@/stores/user'
-
-const route = useRoute()
-const router = useRouter()
-const userStore = useUserStore()
-
-const formRef = ref<FormInstance>()
-const loading = ref(false)
-const form = reactive({ email: '', password: '' })
-
-const rules: FormRules = {
+<script setup>
+import { Message, Lock } from '@element-plus/icons-vue'
+import { reactive, ref } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { ElMessage } from "element-plus";
+import { useUserStore } from "@/stores/user";
+const route = useRoute();
+const router = useRouter();
+const userStore = useUserStore();
+const formRef = ref();
+const loading = ref(false);
+const form = reactive({ email: "", password: "" });
+const rules = {
   email: [
-    { required: true, message: '请输入邮箱', trigger: 'blur' },
-    { type: 'email', message: '邮箱格式不正确', trigger: ['blur', 'change'] },
+    { required: true, message: "\u8BF7\u8F93\u5165\u90AE\u7BB1", trigger: "blur" },
+    { type: "email", message: "\u90AE\u7BB1\u683C\u5F0F\u4E0D\u6B63\u786E", trigger: ["blur", "change"] }
   ],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
-}
-
+  password: [{ required: true, message: "\u8BF7\u8F93\u5165\u5BC6\u7801", trigger: "blur" }]
+};
 async function onSubmit() {
-  if (!formRef.value) return
-  const valid = await formRef.value.validate().catch(() => false)
-  if (!valid) return
-  loading.value = true
+  if (!formRef.value) return;
+  const valid = await formRef.value.validate().catch(() => false);
+  if (!valid) return;
+  loading.value = true;
   try {
-    await userStore.login({ ...form })
-    ElMessage.success('登录成功')
-    const redirect = (route.query.redirect as string) || '/admin/dashboard'
-    router.push(redirect)
+    await userStore.login({ ...form });
+    ElMessage.success("\u767B\u5F55\u6210\u529F");
+    const redirect = route.query.redirect || "/admin/dashboard";
+    router.push(redirect);
   } catch {
-    // 错误提示由请求层统一处理
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
-
 function fillDemo() {
-  form.email = 'admin@ailearn.com'
-  form.password = '123456'
+  form.email = "admin@ailearn.com";
+  form.password = "123456";
 }
+
 </script>
 
 <style scoped lang="scss">

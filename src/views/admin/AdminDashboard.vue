@@ -55,57 +55,52 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import { DocumentChecked, TrendCharts, User, Warning } from '@element-plus/icons-vue'
-import { getAdminStats } from '@/api/admin'
-import type { AdminStats, Role } from '@/api/schema'
-
-const loading = ref(false)
-const stats = ref<AdminStats | null>(null)
-
+<script setup>
+import { computed, onMounted, ref } from "vue";
+import { DocumentChecked, TrendCharts, User, Warning } from "@element-plus/icons-vue";
+import { getAdminStats } from "@/api/admin";
+const loading = ref(false);
+const stats = ref(null);
 onMounted(async () => {
-  loading.value = true
+  loading.value = true;
   try {
-    stats.value = await getAdminStats()
+    stats.value = await getAdminStats();
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-})
-
+});
 const statCards = computed(() => {
-  const s = stats.value
+  const s = stats.value;
   return [
-    { label: '用户总数', value: s?.totalUsers ?? 0, icon: User, bg: '#ecf5ff', color: '#409eff' },
-    { label: '教师数', value: s?.teacherCount ?? 0, icon: DocumentChecked, bg: '#f0f9eb', color: '#67c23a' },
-    { label: '学生数', value: s?.studentCount ?? 0, icon: TrendCharts, bg: '#fdf6ec', color: '#e6a23c' },
-    { label: '管理员数', value: s?.adminCount ?? 0, icon: Warning, bg: '#fef0f0', color: '#f56c6c' },
-  ]
-})
+    { label: "\u7528\u6237\u603B\u6570", value: s?.totalUsers ?? 0, icon: User, bg: "#ecf5ff", color: "#409eff" },
+    { label: "\u6559\u5E08\u6570", value: s?.teacherCount ?? 0, icon: DocumentChecked, bg: "#f0f9eb", color: "#67c23a" },
+    { label: "\u5B66\u751F\u6570", value: s?.studentCount ?? 0, icon: TrendCharts, bg: "#fdf6ec", color: "#e6a23c" },
+    { label: "\u7BA1\u7406\u5458\u6570", value: s?.adminCount ?? 0, icon: Warning, bg: "#fef0f0", color: "#f56c6c" }
+  ];
+});
+const roleDistribution = computed(() => stats.value?.roleDistribution ?? []);
+const recentUsers = computed(() => stats.value?.recentUsers ?? []);
+function rolePercent(v) {
+  const total = stats.value?.totalUsers ?? 1;
+  return total ? Math.round(v / total * 100) : 0;
+}
+function roleColor(name) {
+  const map = { \u5B66\u751F: "#409eff", \u6559\u5E08: "#67c23a", \u7BA1\u7406\u5458: "#f56c6c" };
+  return map[name] || "#909399";
+}
+const roleNameMap = { STUDENT: "\u5B66\u751F", TEACHER: "\u6559\u5E08", ADMIN: "\u7BA1\u7406\u5458" };
+function roleName(r) {
+  return roleNameMap[r] || r;
+}
+function roleTag(r) {
+  const map = {
+    STUDENT: "primary",
+    TEACHER: "success",
+    ADMIN: "danger"
+  };
+  return map[r] || "info";
+}
 
-const roleDistribution = computed(() => stats.value?.roleDistribution ?? [])
-const recentUsers = computed(() => stats.value?.recentUsers ?? [])
-
-function rolePercent(v: number) {
-  const total = stats.value?.totalUsers ?? 1
-  return total ? Math.round((v / total) * 100) : 0
-}
-function roleColor(name: string) {
-  const map: Record<string, string> = { 学生: '#409eff', 教师: '#67c23a', 管理员: '#f56c6c' }
-  return map[name] || '#909399'
-}
-const roleNameMap: Record<Role, string> = { STUDENT: '学生', TEACHER: '教师', ADMIN: '管理员' }
-function roleName(r: string) {
-  return roleNameMap[r as Role] || r
-}
-function roleTag(r: string) {
-  const map: Record<string, 'primary' | 'success' | 'danger' | 'warning' | 'info'> = {
-    STUDENT: 'primary',
-    TEACHER: 'success',
-    ADMIN: 'danger',
-  }
-  return map[r] || 'info'
-}
 </script>
 
 <style scoped lang="scss">

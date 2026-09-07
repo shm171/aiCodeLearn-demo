@@ -27,31 +27,28 @@
   </el-card>
 </template>
 
-<script setup lang="ts">
-import { onMounted, ref } from 'vue'
-import { getRoles } from '@/api/admin'
-import type { RoleOption } from '@/api/schema'
-
-const loading = ref(false)
-const roles = ref<RoleOption[]>([])
-
+<script setup>
+import { onMounted, ref } from "vue";
+import { getRoles } from "@/api/admin";
+const loading = ref(false);
+const roles = ref([]);
 onMounted(async () => {
-  loading.value = true
+  loading.value = true;
   try {
-    roles.value = await getRoles()
+    roles.value = await getRoles();
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-})
-
-function roleTag(r: string) {
-  const map: Record<string, 'primary' | 'success' | 'danger' | 'warning' | 'info'> = {
-    STUDENT: 'primary',
-    TEACHER: 'success',
-    ADMIN: 'danger',
-  }
-  return map[r] || 'info'
+});
+function roleTag(r) {
+  const map = {
+    STUDENT: "primary",
+    TEACHER: "success",
+    ADMIN: "danger"
+  };
+  return map[r] || "info";
 }
+
 </script>
 
 <style scoped lang="scss">

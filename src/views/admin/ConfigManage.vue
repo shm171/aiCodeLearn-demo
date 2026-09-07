@@ -34,50 +34,44 @@
   </el-card>
 </template>
 
-<script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
-import { ElMessage } from 'element-plus'
-import type { FormInstance, FormRules } from 'element-plus'
-import { getConfig, updateConfig } from '@/api/admin'
-import type { PlatformConfig } from '@/api/schema'
-
-const loading = ref(false)
-const saving = ref(false)
-const formRef = ref<FormInstance>()
-
-const form = reactive<PlatformConfig>({
-  platformName: '',
+<script setup>
+import { onMounted, reactive, ref } from "vue";
+import { ElMessage } from "element-plus";
+import { getConfig, updateConfig } from "@/api/admin";
+const loading = ref(false);
+const saving = ref(false);
+const formRef = ref();
+const form = reactive({
+  platformName: "",
   allowRegister: true,
-  defaultRole: 'STUDENT',
-  classes: [],
-})
-
-const rules: FormRules = {
-  platformName: [{ required: true, message: '请输入平台名称', trigger: 'blur' }],
-}
-
+  defaultRole: "STUDENT",
+  classes: []
+});
+const rules = {
+  platformName: [{ required: true, message: "\u8BF7\u8F93\u5165\u5E73\u53F0\u540D\u79F0", trigger: "blur" }]
+};
 onMounted(async () => {
-  loading.value = true
+  loading.value = true;
   try {
-    const c = await getConfig()
-    Object.assign(form, c)
+    const c = await getConfig();
+    Object.assign(form, c);
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-})
-
+});
 async function onSave() {
-  if (!formRef.value) return
-  const valid = await formRef.value.validate().catch(() => false)
-  if (!valid) return
-  saving.value = true
+  if (!formRef.value) return;
+  const valid = await formRef.value.validate().catch(() => false);
+  if (!valid) return;
+  saving.value = true;
   try {
-    await updateConfig({ ...form })
-    ElMessage.success('配置已保存')
+    await updateConfig({ ...form });
+    ElMessage.success("\u914D\u7F6E\u5DF2\u4FDD\u5B58");
   } finally {
-    saving.value = false
+    saving.value = false;
   }
 }
+
 </script>
 
 <style scoped lang="scss">

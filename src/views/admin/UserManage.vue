@@ -104,125 +104,111 @@
   </el-card>
 </template>
 
-<script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Search } from '@element-plus/icons-vue'
-import type { FormInstance, FormRules } from 'element-plus'
-import { createUser, deleteUser, getUserList, updateUserRole } from '@/api/admin'
-import type { AdminUser, Role, UserQuery } from '@/api/schema'
-
-const loading = ref(false)
-const saving = ref(false)
-const savingRole = ref(false)
-const list = ref<AdminUser[]>([])
-const total = ref(0)
-const query = reactive<UserQuery>({ page: 1, size: 10, keyword: '', role: '' })
-
-const createVisible = ref(false)
-const createFormRef = ref<FormInstance>()
-const createForm = reactive({ username: '', email: '', password: '', role: 'STUDENT' })
-const createRules: FormRules = {
-  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
+<script setup>
+import { Plus } from '@element-plus/icons-vue'
+import { onMounted, reactive, ref } from "vue";
+import { ElMessage, ElMessageBox } from "element-plus";
+import { createUser, deleteUser, getUserList, updateUserRole } from "@/api/admin";
+const loading = ref(false);
+const saving = ref(false);
+const savingRole = ref(false);
+const list = ref([]);
+const total = ref(0);
+const query = reactive({ page: 1, size: 10, keyword: "", role: "" });
+const createVisible = ref(false);
+const createFormRef = ref();
+const createForm = reactive({ username: "", email: "", password: "", role: "STUDENT" });
+const createRules = {
+  username: [{ required: true, message: "\u8BF7\u8F93\u5165\u7528\u6237\u540D", trigger: "blur" }],
   email: [
-    { required: true, message: '请输入邮箱', trigger: 'blur' },
-    { type: 'email', message: '邮箱格式不正确', trigger: ['blur', 'change'] },
+    { required: true, message: "\u8BF7\u8F93\u5165\u90AE\u7BB1", trigger: "blur" },
+    { type: "email", message: "\u90AE\u7BB1\u683C\u5F0F\u4E0D\u6B63\u786E", trigger: ["blur", "change"] }
   ],
   password: [
-    { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 8, max: 16, message: '密码长度 8~16 位', trigger: 'blur' },
+    { required: true, message: "\u8BF7\u8F93\u5165\u5BC6\u7801", trigger: "blur" },
+    { min: 8, max: 16, message: "\u5BC6\u7801\u957F\u5EA6 8~16 \u4F4D", trigger: "blur" }
   ],
-  role: [{ required: true, message: '请选择角色', trigger: 'change' }],
-}
-
-const roleVisible = ref(false)
-const currentRow = ref<AdminUser | null>(null)
-const roleForm = reactive<{ role: Role }>({ role: 'STUDENT' })
-
+  role: [{ required: true, message: "\u8BF7\u9009\u62E9\u89D2\u8272", trigger: "change" }]
+};
+const roleVisible = ref(false);
+const currentRow = ref(null);
+const roleForm = reactive({ role: "STUDENT" });
 async function load() {
-  loading.value = true
+  loading.value = true;
   try {
-    const res = await getUserList({ ...query })
-    list.value = res.list
-    total.value = res.total
+    const res = await getUserList({ ...query });
+    list.value = res.list;
+    total.value = res.total;
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
-
 function handleSearch() {
-  query.page = 1
-  load()
+  query.page = 1;
+  load();
 }
 function handleReset() {
-  query.keyword = ''
-  query.role = ''
-  query.page = 1
-  load()
+  query.keyword = "";
+  query.role = "";
+  query.page = 1;
+  load();
 }
-
 function openCreate() {
-  Object.assign(createForm, { username: '', email: '', password: '', role: 'STUDENT' })
-  createVisible.value = true
-  createFormRef.value?.clearValidate()
+  Object.assign(createForm, { username: "", email: "", password: "", role: "STUDENT" });
+  createVisible.value = true;
+  createFormRef.value?.clearValidate();
 }
-
 async function onCreate() {
-  if (!createFormRef.value) return
-  const valid = await createFormRef.value.validate().catch(() => false)
-  if (!valid) return
-  saving.value = true
+  if (!createFormRef.value) return;
+  const valid = await createFormRef.value.validate().catch(() => false);
+  if (!valid) return;
+  saving.value = true;
   try {
-    await createUser({ ...createForm })
-    ElMessage.success('创建成功')
-    createVisible.value = false
-    load()
+    await createUser({ ...createForm });
+    ElMessage.success("\u521B\u5EFA\u6210\u529F");
+    createVisible.value = false;
+    load();
   } finally {
-    saving.value = false
+    saving.value = false;
   }
 }
-
-function openRole(row: AdminUser) {
-  currentRow.value = row
-  roleForm.role = row.role
-  roleVisible.value = true
+function openRole(row) {
+  currentRow.value = row;
+  roleForm.role = row.role;
+  roleVisible.value = true;
 }
-
 async function onSaveRole() {
-  if (!currentRow.value) return
-  savingRole.value = true
+  if (!currentRow.value) return;
+  savingRole.value = true;
   try {
-    await updateUserRole(currentRow.value.id, roleForm.role)
-    ElMessage.success('角色已更新')
-    roleVisible.value = false
-    load()
+    await updateUserRole(currentRow.value.id, roleForm.role);
+    ElMessage.success("\u89D2\u8272\u5DF2\u66F4\u65B0");
+    roleVisible.value = false;
+    load();
   } finally {
-    savingRole.value = false
+    savingRole.value = false;
   }
 }
-
-function onDelete(row: AdminUser) {
-  ElMessageBox.confirm(`确定删除用户「${row.username}」吗？`, '删除确认', { type: 'warning' })
-    .then(async () => {
-      await deleteUser(row.id)
-      ElMessage.success('删除成功')
-      load()
-    })
-    .catch(() => {})
+function onDelete(row) {
+  ElMessageBox.confirm(`\u786E\u5B9A\u5220\u9664\u7528\u6237\u300C${row.username}\u300D\u5417\uFF1F`, "\u5220\u9664\u786E\u8BA4", { type: "warning" }).then(async () => {
+    await deleteUser(row.id);
+    ElMessage.success("\u5220\u9664\u6210\u529F");
+    load();
+  }).catch(() => {
+  });
 }
-
-const roleNameMap: Record<Role, string> = { STUDENT: '学生', TEACHER: '教师', ADMIN: '管理员' }
-function roleName(r: string) {
-  return roleNameMap[r as Role] || r
+const roleNameMap = { STUDENT: "\u5B66\u751F", TEACHER: "\u6559\u5E08", ADMIN: "\u7BA1\u7406\u5458" };
+function roleName(r) {
+  return roleNameMap[r] || r;
 }
-function roleTag(r: string) {
-  const map: Record<string, 'primary' | 'success' | 'danger' | 'warning' | 'info'> = {
-    STUDENT: 'primary',
-    TEACHER: 'success',
-    ADMIN: 'danger',
-  }
-  return map[r] || 'info'
+function roleTag(r) {
+  const map = {
+    STUDENT: "primary",
+    TEACHER: "success",
+    ADMIN: "danger"
+  };
+  return map[r] || "info";
 }
+onMounted(load);
 
-onMounted(load)
 </script>
