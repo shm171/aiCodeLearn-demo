@@ -1,0 +1,274 @@
+/* ============================================================
+ * EduCode 深色玻璃高级感主题（共享基准）
+ * 来源：学生端 web/src/assets/global.css
+ * 说明：三端引用同一份内容，改动请以本文件为基准同步。
+ * ============================================================ */
+/* 全局样式 - EduCode 深色玻璃高级感主题 */
+:root {
+  /* 强调色：淡紫 */
+  --accent: #c4b5fd;
+  --accent-dim: rgba(196, 181, 253, 0.12);
+  --accent-border: rgba(196, 181, 253, 0.25);
+
+  /* 背景 */
+  --bg-base: #0a0a0c;
+  --glass-bg: rgba(255, 255, 255, 0.04);
+  --glass-bg-hover: rgba(255, 255, 255, 0.07);
+  --glass-border: rgba(255, 255, 255, 0.1);
+
+  /* 文字 */
+  --text-primary: #f4f4f5;
+  --text-secondary: #d4d4d8;
+  --text-muted: #a1a1aa;
+
+  /* 圆角 */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: #0a0a0c;
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+html, body, #app {
+  height: 100%;
+}
+
+/* 滚动条 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* Element Plus 暗黑覆盖 */
+.el-card {
+  background: var(--glass-bg) !important;
+  border: 1px solid var(--glass-border) !important;
+  color: var(--text-primary) !important;
+  border-radius: var(--radius-lg) !important;
+}
+.el-card__header {
+  border-bottom: 1px solid var(--glass-border) !important;
+  color: var(--text-primary) !important;
+}
+.el-table {
+  background: transparent !important;
+  color: var(--text-secondary) !important;
+}
+.el-table tr {
+  background: transparent !important;
+}
+.el-table th.el-table__cell {
+  background: rgba(255, 255, 255, 0.03) !important;
+  color: var(--text-muted) !important;
+  border-bottom: 1px solid var(--glass-border) !important;
+}
+.el-table td.el-table__cell {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+  color: var(--text-secondary) !important;
+}
+.el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell {
+  background: rgba(255, 255, 255, 0.02) !important;
+}
+.el-table__body tr:hover > td.el-table__cell {
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+.el-input__wrapper {
+  background: rgba(255, 255, 255, 0.05) !important;
+  box-shadow: 0 0 0 1px var(--glass-border) inset !important;
+  border-radius: var(--radius-md) !important;
+}
+.el-input__wrapper:hover {
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.18) inset !important;
+}
+.el-input__wrapper.is-focus {
+  box-shadow: 0 0 0 1px var(--accent) inset !important;
+  background: rgba(255, 255, 255, 0.07) !important;
+}
+.el-input__inner {
+  color: var(--text-primary) !important;
+  background: transparent !important;
+}
+.el-input__inner::placeholder {
+  color: #71717a !important;
+}
+.el-input__prefix,
+.el-input__suffix,
+.el-input__suffix-inner {
+  color: #71717a !important;
+}
+/* 浏览器自动填充时覆盖白色背景 */
+.el-input__inner:-webkit-autofill,
+.el-input__inner:-webkit-autofill:hover,
+.el-input__inner:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text-primary) !important;
+  -webkit-box-shadow: 0 0 0 1000px rgba(255, 255, 255, 0.05) inset !important;
+  transition: background-color 5000s ease-in-out 0s;
+  caret-color: var(--text-primary);
+}
+.el-input.is-disabled .el-input__wrapper {
+  background: rgba(255, 255, 255, 0.02) !important;
+}
+.el-textarea__inner {
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: var(--radius-md) !important;
+}
+.el-select__wrapper {
+  background: rgba(255, 255, 255, 0.05) !important;
+  box-shadow: 0 0 0 1px var(--glass-border) inset !important;
+  border-radius: var(--radius-md) !important;
+}
+.el-select__wrapper:hover {
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.18) inset !important;
+}
+.el-select__wrapper.is-focused {
+  box-shadow: 0 0 0 1px var(--accent) inset !important;
+}
+.el-select__selected-item {
+  color: var(--text-primary) !important;
+}
+.el-select__placeholder {
+  color: #71717a !important;
+}
+.el-dialog {
+  background: rgba(16, 16, 20, 0.98) !important;
+  border: 1px solid var(--glass-border) !important;
+  backdrop-filter: blur(24px);
+  border-radius: var(--radius-lg) !important;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6) !important;
+}
+.el-dialog__header {
+  border-bottom: 1px solid var(--glass-border) !important;
+}
+.el-dialog__title {
+  color: var(--text-primary) !important;
+}
+.el-dialog__body {
+  color: var(--text-secondary) !important;
+}
+.el-dialog__footer {
+  border-top: 1px solid var(--glass-border) !important;
+}
+.el-dropdown-menu {
+  background: rgba(16, 16, 20, 0.98) !important;
+  border: 1px solid var(--glass-border) !important;
+  backdrop-filter: blur(20px);
+  border-radius: var(--radius-md) !important;
+}
+.el-dropdown-menu__item {
+  color: var(--text-secondary) !important;
+  border-radius: var(--radius-sm) !important;
+}
+.el-dropdown-menu__item:hover {
+  background: rgba(255, 255, 255, 0.07) !important;
+  color: var(--text-primary) !important;
+}
+.el-button {
+  border-radius: var(--radius-md) !important;
+  font-weight: 500 !important;
+}
+.el-button--primary {
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+  color: #0a0a0c !important;
+}
+.el-button--primary:hover {
+  background: #d4c5fe !important;
+  border-color: #d4c5fe !important;
+}
+.el-tag {
+  border: none !important;
+  border-radius: 6px !important;
+}
+.el-pagination button {
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: var(--text-muted) !important;
+  border-radius: var(--radius-sm) !important;
+}
+.el-pagination .el-pager li {
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: var(--text-muted) !important;
+  border-radius: var(--radius-sm) !important;
+}
+.el-pagination .el-pager li.is-active {
+  background: var(--accent-dim) !important;
+  color: var(--accent) !important;
+}
+.el-loading-mask {
+  background: rgba(10, 10, 12, 0.85) !important;
+}
+.el-loading-spinner .path {
+  stroke: var(--accent) !important;
+}
+.el-loading-text {
+  color: var(--text-secondary) !important;
+}
+.el-message-box {
+  background: rgba(16, 16, 20, 0.98) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: var(--radius-lg) !important;
+}
+.el-message-box__title {
+  color: var(--text-primary) !important;
+}
+.el-message-box__message {
+  color: var(--text-secondary) !important;
+}
+
+/* 渐变文字 */
+.gradient-text {
+  background: linear-gradient(135deg, #c4b5fd 0%, #a78bfa 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* 卡片悬浮效果 */
+.hover-lift {
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+.hover-lift:hover {
+  transform: translateY(-3px);
+  border-color: var(--accent-border);
+}
+
+
+/* ---- 教师端 / 管理端通用文字与外壳适配（保持深色玻璃风格可读）---- */
+.layout-main { background: transparent !important; }
+.layout-header {
+  background: rgba(16, 16, 20, 0.75) !important;
+  border-bottom: 1px solid var(--glass-border) !important;
+  box-shadow: none !important;
+}
+.layout-header .username { color: var(--text-primary) !important; }
+.layout-aside { background: #101014 !important; border-right: 1px solid var(--glass-border) !important; }
+.logo-text, .site-name { color: #f4f4f5 !important; }
+.stat-value, .card-title, .block-title, .title, .score-num {
+  color: var(--text-primary) !important;
+}
+.stat-label, .sub-meta, .muted, .form-tip { color: var(--text-muted) !important; }
+.desc { color: var(--text-secondary) !important; }
+.code-block { background: #16161a !important; border: 1px solid var(--glass-border) !important; }
