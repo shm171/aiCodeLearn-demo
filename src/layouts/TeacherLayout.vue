@@ -3,7 +3,7 @@
     <el-aside :width="collapsed ? '64px' : '220px'" class="layout-aside">
       <div class="logo" @click="$router.push('/teacher/dashboard')">
         <el-icon :size="24" color="#409eff"><Platform /></el-icon>
-        <span v-show="!collapsed" class="logo-text">AI Learn 教师端</span>
+        <span v-show="!collapsed" class="logo-text">EduCode 教师端</span>
       </div>
       <el-menu
         :default-active="activeMenu"

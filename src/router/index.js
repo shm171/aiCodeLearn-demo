@@ -5,7 +5,7 @@ const routes = [
     path: "/login",
     name: "Login",
     component: () => import("@/views/Login.vue"),
-    meta: { public: true, title: "\u767B\u5F55 \xB7 AI Learn \u6559\u5E08\u7AEF" }
+    meta: { public: true, title: "\u767B\u5F55 \xB7 EduCode \u6559\u5E08\u7AEF" }
   },
   {
     path: "/",
@@ -102,7 +102,7 @@ router.beforeEach(async (to) => {
   return true;
 });
 router.afterEach((to) => {
-  document.title = to.meta.title ? `${to.meta.title} \xB7 AI Learn` : "AI Learn \xB7 \u6559\u5E08\u7AEF";
+  document.title = to.meta.title ? `${to.meta.title} \xB7 EduCode` : "EduCode \xB7 \u6559\u5E08\u7AEF";
 });
 var stdin_default = router;
 export {
