@@ -3,7 +3,7 @@
     <div class="login-card">
       <div class="login-brand">
         <el-icon :size="40" color="#67c23a"><Platform /></el-icon>
-        <h1>AI Learn 智能学习平台</h1>
+        <h1>EduCode 智能学习平台</h1>
         <p>管理端 · 用户与权限管理</p>
       </div>
 

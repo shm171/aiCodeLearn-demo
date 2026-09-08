@@ -108,7 +108,7 @@ function mockGetRoles() {
   ]);
 }
 let config = {
-  platformName: "AI Learn \u667A\u80FD\u5B66\u4E60\u5E73\u53F0",
+  platformName: "EduCode \u667A\u80FD\u5B66\u4E60\u5E73\u53F0",
   allowRegister: true,
   defaultRole: "STUDENT",
   classes: ["\u8BA1\u7B97\u673A 2101", "\u8BA1\u7B97\u673A 2102", "\u8BA1\u7B97\u673A 2103", "\u8F6F\u4EF6 2101"]
