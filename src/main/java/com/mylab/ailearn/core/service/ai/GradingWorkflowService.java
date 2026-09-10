@@ -19,7 +19,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -49,6 +48,7 @@ public class GradingWorkflowService {
     private final ChapterMatchService chapterMatchService;
     private final StaticCheckService staticCheckService;
     private final ObjectProvider<LlmGradingClient> llmGradingClientProvider;
+    private final LlmReviewValidator llmReviewValidator;
 
     private volatile CompiledGraph compiledGraph;
 
@@ -137,9 +137,10 @@ public class GradingWorkflowService {
         StaticCheckReport report = state.value(KEY_STATIC_REPORT, StaticCheckReport.class).orElse(null);
 
         LlmGradingClient client = llmGradingClientProvider.getIfAvailable();
+        // 模型输出不是可信证据：与 GradingServiceImpl 一样先校验再返回
         LlmReview review = client == null
-                ? new LlmReview(List.of(), "LLM 深度批改客户端尚未接入，已跳过。")
-                : client.review(sourceFile);
+                ? LlmReview.unavailable("LLM 深度批改客户端尚未接入，已跳过。")
+                : llmReviewValidator.validate(client.review(sourceFile), sourceFile);
 
         return Map.<String, Object>of(KEY_LLM_REVIEW, review);
     }

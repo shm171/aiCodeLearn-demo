@@ -4,9 +4,11 @@ import com.mylab.ailearn.core.enums.ErrorCategory;
 import com.mylab.ailearn.core.model.commonmodel.GradedError;
 import com.mylab.ailearn.core.model.commonmodel.GradingResult;
 import com.mylab.ailearn.core.model.commonmodel.LlmReview;
+import com.mylab.ailearn.core.model.commonmodel.LlmReviewStatus;
 import com.mylab.ailearn.core.model.commonmodel.RuleViolation;
 import com.mylab.ailearn.core.model.commonmodel.SourceFile;
 import com.mylab.ailearn.core.model.commonmodel.StaticCheckReport;
+import com.mylab.ailearn.core.service.ai.LlmReviewValidator;
 import com.mylab.ailearn.core.service.spi.LlmGradingClient;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.ObjectProvider;
@@ -21,6 +23,9 @@ import java.util.Map;
 
 /**
  * 双层批改的默认实现：先规则静态筛查，再 LLM 深度批改，最后合并、去重并计分。
+ *
+ * <p>模型输出在本层统一校验：只有通过 {@link LlmReviewValidator} 的条目才会进入
+ * 分数与错题归档，未通过的部分体现在反馈文案里，不会被当成「没有发现问题」。</p>
  */
 @Service
 @RequiredArgsConstructor
@@ -29,8 +34,12 @@ public class GradingServiceImpl implements GradingService {
     public static final String SOURCE_RULE = "规则校验";
     public static final String SOURCE_LLM = "LLM 深度批改";
 
+    /** 分类缺失时的兜底扣分权重：按最高权重扣，避免无法归类的问题「免罚」。 */
+    private static final int UNCLASSIFIED_DEDUCTION = 10;
+
     private final StaticCheckService staticCheckService;
     private final ObjectProvider<LlmGradingClient> llmGradingClientProvider;
+    private final LlmReviewValidator llmReviewValidator;
 
     // 暴露接口，编排业务
     @Override
@@ -59,10 +68,13 @@ public class GradingServiceImpl implements GradingService {
         }
     }
 
-    // 调 LLM；没有 LlmGradingClient bean 时返回 null
+    // 调 LLM；没有 LlmGradingClient bean 时返回 null；模型输出一律先校验再使用
     private LlmReview llmReview(SourceFile sourceFile) {
         LlmGradingClient llmClient = llmGradingClientProvider.getIfAvailable();
-        return llmClient == null ? null : llmClient.review(sourceFile);
+        if (llmClient == null) {
+            return null;
+        }
+        return llmReviewValidator.validate(llmClient.review(sourceFile), sourceFile);
     }
 
     // 规则静态检查 → 错误
@@ -88,6 +100,10 @@ public class GradingServiceImpl implements GradingService {
         }
         List<GradedError> errors = new ArrayList<>();
         for (GradedError issue : review.issues()) {
+            if (issue.category() == null) {
+                // 无分类的问题既不能归因也不能计分，防御性丢弃（校验层本应已拦截）
+                continue;
+            }
             errors.add(new GradedError(
                     issue.category(),
                     issue.errorType(),
@@ -121,23 +137,35 @@ public class GradingServiceImpl implements GradingService {
         return Math.max(0, score);
     }
 
-    // 错误类型的扣分权重
+    // 错误类型的扣分权重；分类缺失时按最高权重扣分
     private int deduction(ErrorCategory category) {
-        return category == null ? 0 : category.deductionWeight();
+        return category == null ? UNCLASSIFIED_DEDUCTION : category.deductionWeight();
     }
 
-    // 选择反馈：LLM 有结论用原话，否则用统计文案
+    // 选择反馈：LLM 有结论用原话（不完整时附加提示），否则用统计文案
     private String selectFeedback(List<GradedError> errors, LlmReview review) {
-        boolean llmAvailable = review != null;
+        LlmReviewStatus status = review == null ? null : review.status();
         String llmSummary = review == null ? null : review.summary();
         if (llmSummary != null && !llmSummary.isBlank()) {
-            return llmSummary;
+            String warning = incompleteWarning(status);
+            return warning == null ? llmSummary : llmSummary + warning;
         }
-        return buildFeedback(errors, llmAvailable);
+        return buildFeedback(errors, status);
+    }
+
+    // 结论不完整时的补充说明；结论完整或未接入模型时返回 null
+    private String incompleteWarning(LlmReviewStatus status) {
+        if (status == LlmReviewStatus.PARTIAL) {
+            return "（注意：LLM 批改结果不完整，部分输出未通过校验已被丢弃）";
+        }
+        if (status == LlmReviewStatus.UNAVAILABLE) {
+            return "（注意：LLM 批改未产出可信结论，本次仅规则校验）";
+        }
+        return null;
     }
 
     // 生成非 LLM 的统计文案
-    private String buildFeedback(List<GradedError> errors, boolean llmAvailable) {
+    private String buildFeedback(List<GradedError> errors, LlmReviewStatus llmStatus) {
         long format = errors.stream().filter(e -> e.category() == ErrorCategory.FORMAT_ERROR).count();
         long syntax = errors.stream().filter(e -> e.category() == ErrorCategory.SYNTAX_ERROR).count();
         long logic = errors.stream().filter(e -> e.category() == ErrorCategory.LOGIC_ERROR).count();
@@ -151,7 +179,19 @@ public class GradingServiceImpl implements GradingService {
         if (uncategorized > 0) {
             feedback.append("，未分类错误 ").append(uncategorized);
         }
-        feedback.append(llmAvailable ? "；已结合 LLM 深度批改。" : "；LLM 深度批改未接入，本次仅规则校验。");
+        feedback.append(llmStatusNote(llmStatus));
         return feedback.toString();
+    }
+
+    // LLM 阶段的结论状态说明；null 表示未接入 LLM 客户端
+    private String llmStatusNote(LlmReviewStatus status) {
+        if (status == null) {
+            return "；LLM 深度批改未接入，本次仅规则校验。";
+        }
+        return switch (status) {
+            case COMPLETED -> "；已结合 LLM 深度批改。";
+            case PARTIAL -> "；LLM 深度批改结果不完整（部分输出未通过校验），本次结论仅供参考。";
+            case UNAVAILABLE -> "；LLM 深度批改未产出可信结论，本次仅规则校验。";
+        };
     }
 }

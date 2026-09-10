@@ -5,7 +5,9 @@ import com.mylab.ailearn.core.enums.ProgrammingLanguage;
 import com.mylab.ailearn.core.model.commonmodel.GradedError;
 import com.mylab.ailearn.core.model.commonmodel.GradingResult;
 import com.mylab.ailearn.core.model.commonmodel.LlmReview;
+import com.mylab.ailearn.core.model.commonmodel.LlmReviewStatus;
 import com.mylab.ailearn.core.model.commonmodel.SourceFile;
+import com.mylab.ailearn.core.service.ai.LlmReviewValidator;
 import com.mylab.ailearn.core.service.spi.LlmGradingClient;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.ObjectProvider;
@@ -23,7 +25,7 @@ class GradingServiceImplTest {
     private final StaticCheckServiceImpl staticCheck = new StaticCheckServiceImpl();
 
     private GradingServiceImpl newService(ObjectProvider<LlmGradingClient> llmProvider) {
-        return new GradingServiceImpl(staticCheck, llmProvider);
+        return new GradingServiceImpl(staticCheck, llmProvider, new LlmReviewValidator());
     }
 
     @Test
@@ -43,7 +45,7 @@ class GradingServiceImplTest {
         LlmGradingClient client = mock(LlmGradingClient.class);
         when(client.review(any())).thenReturn(new LlmReview(
                 List.of(new GradedError(ErrorCategory.LOGIC_ERROR, "思路偏差", "L001", "思路偏差", "换一种算法", "LLM 深度批改", List.of())),
-                "整体思路欠佳"));
+                "整体思路欠佳", LlmReviewStatus.COMPLETED));
         ObjectProvider<LlmGradingClient> provider = mock(ObjectProvider.class);
         when(provider.getIfAvailable()).thenReturn(client);
         GradingService service = newService(provider);
@@ -60,7 +62,7 @@ class GradingServiceImplTest {
         LlmGradingClient client = mock(LlmGradingClient.class);
         when(client.review(any())).thenReturn(new LlmReview(
                 List.of(new GradedError(ErrorCategory.SYNTAX_ERROR, "花括号不匹配", "BRACE_MISMATCH", "花括号不匹配", "补右括号", "LLM 深度批改", List.of())),
-                "s"));
+                "s", LlmReviewStatus.COMPLETED));
         ObjectProvider<LlmGradingClient> provider = mock(ObjectProvider.class);
         when(provider.getIfAvailable()).thenReturn(client);
         GradingService service = newService(provider);
