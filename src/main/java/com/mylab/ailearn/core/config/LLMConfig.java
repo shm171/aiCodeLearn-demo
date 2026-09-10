@@ -49,7 +49,6 @@ public class LLMConfig {
                 .build();
 
         return client;
-
     }
 
 }
