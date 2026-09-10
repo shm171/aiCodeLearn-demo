@@ -13,6 +13,9 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
+/**
+ * 教师班级看板的聚合逻辑单测：直接传入错题数据，持久化端口用 Mockito 桩占位（不会真正查库）。
+ */
 class TeacherDashboardServiceImplTest {
 
     private final StudentReportServiceImpl studentReport = new StudentReportServiceImpl(mock(ObjectProvider.class), mock(ObjectProvider.class));

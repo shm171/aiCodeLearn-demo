@@ -4,7 +4,7 @@ import com.mylab.ailearn.core.model.commonmodel.GradingResult;
 import com.mylab.ailearn.core.model.commonmodel.SourceFile;
 
 /**
- * 双层批改：先规则静态筛查，最后交给 LLM 深度批改，
+ * 双层批改：先做规则静态检查，再交给 LLM 深度批改，
  * 把双方结果合并、去重、分类并计分，同时给出各阶段状态与分数可采纳性。
  */
 public interface GradingService {

@@ -10,9 +10,14 @@ import reactor.core.publisher.Flux;
 /**
  * AI 学习助手：基于 Spring AI {@link ChatClient} 提供与批改系统的对话问答能力。
  *
- * <p>助手具备调用 {@link LlmErrorRecordGet} 工具的能力，可按用户角色从数据库调取
- * 批改记录、总结薄弱点、推荐训练章节并讲解易错知识点。对话记忆通过
+ * <p>助手可以调用 {@link LlmErrorRecordGet} 工具，按用户 ID 从数据库调取批改记录（错题），
+ * 用于总结薄弱点、推荐训练章节与讲解易错知识点。对话记忆通过
  * {@link ChatMemory#CONVERSATION_ID} 按「用户 + 会话」隔离，避免不同会话串扰。</p>
+ *
+ * <p><b>安全边界（重要）</b>：{@link #aiChat} 把 {@code ownerUserId} 写进系统提示词，
+ * 这只是给模型的上下文，<b>不构成任何数据权限</b>——真正查库时用的是模型自己生成的
+ * 工具调用参数。要做数据隔离，必须在 {@link LlmErrorRecordGet} 侧改用服务端可信身份，
+ * 而不是模型给出的 ID（当前尚未实现）。</p>
  */
 @Service
 public class AiAssistant {
@@ -41,7 +46,7 @@ public class AiAssistant {
      * 流式 AI 对话：逐段返回助手回答，供 Controller 以 text/event-stream 输出。
      *
      * @param message        用户输入的消息
-     * @param ownerUserId    当前用户 ID，用于限定可查询的批改记录范围
+     * @param ownerUserId    当前用户 ID，仅作为提示词上下文交给模型，不构成数据权限（见类注释）
      * @param conversationId 会话 ID，用于隔离不同对话的记忆（同一用户不同会话互不串扰）
      * @return 流式回答内容
      */

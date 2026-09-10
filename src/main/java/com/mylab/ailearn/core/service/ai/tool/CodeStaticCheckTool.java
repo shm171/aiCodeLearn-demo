@@ -31,7 +31,7 @@ public class CodeStaticCheckTool {
     }
 
     /**
-     * 对本次提交的源码做硬性静态筛查，返回规则违规列表。
+     * 对本次提交的源码做规则静态检查，返回违规列表。
      */
     @Tool(name = "staticCodeCheck",
             description = "对本次批改的学生源码执行规则静态检查，返回括号匹配、缩进、命名、"

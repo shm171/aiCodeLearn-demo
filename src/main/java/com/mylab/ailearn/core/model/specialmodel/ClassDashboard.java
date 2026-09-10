@@ -3,8 +3,15 @@ package com.mylab.ailearn.core.model.specialmodel;
 import java.util.List;
 
 /**
- * 教师端班级看板：错题分布、易错知识点排行、学生统计、班级学习曲线、总错题数、
- * 总提交数与一句话诊断。
+ * 教师端班级看板：全班维度的统计结果。
+ *
+ * @param distribution     全班错题分类分布，用于饼图
+ * @param topWeakPoints    全班薄弱知识点排行（最多 10 条）
+ * @param studentStats     每个学生的统计，按错题数从多到少排序
+ * @param classCurve       班级月度学习曲线
+ * @param totalErrors      全班错题总条数
+ * @param totalSubmissions 全班提交总次数
+ * @param summary          一句话诊断文案
  */
 public record ClassDashboard(
         ErrorDistribution distribution,

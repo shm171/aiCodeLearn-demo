@@ -37,14 +37,17 @@ public enum CourseChapter {
         this.keywords = keywords;
     }
 
+    /** 章节编号，例如 "CH1"。 */
     public String code() {
         return code;
     }
 
+    /** 章节标题，例如 "程序基础与开发环境"。 */
     public String title() {
         return title;
     }
 
+    /** 展示用文案：编号 + 标题，例如 "CH1 程序基础与开发环境"。 */
     public String displayValue() {
         return code + " " + title;
     }
@@ -52,8 +55,13 @@ public enum CourseChapter {
     /**
      * 根据文件名与源码内容做关键词打分，返回得分最高的章节；无任何命中时回退到「综合练习」。
      *
+     * <p>打分方式是统计每个关键词在「文件名 + 内容」里出现的次数并累加。若多个章节得分相同，
+     * 取枚举声明顺序靠前的一个（即 {@link #FUNDAMENTALS} 优先）；{@link #COMPREHENSIVE}
+     * 只作为兜底，不参与打分。</p>
+     *
      * @param filename 文件名，可与内容一起提供少量线索
      * @param content  源码内容
+     * @return 匹配到的章节，永不返回 null；无命中时为 {@link #COMPREHENSIVE}
      */
     public static CourseChapter match(String filename, String content) {
         String corpus = (Objects.toString(filename, "") + "\n" + Objects.toString(content, "")).toLowerCase(Locale.ROOT);

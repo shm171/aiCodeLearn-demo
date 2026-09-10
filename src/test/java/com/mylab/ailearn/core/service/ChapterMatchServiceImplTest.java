@@ -8,6 +8,9 @@ import org.springframework.web.server.ResponseStatusException;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+/**
+ * 题目匹配与输入预算的离线单测：覆盖语言识别、文件名规范化，以及各种非法输入的 400 行为。
+ */
 class ChapterMatchServiceImplTest {
 
     private final ChapterMatchServiceImpl service = new ChapterMatchServiceImpl();

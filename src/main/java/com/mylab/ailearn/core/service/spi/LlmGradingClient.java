@@ -7,8 +7,10 @@ import com.mylab.ailearn.core.model.commonmodel.SourceFile;
 /**
  * LLM 深度批改端口（SPI）。
  *
- * <p>由负责 Spring AI Alibaba / 通义的同学实现，对规则筛不出的逻辑错误、
+ * <p>由负责 Spring AI 接入的同学实现，对规则静态检查筛不出的逻辑错误、
  * 算法思路问题进行深度批改。Service 层只依赖该抽象，不绑定具体模型。</p>
+ *
+ * <p>实现方不需要、也不应该做输入预算校验（如源码体积上限）：那是调用方的职责。</p>
  */
 public interface LlmGradingClient {
 

@@ -12,6 +12,9 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * 规则静态检查的离线单测：直接用源码文本驱动，不依赖 Spring、数据库与模型。
+ */
 class StaticCheckServiceImplTest {
 
     private final StaticCheckServiceImpl checker = new StaticCheckServiceImpl();

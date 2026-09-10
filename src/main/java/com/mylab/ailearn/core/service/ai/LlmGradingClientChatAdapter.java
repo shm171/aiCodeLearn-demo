@@ -28,7 +28,7 @@ import org.springframework.stereotype.Service;
  * 结果的结构与语义校验、以及状态判定由消费端 {@link LlmReviewValidator} 完成。</p>
  *
  * <p>ChatModel 通过 {@link ObjectProvider} 注入：未配置模型时优雅降级为
- * 不可采信的空结论，不阻断规则校验路径。</p>
+ * 不可采信的空结论，不阻断规则静态检查路径。</p>
  */
 @Slf4j
 @Service

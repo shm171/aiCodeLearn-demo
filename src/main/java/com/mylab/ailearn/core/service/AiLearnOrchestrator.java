@@ -16,6 +16,13 @@ import java.util.List;
  * <p><b>读侧流转</b>：错题归档 → 学生学习报告 / 教师班级看板。</p>
  *
  * <p>Controller 层只需注入本接口即可完成一条龙业务，无需关心内部各 Service 的调用顺序。</p>
+ *
+ * <p><b>安全边界（读代码前必看）</b>：本接口所有方法都以调用方传入的 {@code ownerUserId}
+ * 决定数据归属，内部只校验它非空且为正数，<b>不会</b>核对它与当前登录用户是否一致。
+ * 因此 Controller 层必须从已认证身份中取得该 ID，绝不能直接使用请求参数里的用户 ID；
+ * 否则传入他人 ID 即可读写他人数据。按角色 / 班级的细粒度授权目前尚未实现。</p>
+ *
+ * <p>本接口的实现类对写侧方法开启了事务（{@code @Transactional}），读侧为只读事务。</p>
  */
 public interface AiLearnOrchestrator {
 

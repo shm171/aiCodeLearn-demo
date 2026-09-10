@@ -25,19 +25,27 @@ import java.util.Optional;
 /**
  * 批改智能体工作流（Spring AI Alibaba Graph）。
  *
- * <p>把「解析 → 静态检查 → (有错则) LLM 深度批改 → 汇总」编排为一个
- * {@link StateGraph}，演示多节点智能体工作流的 Service 层实现。条件边会在静态检查
- * 无违规时跳过 LLM，直接进入汇总节点。</p>
+ * <p>把「解析 → 规则静态检查 → LLM 深度批改 → 汇总」编排为一个 {@link StateGraph}，
+ * 演示多节点智能体工作流的 Service 层实现。</p>
+ *
+ * <p><b>注意两点</b>：① 当前节点之间都是无条件边，静态检查之后<b>总会</b>执行 LLM 深度批改，
+ * 「静态检查无违规就跳过 LLM」的条件边尚未实现（{@code AsyncEdgeAction} 已导入但未使用）；
+ * ② 本类是独立的工作流演示，不参与 {@code GradingService} 的正式批改流程，
+ * 正式流程见 {@code GradingServiceImpl}。</p>
  */
 @Service
 @RequiredArgsConstructor
 public class GradingWorkflowService {
 
+    /** 工作流状态键：输入的文件名、源码内容与提交者用户 ID。 */
     public static final String KEY_FILENAME = "filename";
     public static final String KEY_CONTENT = "content";
     public static final String KEY_OWNER = "ownerUserId";
+    /** 工作流状态键：解析得到的源码对象。 */
     public static final String KEY_SOURCE_FILE = "sourceFile";
+    /** 工作流状态键：规则静态检查报告。 */
     public static final String KEY_STATIC_REPORT = "staticReport";
+    /** 工作流状态键：LLM 深度批改结论（已经过校验）。 */
     public static final String KEY_LLM_REVIEW = "llmReview";
 
     private static final String NODE_PARSE = "parse";
@@ -61,6 +69,9 @@ public class GradingWorkflowService {
 
     /**
      * 以一段源码驱动整条批改工作流。
+     *
+     * <p>输入非法（文件名为空、后缀不支持、超出输入预算）时抛 400；
+     * 工作流未产出结果时抛 {@code IllegalStateException}。</p>
      */
     public WorkflowOutcome run(String filename, String content, Long ownerUserId) {
         Map<String, Object> input = new HashMap<>();

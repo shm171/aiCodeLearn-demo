@@ -32,13 +32,17 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 /**
- * 学生学习报告的默认实现。所有聚合逻辑都是纯函数，便于单元测试；
- * 需要从数据库取数的方法通过 ErrorRecordStore 端口完成。
+ * 学生学习报告的默认实现。
+ *
+ * <p>所有聚合逻辑都是纯函数（只依赖传入的数据），便于单元测试与在教师看板中复用；
+ * 带 {@code ownerUserId} 的重载通过 ErrorRecordStore / SourceFileStore 端口取数后，
+ * 走的是同一套纯函数逻辑。</p>
  */
 @Service
 @RequiredArgsConstructor
 public class StudentReportServiceImpl implements StudentReportService {
 
+    /** 薄弱知识点排行默认取前 10 条。 */
     private static final int TOP_WEAK_POINTS = 10;
 
     /** 权重时间衰减半衰期（天）：每过半衰期，历史错题对权重的贡献减半。 */
@@ -132,7 +136,7 @@ public class StudentReportServiceImpl implements StudentReportService {
                 sourceFileStore().findByOwnerUserId(ownerUserId));
     }
 
-    /** 基于一批错题生成专属刷题清单：按错题频率与归档时间倒序排序。 */
+    /** 基于一批错题生成刷题清单：按错题频率与归档时间倒序排序（不去重）。 */
     @Override
     public List<ErrorRecord> buildPracticeList(List<ErrorRecord> records) {
         List<ErrorRecord> data = ServiceSupport.nullToEmpty(records);
@@ -183,8 +187,10 @@ public class StudentReportServiceImpl implements StudentReportService {
     }
 
     /**
-     * 把一批错题聚合成薄弱知识点排行（含时间衰减扣分权重与最近出现时间），
-     * 按权重降序返回前 {@code limit} 条。供学生报告与教师看板复用，保证口径统一。
+     * 把一批错题聚合成薄弱知识点排行，按权重降序返回前 {@code limit} 条。
+     *
+     * <p>衰减基准取这批错题里最新的 {@code createdAt}（不是 {@code LocalDateTime.now()}），
+     * 保证同一批数据的结果可复现。</p>
      */
     @Override
     public List<WeakPoint> aggregateWeakPoints(List<ErrorRecord> records, int limit) {
@@ -266,6 +272,7 @@ public class StudentReportServiceImpl implements StudentReportService {
         if (data.isEmpty()) {
             return "暂无错题！";
         }
+        // 入参已按权重降序，第一条就是最薄弱的知识点
         WeakPoint first = data.get(0);
         return "最薄弱知识点：" + first.errorType() + "（出现 " + first.count() + " 次）";
     }

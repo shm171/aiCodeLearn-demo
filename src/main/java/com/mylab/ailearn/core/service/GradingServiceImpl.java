@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 双层批改的默认实现：先规则静态筛查，再 LLM 深度批改，最后合并、去重并计分。
+ * 双层批改的默认实现：先规则静态检查，再 LLM 深度批改，最后合并、去重并计分。
  *
  * <p>模型输出在本层统一校验：只有通过 {@link LlmReviewValidator} 的条目才会进入
  * 分数与错题归档，未通过的部分体现在反馈文案里，不会被当成「没有发现问题」。</p>
@@ -38,7 +38,9 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class GradingServiceImpl implements GradingService {
 
+    /** 规则静态检查产出的问题在结果中的来源标识（会展示给学生，文案保持不变）。 */
     public static final String SOURCE_RULE = "规则校验";
+    /** LLM 深度批改产出的问题在结果中的来源标识。 */
     public static final String SOURCE_LLM = "LLM 深度批改";
 
     /** 分类缺失时的兜底扣分权重：按最高权重扣，避免无法归类的问题「免罚」。 */

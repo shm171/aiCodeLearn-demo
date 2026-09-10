@@ -12,6 +12,10 @@ import java.util.List;
  *
  * <p>{@code status} 只由服务端决定：模型返回的 JSON 里即使写了 status 也会被忽略，
  * 未填状态时按 {@link LlmReviewStatus#UNVERIFIED}（未经校验）处理，同样不可直接采纳。</p>
+ *
+ * @param issues  模型给出的问题条目；只有通过校验的条目才会保留下来
+ * @param summary 模型给出的一句话结论，可为 null；超长时会被截断
+ * @param status  可信状态，由 {@code LlmReviewValidator} 判定；null 视为 UNVERIFIED
  */
 public record LlmReview(
         List<GradedError> issues,

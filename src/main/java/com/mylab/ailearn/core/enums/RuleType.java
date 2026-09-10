@@ -1,8 +1,10 @@
 package com.mylab.ailearn.core.enums;
 
 /**
- * 规则校验 Tool 中的固定静态规则。
- * 每条规则自带错误分类，先做硬性静态筛查，筛不出的逻辑错误再交给 LLM 深度批改。
+ * 规则静态检查中的固定规则。
+ *
+ * <p>每条规则自带错误代码、中文名与错误分类。规则静态检查负责这些可以硬性判定的问题，
+ * 筛不出的逻辑错误再交给 LLM 深度批改。</p>
  */
 public enum RuleType {
 
@@ -26,14 +28,17 @@ public enum RuleType {
         this.category = category;
     }
 
+    /** 错误代码，落库与前后端交互使用，例如 ARRAY_OUT_OF_BOUNDS。 */
     public String code() {
         return code;
     }
 
+    /** 规则的中文名，展示给学生看。 */
     public String label() {
         return name;
     }
 
+    /** 该规则所属的错误大类，决定扣分权重。 */
     public ErrorCategory category() {
         return category;
     }

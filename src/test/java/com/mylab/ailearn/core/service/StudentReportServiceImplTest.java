@@ -20,6 +20,9 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
+/**
+ * 学生学习报告的聚合逻辑单测：走纯函数重载，持久化端口用 Mockito 桩占位（不会真正查库）。
+ */
 class StudentReportServiceImplTest {
 
     private final StudentReportServiceImpl service = new StudentReportServiceImpl(mock(ObjectProvider.class), mock(ObjectProvider.class));

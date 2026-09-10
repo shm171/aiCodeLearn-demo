@@ -19,16 +19,20 @@ public enum ProgrammingLanguage {
         this.extension = extension;
     }
 
+    /** 语言的展示名，例如 "C++"。 */
     public String displayName() {
         return displayName;
     }
 
+    /** 该语言对应的文件后缀，例如 ".cpp"。 */
     public String extension() {
         return extension;
     }
 
     /**
      * 根据文件名后缀识别语言，无法识别时返回 {@link Optional#empty()}。
+     *
+     * <p>只按后缀判断，大小写不敏感（{@code Main.JAVA} 也识别为 Java）；不做内容嗅探。</p>
      */
     public static Optional<ProgrammingLanguage> detect(String filename) {
         if (filename == null || filename.isBlank()) {

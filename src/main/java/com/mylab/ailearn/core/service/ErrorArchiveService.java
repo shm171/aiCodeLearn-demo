@@ -8,6 +8,10 @@ import java.util.List;
  * 错题归档：查询某学生已归档的全部错题，并支持把错题标记为「已掌握」。
  *
  * <p>供学生复习与教师看板读取使用。</p>
+ *
+ * <p><b>权限说明</b>：{@link #listByOwner} 按传入的 {@code ownerUserId} 直接取数，
+ * 不校验该 ID 与当前登录用户是否一致；{@link #markMastered} 会校验错题确实属于该
+ * {@code ownerUserId}（不属于时按 404 处理）。因此调用方必须传入已认证用户的 ID。</p>
  */
 public interface ErrorArchiveService {
 

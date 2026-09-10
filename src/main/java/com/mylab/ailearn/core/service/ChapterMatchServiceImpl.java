@@ -8,7 +8,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 /**
- * 题目匹配的默认实现。语言识别、章节匹配等为纯业务逻辑，可独立编译。
+ * 题目匹配的默认实现。
+ *
+ * <p>语言识别与章节匹配都是纯业务逻辑，不依赖持久化与模型，可直接用单元测试覆盖。</p>
  *
  * <p>解析前先做输入预算与文件名校验（{@link SourceInputValidator}）：文件名不合规、
  * 源码超限一律返回 400 受控错误，错误信息不回显原始输入。返回的

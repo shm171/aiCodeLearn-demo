@@ -17,18 +17,28 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * 规则校验 Tool 的默认实现。
+ * 规则静态检查的默认实现。
  *
- * <p>覆盖大一高频错误：变量命名规范、缩进、内存泄漏、指针错误、数组越界，
- * 以及基础的括号 / 语法筛查。规则均为启发式静态筛查，筛不出的逻辑错误交 LLM 深度批改。</p>
+ * <p>覆盖大一高频错误：括号不匹配、缩进风格、变量命名、使用未初始化变量、内存泄漏、
+ * 空指针 / 野指针解引用、数组越界与死循环。规则都是基于正则的启发式筛查，只做硬性判定，
+ * 筛不出的逻辑错误交给 LLM 深度批改。</p>
+ *
+ * <p><b>语言差异</b>：空指针检查分两套——C++ 走指针声明与解引用分析，Java 走对象引用
+ * 调用分析；其余规则两种语言共用。</p>
  */
 @Service
 public class StaticCheckServiceImpl implements StaticCheckService {
 
+    /** 允许保留的单字母变量名：循环变量 i / j / k 不算命名不规范。 */
     private static final Set<String> COMMON_LOOP_NAMES = Set.of("i", "j", "k");
 
     /**
-     * 对源码做静态筛查。永不返回 null；{@code sourceFile} 为空时抛 400。
+     * 对源码做静态检查。
+     *
+     * <p>匹配前会先剔除注释与字符串字面量，因此不会把注释里的括号或关键字误判为代码；
+     * 返回的行号仍是原始源码中的行号。{@code sourceFile.language()} 为 null 时按 C++ 处理。</p>
+     *
+     * <p>永不返回 null；{@code sourceFile} 为空时抛 400。</p>
      */
     @Override
     public StaticCheckReport check(SourceFile sourceFile) {
@@ -111,7 +121,9 @@ public class StaticCheckServiceImpl implements StaticCheckService {
             }
         }
 
+        // 以「行首用 tab 的行更多，还是用空格的行更多」推断整份文件的缩进风格
         boolean useTabs = tabStarts > spaceStarts;
+        // 空格缩进的判定单位：用空格时，行首空格数必须是它的整数倍才算对齐
         int unit = 4;
         int badLines = 0;
         int firstBadLine = -1;
@@ -379,6 +391,12 @@ public class StaticCheckServiceImpl implements StaticCheckService {
     }
 
 
+    /**
+     * 把注释、字符串与字符字面量替换成空格，让后续规则只匹配真正的代码。
+     *
+     * <p>用空格替换而不是删除，是为了保持每个字符的下标不变，从而让 {@link #lineAt}
+     * 算出的行号与原始源码完全一致。换行符本身保留，避免行数变化。</p>
+     */
     private String stripCommentsAndStrings(String code) {
         StringBuilder cleaned = new StringBuilder(code);
         removeMatches(cleaned, Pattern.compile("(?s)/\\*.*?\\*/"));
@@ -421,11 +439,13 @@ public class StaticCheckServiceImpl implements StaticCheckService {
         return count;
     }
 
+    /** 返回下标 {@code index} 所在的行号，从 1 开始计数。 */
     private int lineAt(String code, int index) {
         String prefix = code.substring(0, Math.min(index, code.length()));
         return 1 + (int) prefix.chars().filter(c -> c == '\n').count();
     }
 
+    /** 返回第一个匹配所在的行号；没有任何匹配时返回 null。 */
     private Integer lineOfFirst(String code, String regex) {
         Matcher matcher = Pattern.compile(regex).matcher(code);
         return matcher.find() ? lineAt(code, matcher.start()) : null;

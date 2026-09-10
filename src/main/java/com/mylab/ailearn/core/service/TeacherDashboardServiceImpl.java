@@ -24,8 +24,13 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * 教师数据看板的默认实现。班级聚合复用 {@link StudentReportService} 的
- * 错题分布与学习曲线等通用聚合原语，本身只编排班级维度结果。
+ * 教师数据看板的默认实现。
+ *
+ * <p>班级聚合复用 {@link StudentReportService} 的错题分布与学习曲线等通用聚合原语
+ * （权重与排序口径与学生报告完全一致），本身只编排班级维度结果。</p>
+ *
+ * <p>无参的 {@link #buildClassDashboard()} 直接取全量数据，不做教师 / 班级过滤，
+ * 详见接口注释中的数据范围说明。</p>
  */
 @Service
 @RequiredArgsConstructor
@@ -56,7 +61,7 @@ public class TeacherDashboardServiceImpl implements TeacherDashboardService {
     /** 基于一组错题与提交生成教师班级看板，同时统计每个学生提交数与总提交数。 */
     @Override
     public ClassDashboard buildClassDashboard(List<ErrorRecord> records, List<SourceFile> submissions) {
-        // 判断错误记录、源码文件列表非空
+        // 空列表兜底，避免调用方传 null 导致后续 NPE
         List<ErrorRecord> data = ServiceSupport.nullToEmpty(records);
         List<SourceFile> files = ServiceSupport.nullToEmpty(submissions);
         // 根据错误记录，创建全班学生的错题扇形分布图
@@ -68,7 +73,7 @@ public class TeacherDashboardServiceImpl implements TeacherDashboardService {
         // 生成班级月度学习曲线
         LearningCurve classCurve = studentReportService.buildLearningCurve(data, files);
 
-        // 创建学生看板
+        // 汇总成班级看板
         return new ClassDashboard(distribution, topWeakPoints, studentStats, classCurve,
                 data.size(), files.size(), studentReportService.summarizeWeakPoints(topWeakPoints));
     }
@@ -82,7 +87,7 @@ public class TeacherDashboardServiceImpl implements TeacherDashboardService {
     }
 
     private List<StudentStat> buildStudentStats(List<ErrorRecord> records, List<SourceFile> submissions) {
-        // 遍历错题记录，过滤野记录，通过用户ID排序，创建map
+        // 按 ownerUserId 分组；没有归属用户的记录视为脏数据直接跳过
         Map<Long, List<ErrorRecord>> byOwner = records.stream()
                 .filter(record -> record.ownerUserId() != null)
                 .collect(Collectors.groupingBy(ErrorRecord::ownerUserId, LinkedHashMap::new, Collectors.toList()));

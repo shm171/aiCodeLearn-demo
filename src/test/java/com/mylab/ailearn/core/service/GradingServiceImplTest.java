@@ -20,6 +20,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+/**
+ * 双层批改的服务层单测：用真实规则静态检查 + Mockito 桩客户端，验证合并、去重与计分。
+ */
 class GradingServiceImplTest {
 
     private final StaticCheckServiceImpl staticCheck = new StaticCheckServiceImpl();
