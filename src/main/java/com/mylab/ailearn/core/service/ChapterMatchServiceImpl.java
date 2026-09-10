@@ -9,24 +9,24 @@ import org.springframework.web.server.ResponseStatusException;
 
 /**
  * 题目匹配的默认实现。语言识别、章节匹配等为纯业务逻辑，可独立编译。
+ *
+ * <p>解析前先做输入预算与文件名校验（{@link SourceInputValidator}）：文件名不合规、
+ * 源码超限一律返回 400 受控错误，错误信息不回显原始输入。返回的
+ * {@link ParseResult#filename()} 是校验并规范化后的名字，后续环节直接使用它。</p>
  */
 @Service
 public class ChapterMatchServiceImpl implements ChapterMatchService {
 
     @Override
     public ParseResult parse(String filename, String content) {
-        if (filename == null || filename.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "文件名不能为空");
-        }
-        if (content == null || content.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "源码内容不能为空");
-        }
+        // 先校验预算：空值、文件名非法、超长源码都在这里变成 400，不进入后续流程
+        String safeFilename = SourceInputValidator.requireWithinBudget(filename, content);
 
-        ProgrammingLanguage language = ProgrammingLanguage.detect(filename)
+        ProgrammingLanguage language = ProgrammingLanguage.detect(safeFilename)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                        "仅支持 .cpp 或 .java 源码文件，收到：" + filename));
+                        "仅支持 .cpp 或 .java 源码文件"));
 
-        CourseChapter chapter = CourseChapter.match(filename, content);
-        return new ParseResult(filename, language, chapter);
+        CourseChapter chapter = CourseChapter.match(safeFilename, content);
+        return new ParseResult(safeFilename, language, chapter);
     }
 }

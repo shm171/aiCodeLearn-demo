@@ -112,11 +112,12 @@ public class GradingServiceImpl implements GradingService {
     }
 
 
-    // 源码校验
+    // 源码校验：非空 + 与文件解析入口同一套输入预算（防御直接构造 SourceFile 的调用方）
     private void requireSource(SourceFile sourceFile) {
         if (sourceFile == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "sourceFile 不能为空");
         }
+        SourceInputValidator.requireWithinBudget(sourceFile.filename(), sourceFile.content());
     }
 
     // 调 LLM；没有 LlmGradingClient bean 时返回 null；模型输出一律先校验再使用
