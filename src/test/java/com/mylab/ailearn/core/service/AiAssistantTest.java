@@ -13,7 +13,7 @@ public class AiAssistantTest {
     private AiAssistant aiAssistant;
     @Test
     public void chatModelTest() {
-        String content1 = "我叫什么名字";
+        String content1 = "分析我的薄弱点";
         Long userId = 0001L;
         String conversationId = "0001";
         aiAssistant.aiChat(content1, userId,conversationId)

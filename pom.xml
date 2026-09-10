@@ -34,7 +34,8 @@
         <springdoc.version>3.0.3</springdoc.version>
         <database.url>jdbc:mysql://localhost:3306/ai_learn?createDatabaseIfNotExist=true</database.url>
         <database.username>root</database.username>
-        <database.password>${env.DB_PASSWORD}</database.password>
+        <database.password>${env.MYSQL_ROOT_DB_PASSWORD}</database.password>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
     <dependencies>
         <dependency>
@@ -93,6 +94,23 @@
             <artifactId>mysql-connector-j</artifactId>
             <scope>runtime</scope>
         </dependency>
+        <!-- Spring AI Alibaba Graph + Spring AI ChatClient：Service 层接入所需依赖（仅新增，不动其它配置） -->
+        <dependency>
+            <groupId>com.alibaba.cloud.ai</groupId>
+            <artifactId>spring-ai-alibaba-graph-core</artifactId>
+            <version>2.0.0-M1.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-client-chat</artifactId>
+            <version>2.0.0-M1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-starter-model-openai</artifactId>
+            <version>2.0.0-M1</version>
+        </dependency>
+
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
@@ -127,6 +145,13 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webmvc-test</artifactId>
             <scope>test</scope>
+        </dependency>
+
+
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-starter-model-chat-memory-repository-jdbc</artifactId>
+            <version>2.0.0-M1</version>
         </dependency>
     </dependencies>
 
