@@ -5,6 +5,7 @@ import com.mylab.ailearn.core.model.commonmodel.SourceFile;
 import com.mylab.ailearn.core.service.ai.tool.CodeLineLocatorTool;
 import com.mylab.ailearn.core.service.ai.tool.CodeStaticCheckTool;
 import com.mylab.ailearn.core.service.ai.tool.SourceFileParseTool;
+import com.mylab.ailearn.core.service.StaticCheckService;
 import com.mylab.ailearn.core.service.spi.LlmGradingClient;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
@@ -22,8 +23,8 @@ import org.springframework.stereotype.Service;
  * {@link SourceFileParseTool} 注册为模型可调用的工具，方便模型复核静态结论。</p>
  *
  * <p><b>信任边界：</b>模型输出是不可信数据，本类只负责「调用 + 反序列化」，
- * 返回的结论一律标记为不可采信（见 {@link LlmReview}）；行号定位工具
- * {@link CodeLineLocatorTool} 按本次源码新建实例，模型只能选择片段、不能替换被审查的源文件。
+ * 返回的结论一律标记为未经校验（见 {@link LlmReview}）。三个工具都按本次源码
+ * 新建实例：模型只能选择代码片段与是否复核，不能传入或替换被审查的源文件。
  * 结果的结构与语义校验、以及状态判定由消费端 {@link LlmReviewValidator} 完成。</p>
  *
  * <p>ChatModel 通过 {@link ObjectProvider} 注入：未配置模型时优雅降级为
@@ -101,17 +102,14 @@ public class LlmGradingClientChatAdapter implements LlmGradingClient {
             """;
 
     private final ObjectProvider<ChatModel> chatModelProvider;
-    private final CodeStaticCheckTool codeStaticCheckTool;
-    private final SourceFileParseTool sourceFileParseTool;
+    private final StaticCheckService staticCheckService;
 
     LlmGradingClientChatAdapter(
             @Qualifier("DeepSeek")
             ObjectProvider<ChatModel> chatModelProvider,
-            CodeStaticCheckTool codeStaticCheckTool,
-            SourceFileParseTool sourceFileParseTool) {
+            StaticCheckService staticCheckService) {
         this.chatModelProvider = chatModelProvider;
-        this.codeStaticCheckTool = codeStaticCheckTool;
-        this.sourceFileParseTool = sourceFileParseTool;
+        this.staticCheckService = staticCheckService;
     }
 
     @Override
@@ -124,7 +122,9 @@ public class LlmGradingClientChatAdapter implements LlmGradingClient {
             return LlmReview.unavailable("尚未配置 Spring AI ChatModel，本次未执行 LLM 深度批改。");
         }
         try {
-            // 行号定位工具按本次源码新建实例：模型只能选择片段，无法替换被审查的源文件
+            // 三个工具都绑定本次权威源码：模型只能选择片段与是否复核，无法替换被审查的文件
+            CodeStaticCheckTool codeStaticCheckTool = new CodeStaticCheckTool(staticCheckService, file);
+            SourceFileParseTool sourceFileParseTool = new SourceFileParseTool(file);
             CodeLineLocatorTool codeLineLocatorTool = new CodeLineLocatorTool(file.content());
 
             ChatClient client = ChatClient.builder(model)

@@ -5,7 +5,7 @@ package com.mylab.ailearn.core.model.commonmodel;
  *
  * <p>模型输出不是可信证据：只有通过 {@code LlmReviewValidator} 校验的条目才会带
  * {@link #COMPLETED}；模型未接入、调用失败或输出整体不可采信时是 {@link #UNAVAILABLE}。
- * 调用方不得把 {@link #UNAVAILABLE} 当成「没有发现问题」。</p>
+ * <b>调用方不得把 {@link #UNAVAILABLE} 或 {@link #UNVERIFIED} 当成「没有发现问题」。</b></p>
  */
 public enum LlmReviewStatus {
 
@@ -16,5 +16,8 @@ public enum LlmReviewStatus {
     PARTIAL,
 
     /** 模型未接入、调用失败，或输出整体不可采信（超量、无可解析条目）。 */
-    UNAVAILABLE
+    UNAVAILABLE,
+
+    /** 模型原始输出，尚未经过服务端校验（默认值）；调用方不得直接采纳。 */
+    UNVERIFIED
 }

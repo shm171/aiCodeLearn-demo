@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
  *
  * <p>处理策略：</p>
  * <ul>
+ *   <li>客户端已标记为 {@link LlmReviewStatus#UNAVAILABLE} → 原样保持不可采信，不采纳任何条目；</li>
  *   <li>单条 issue 任一项不通过 → 丢弃该条，其余保留，结论标记为 {@link LlmReviewStatus#PARTIAL}；</li>
  *   <li>issue 总数超过 {@link #MAX_ISSUES} → 整份结论作废，标记为 {@link LlmReviewStatus#UNAVAILABLE}；</li>
  *   <li>全部条目被丢弃 → 标记为 {@link LlmReviewStatus#UNAVAILABLE}，调用方不得当作「没有发现问题」。</li>
@@ -66,6 +67,13 @@ public class LlmReviewValidator {
         }
 
         String summary = truncate(raw.summary(), MAX_SUMMARY_LENGTH);
+
+        // 客户端已明确判定「不可采信」（模型未接入、调用失败）：保持不可采信，任何条目都不采纳，
+        // 绝不能因为 issues 为空就升级成「没有发现问题」
+        if (raw.status() == LlmReviewStatus.UNAVAILABLE) {
+            return new LlmReview(List.of(), summary, LlmReviewStatus.UNAVAILABLE);
+        }
+
         List<GradedError> declared = raw.issues();
 
         if (declared.isEmpty()) {

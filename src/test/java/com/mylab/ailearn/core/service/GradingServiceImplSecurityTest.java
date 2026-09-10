@@ -14,7 +14,6 @@ import com.mylab.ailearn.core.model.commonmodel.StaticCheckReport;
 import com.mylab.ailearn.core.service.ai.LlmReviewValidator;
 import com.mylab.ailearn.core.service.spi.LlmGradingClient;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.ObjectProvider;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -117,7 +116,7 @@ class GradingServiceImplSecurityTest {
     }
 
     private GradingServiceImpl serviceWith(StaticCheckService staticCheck, LlmGradingClient client) {
-        return new GradingServiceImpl(staticCheck, providerOf(client), validator);
+        return new GradingServiceImpl(staticCheck, StubObjectProvider.of(client), validator);
     }
 
     private StaticCheckService noViolations() {
@@ -132,32 +131,5 @@ class GradingServiceImplSecurityTest {
     private SourceFile source() {
         return new SourceFile(null, 1L, "Main.java", ProgrammingLanguage.JAVA,
                 CourseChapter.COMPREHENSIVE, SOURCE, LocalDateTime.now());
-    }
-
-    private <T> ObjectProvider<T> providerOf(T instance) {
-        return new ObjectProvider<>() {
-            @Override
-            public T getObject() {
-                if (instance == null) {
-                    throw new IllegalStateException("没有可用的 bean");
-                }
-                return instance;
-            }
-
-            @Override
-            public T getObject(Object... args) {
-                return getObject();
-            }
-
-            @Override
-            public T getIfAvailable() {
-                return instance;
-            }
-
-            @Override
-            public T getIfUnique() {
-                return instance;
-            }
-        };
     }
 }

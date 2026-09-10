@@ -1,30 +1,35 @@
 package com.mylab.ailearn.core.service.ai.tool;
 
 import com.mylab.ailearn.core.model.commonmodel.ParseResult;
-import com.mylab.ailearn.core.service.ChapterMatchService;
-import lombok.RequiredArgsConstructor;
+import com.mylab.ailearn.core.model.commonmodel.SourceFile;
 import org.springframework.ai.tool.annotation.Tool;
-import org.springframework.ai.tool.annotation.ToolParam;
-import org.springframework.stereotype.Service;
+
+import java.util.Objects;
 
 /**
  * 源码解析 {@link Tool}。
  *
- * <p>把文件解析能力（识别语言、匹配课程章节、统计行数）暴露给智能体，
- * 支持智能体先解析、再决定后续批改策略。</p>
+ * <p>把本次提交的解析结果（文件名、编程语言、课程章节）暴露给模型，
+ * 便于它据此选择批改策略。</p>
+ *
+ * <p>与静态检查工具一致，源码在构造时绑定，模型不能传入其他文件来自定义批改对象。
+ * 每次批改创建一个实例。</p>
  */
-@Service
-@RequiredArgsConstructor
 public class SourceFileParseTool {
 
-    private final ChapterMatchService chapterMatchService;
+    private final ParseResult parseResult;
+
+    /**
+     * @param sourceFile 本次提交的权威源码，语言与章节以其解析结果为准
+     */
+    public SourceFileParseTool(SourceFile sourceFile) {
+        Objects.requireNonNull(sourceFile, "sourceFile 不能为空");
+        this.parseResult = new ParseResult(sourceFile.filename(), sourceFile.language(), sourceFile.chapter());
+    }
 
     @Tool(name = "parseSourceFile",
-            description = "解析源码文件名与内容，识别编程语言、匹配课程章节并统计代码行数")
-    public ParseResult parse(
-            @ToolParam(required = true, description = "源码文件名，例如 main.cpp 或 Main.java") String filename,
-            @ToolParam(required = true, description = "源码的完整文本内容") String content) {
-
-        return chapterMatchService.parse(filename, content);
+            description = "返回本次批改源码的解析信息：文件名、识别出的编程语言与匹配到的课程章节。无需传入参数。")
+    public ParseResult parse() {
+        return parseResult;
     }
 }

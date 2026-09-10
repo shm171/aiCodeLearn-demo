@@ -156,6 +156,29 @@ class LlmReviewValidatorTest {
     }
 
     @Test
+    void validatesRawUnverifiedReview() {
+        // 模型原始输出（状态未填 = 未经校验）校验通过后才是 COMPLETED
+        LlmReview raw = new LlmReview(List.of(issue(ErrorCategory.LOGIC_ERROR, "数组越界访问",
+                "ARRAY_OUT_OF_BOUNDS", List.of(3))), "模型结论", null);
+
+        assertThat(raw.status()).isEqualTo(LlmReviewStatus.UNVERIFIED);
+
+        LlmReview result = validator.validate(raw, source());
+
+        assertThat(result.status()).isEqualTo(LlmReviewStatus.COMPLETED);
+        assertThat(result.issues()).hasSize(1);
+    }
+
+    @Test
+    void keepsClientDeclaredUnavailableInsteadOfUpgradingIt() {
+        // 模型未接入/调用失败的空结论不能被当成「没有发现问题」
+        LlmReview result = validator.validate(LlmReview.unavailable("LLM 调用失败"), source());
+
+        assertThat(result.issues()).isEmpty();
+        assertThat(result.status()).isEqualTo(LlmReviewStatus.UNAVAILABLE);
+    }
+
+    @Test
     void emptyIssueListIsCompleteNotUnavailable() {
         LlmReview result = validator.validate(reviewOf(List.of(), "没有发现问题"), source());
 

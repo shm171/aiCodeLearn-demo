@@ -10,7 +10,8 @@ import java.util.List;
  * PARTIAL 表示非法条目已丢弃、结论不完整；UNAVAILABLE 表示模型未接入、
  * 调用失败或输出整体不可采信。<b>调用方不得把 UNAVAILABLE 当成「没有发现问题」。</b></p>
  *
- * <p>{@code status} 一律由服务端校验得出，不从模型输出里读取。</p>
+ * <p>{@code status} 只由服务端决定：模型返回的 JSON 里即使写了 status 也会被忽略，
+ * 未填状态时按 {@link LlmReviewStatus#UNVERIFIED}（未经校验）处理，同样不可直接采纳。</p>
  */
 public record LlmReview(
         List<GradedError> issues,
@@ -19,8 +20,8 @@ public record LlmReview(
 
     public LlmReview {
         issues = issues == null ? List.of() : List.copyOf(issues);
-        // 状态缺失时按「不可采信」处理，避免出现默认可信的漏洞
-        status = status == null ? LlmReviewStatus.UNAVAILABLE : status;
+        // 状态缺失时按「未经校验」处理，避免出现默认可信的漏洞
+        status = status == null ? LlmReviewStatus.UNVERIFIED : status;
     }
 
     /** 模型未接入、调用失败或缺少源码时的降级结果：无 issues，且明确标记为不可采信。 */

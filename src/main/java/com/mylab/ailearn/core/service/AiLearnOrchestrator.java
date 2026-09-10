@@ -26,7 +26,7 @@ public interface AiLearnOrchestrator {
      * @param ownerUserId 提交者用户 ID
      * @param filename    源码文件名（.cpp / .java）
      * @param content     源码内容
-     * @return 归档后的源码 + 批改结果（总分、问题清单、反馈）
+     * @return 归档后的源码 + 批改结果（总分、问题清单、反馈、各阶段状态与分数可采纳性）
      * @throws org.springframework.web.server.ResponseStatusException 参数非法（400）时抛出
      */
     SubmissionGradingResult submitAndGrade(Long ownerUserId, String filename, String content);

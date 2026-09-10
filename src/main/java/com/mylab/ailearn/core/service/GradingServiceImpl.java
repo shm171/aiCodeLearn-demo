@@ -3,6 +3,10 @@ package com.mylab.ailearn.core.service;
 import com.mylab.ailearn.core.enums.ErrorCategory;
 import com.mylab.ailearn.core.model.commonmodel.GradedError;
 import com.mylab.ailearn.core.model.commonmodel.GradingResult;
+import com.mylab.ailearn.core.model.commonmodel.GradingStage;
+import com.mylab.ailearn.core.model.commonmodel.GradingStageOutcome;
+import com.mylab.ailearn.core.model.commonmodel.GradingStageReport;
+import com.mylab.ailearn.core.model.commonmodel.GradingStatus;
 import com.mylab.ailearn.core.model.commonmodel.LlmReview;
 import com.mylab.ailearn.core.model.commonmodel.LlmReviewStatus;
 import com.mylab.ailearn.core.model.commonmodel.RuleViolation;
@@ -26,6 +30,9 @@ import java.util.Map;
  *
  * <p>模型输出在本层统一校验：只有通过 {@link LlmReviewValidator} 的条目才会进入
  * 分数与错题归档，未通过的部分体现在反馈文案里，不会被当成「没有发现问题」。</p>
+ *
+ * <p>结果同时带上各阶段状态与整体完成度：没有检测结果不等于检查通过，
+ * 只有全部阶段完整完成时 {@code GradingResult#scoreAdoptable()} 才为 true。</p>
  */
 @Service
 @RequiredArgsConstructor
@@ -54,10 +61,54 @@ public class GradingServiceImpl implements GradingService {
         errors.addAll(llmCheckErrors(review));
         errors = dedupe(errors);
 
+        // 各阶段状态结构化输出：调用方无需从反馈文案里猜分数是否可信
+        List<GradingStageReport> stages = List.of(
+                ruleStageReport(staticReport),
+                llmStageReport(review));
+
         int score = calculateScore(errors);
         String feedback = selectFeedback(errors, review);
 
-        return new GradingResult(errors, score, feedback);
+        return new GradingResult(errors, score, feedback, overallStatus(stages), stages);
+    }
+
+    // 规则静态检查阶段状态：该阶段总会执行
+    private GradingStageReport ruleStageReport(StaticCheckReport staticReport) {
+        return new GradingStageReport(GradingStage.RULE_STATIC_CHECK, GradingStageOutcome.COMPLETED,
+                "规则静态检查已完成，共发现 " + staticReport.errorCount() + " 处违规");
+    }
+
+    // LLM 阶段状态：未接入 / 完整 / 部分 / 不可采信 各自对应不同状态
+    private GradingStageReport llmStageReport(LlmReview review) {
+        if (review == null) {
+            return new GradingStageReport(GradingStage.LLM_REVIEW, GradingStageOutcome.NOT_CONFIGURED,
+                    "未接入 LLM 深度批改客户端，本次结论仅来自规则静态检查");
+        }
+        return switch (review.status()) {
+            case COMPLETED -> new GradingStageReport(GradingStage.LLM_REVIEW, GradingStageOutcome.COMPLETED,
+                    "LLM 深度批改已完成");
+            case PARTIAL -> new GradingStageReport(GradingStage.LLM_REVIEW, GradingStageOutcome.PARTIAL,
+                    "LLM 输出部分未通过校验已被丢弃，结论不完整");
+            case UNAVAILABLE -> new GradingStageReport(GradingStage.LLM_REVIEW, GradingStageOutcome.UNAVAILABLE,
+                    "LLM 深度批改未产出可信结论");
+            case UNVERIFIED -> new GradingStageReport(GradingStage.LLM_REVIEW, GradingStageOutcome.UNAVAILABLE,
+                    "LLM 结论未经校验，按不可采信处理");
+        };
+    }
+
+    // 整体完成度：不可采信优先，其次部分完成/未启用，只有全部完整完成才是 COMPLETED
+    private GradingStatus overallStatus(List<GradingStageReport> stages) {
+        boolean incomplete = false;
+        for (GradingStageReport stage : stages) {
+            GradingStageOutcome outcome = stage.outcome();
+            if (outcome == GradingStageOutcome.UNAVAILABLE) {
+                return GradingStatus.UNAVAILABLE;
+            }
+            if (outcome != GradingStageOutcome.COMPLETED) {
+                incomplete = true;
+            }
+        }
+        return incomplete ? GradingStatus.PARTIAL : GradingStatus.COMPLETED;
     }
 
 
@@ -158,7 +209,7 @@ public class GradingServiceImpl implements GradingService {
         if (status == LlmReviewStatus.PARTIAL) {
             return "（注意：LLM 批改结果不完整，部分输出未通过校验已被丢弃）";
         }
-        if (status == LlmReviewStatus.UNAVAILABLE) {
+        if (status == LlmReviewStatus.UNAVAILABLE || status == LlmReviewStatus.UNVERIFIED) {
             return "（注意：LLM 批改未产出可信结论，本次仅规则校验）";
         }
         return null;
@@ -192,6 +243,7 @@ public class GradingServiceImpl implements GradingService {
             case COMPLETED -> "；已结合 LLM 深度批改。";
             case PARTIAL -> "；LLM 深度批改结果不完整（部分输出未通过校验），本次结论仅供参考。";
             case UNAVAILABLE -> "；LLM 深度批改未产出可信结论，本次仅规则校验。";
+            case UNVERIFIED -> "；LLM 深度批改结论未经校验，按不可采信处理。";
         };
     }
 }
