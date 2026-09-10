@@ -2,8 +2,6 @@ package com.mylab.ailearn.core.service;
 
 import com.mylab.ailearn.core.enums.ErrorCategory;
 import com.mylab.ailearn.core.enums.ProgrammingLanguage;
-import com.mylab.ailearn.core.model.commonmodel.CompileCheckReport;
-import com.mylab.ailearn.core.model.commonmodel.CompileStatus;
 import com.mylab.ailearn.core.model.commonmodel.GradedError;
 import com.mylab.ailearn.core.model.commonmodel.GradingResult;
 import com.mylab.ailearn.core.model.commonmodel.LlmReview;
@@ -25,9 +23,7 @@ class GradingServiceImplTest {
     private final StaticCheckServiceImpl staticCheck = new StaticCheckServiceImpl();
 
     private GradingServiceImpl newService(ObjectProvider<LlmGradingClient> llmProvider) {
-        CompilationCheckService compileCheck = mock(CompilationCheckService.class);
-        when(compileCheck.check(any())).thenReturn(new CompileCheckReport(CompileStatus.PASSED, List.of()));
-        return new GradingServiceImpl(staticCheck, compileCheck, llmProvider);
+        return new GradingServiceImpl(staticCheck, llmProvider);
     }
 
     @Test
