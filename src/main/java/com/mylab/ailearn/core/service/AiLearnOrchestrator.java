@@ -1,9 +1,11 @@
 package com.mylab.ailearn.core.service;
 
 import com.mylab.ailearn.core.model.commonmodel.ErrorRecord;
+import com.mylab.ailearn.core.model.commonmodel.SourceFile;
 import com.mylab.ailearn.core.model.commonmodel.SubmissionGradingResult;
 import com.mylab.ailearn.core.model.specialmodel.ClassDashboard;
 import com.mylab.ailearn.core.model.specialmodel.StudentDashboard;
+import com.mylab.ailearn.core.model.specialmodel.WeakPointReport;
 
 import java.util.List;
 
@@ -13,7 +15,7 @@ import java.util.List;
  * 唯一需要依赖的业务门面。
  *
  * <p><b>写侧流转</b>：文件上传 → 题目匹配 → 双层批改（规则静态检查 + LLM 深度批改）→ 错误记录落库。</p>
- * <p><b>读侧流转</b>：错题归档 → 学生学习报告 / 教师班级看板。</p>
+ * <p><b>读侧流转</b>：错题归档 / 提交列表 → 学生学习报告、薄弱知识点报告 / 教师班级看板。</p>
  *
  * <p>Controller 层只需注入本接口即可完成一条龙业务，无需关心内部各 Service 的调用顺序。</p>
  *
@@ -45,6 +47,25 @@ public interface AiLearnOrchestrator {
      * @return 该学生的错题列表（无错题时返回空列表，不会为 null）
      */
     List<ErrorRecord> listErrorArchive(Long ownerUserId);
+
+    /**
+     * 读侧：查询某学生已归档的全部源码提交，供「我的提交」列表展示。
+     *
+     * @param ownerUserId 学生用户 ID
+     * @return 该学生的提交列表（无提交时返回空列表，不会为 null）
+     */
+    List<SourceFile> listSubmissions(Long ownerUserId);
+
+    /**
+     * 读侧：生成某学生的薄弱知识点报告（薄弱点排行 + 刷题清单 + 一句话诊断）。
+     *
+     * <p>与 {@link #studentDashboard(Long)} 的区别：看板偏「概览图表」，
+     * 报告偏「薄弱点与针对性练习」。</p>
+     *
+     * @param ownerUserId 学生用户 ID
+     * @return 薄弱知识点报告，永不返回 null
+     */
+    WeakPointReport weakPointReport(Long ownerUserId);
 
     /**
      * 写侧：把某学生的一条错题标记为「已掌握」，标记后该错题不再作为薄弱点重点推荐。

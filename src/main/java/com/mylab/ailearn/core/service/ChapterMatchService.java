@@ -5,7 +5,7 @@ import com.mylab.ailearn.core.model.commonmodel.ParseResult;
 /**
  * 题目匹配：识别源码语言、匹配对应课程章节。
  *
- * <p>纯业务逻辑，不涉及数据库读写，供文件上传、AI 工具与批改工作流复用。</p>
+ * <p>纯业务逻辑，不涉及数据库读写，供文件上传与 AI 复核工具复用。</p>
  */
 public interface ChapterMatchService {
 

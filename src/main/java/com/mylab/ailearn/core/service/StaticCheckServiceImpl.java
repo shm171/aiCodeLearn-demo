@@ -10,7 +10,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -25,12 +27,23 @@ import java.util.regex.Pattern;
  *
  * <p><b>语言差异</b>：空指针检查分两套——C++ 走指针声明与解引用分析，Java 走对象引用
  * 调用分析；其余规则两种语言共用。</p>
+ *
+ * <p><b>缩进检查</b>：先从文件本身推断缩进风格（tab 还是空格）与缩进单位（出现最多的行首空格数），
+ * 2 / 4 / 8 空格都能识别，因此不会因为作业使用 2 空格缩进而整份报「缩进不一致」。</p>
  */
 @Service
 public class StaticCheckServiceImpl implements StaticCheckService {
 
     /** 允许保留的单字母变量名：循环变量 i / j / k 不算命名不规范。 */
     private static final Set<String> COMMON_LOOP_NAMES = Set.of("i", "j", "k");
+
+    /** 智能指针相关写法：出现它们时由 RAII 负责释放，new/delete 计数不再可比。 */
+    private static final Pattern SMART_POINTER =
+            Pattern.compile("\\b(?:unique_ptr|shared_ptr|weak_ptr|make_unique|make_shared)\\b");
+
+    /** 指针声明里允许出现在 {@code *} 前面的类型名：内置类型或以大写字母开头的自定义类型。 */
+    private static final String POINTER_TYPE =
+            "(?:int|double|float|char|long|short|bool|unsigned|void|auto|[A-Z]\\w*)";
 
     /**
      * 对源码做静态检查。
@@ -123,8 +136,9 @@ public class StaticCheckServiceImpl implements StaticCheckService {
 
         // 以「行首用 tab 的行更多，还是用空格的行更多」推断整份文件的缩进风格
         boolean useTabs = tabStarts > spaceStarts;
-        // 空格缩进的判定单位：用空格时，行首空格数必须是它的整数倍才算对齐
-        int unit = 4;
+        // 缩进单位同样从文件本身推断（2 空格 / 4 空格 / 8 空格都合法），不写死 4，
+        // 否则用 2 空格缩进的作业会被整份判为「缩进不一致」
+        int unit = dominantIndentUnit(lines);
         int badLines = 0;
         int firstBadLine = -1;
 
@@ -139,7 +153,7 @@ public class StaticCheckServiceImpl implements StaticCheckService {
             if (useTabs) {
                 inconsistent = first == ' ';
             } else {
-                inconsistent = first == '\t' || (leadingSpaces > 0 && leadingSpaces % unit != 0);
+                inconsistent = first == '\t' || (unit > 0 && leadingSpaces % unit != 0);
             }
             if (inconsistent) {
                 badLines++;
@@ -159,6 +173,38 @@ public class StaticCheckServiceImpl implements StaticCheckService {
         }
     }
 
+    /**
+     * 推断本文件的行首空格缩进单位：取出现次数最多的正数行首空格数（次数相同时取较小值）。
+     *
+     * <p>例如整份文件以 4 空格缩进时返回 4，以 2 空格缩进时返回 2，
+     * 只靠一个缩进单位就能同时适配两种风格，不再把 2 空格缩进误判为不一致。
+     * 文件里没有用空格缩进的行时返回 0（此时无需比较倍数）。</p>
+     */
+    private int dominantIndentUnit(String[] lines) {
+        Map<Integer, Integer> counts = new HashMap<>();
+        for (String line : lines) {
+            if (line.isEmpty() || line.charAt(0) == '\t') {
+                continue;
+            }
+            int width = leadingSpaces(line);
+            if (width > 0) {
+                counts.merge(width, 1, Integer::sum);
+            }
+        }
+
+        int unit = 0;
+        int bestCount = 0;
+        for (Map.Entry<Integer, Integer> entry : counts.entrySet()) {
+            boolean moreOften = entry.getValue() > bestCount;
+            boolean tieButSmaller = entry.getValue() == bestCount && entry.getKey() < unit;
+            if (moreOften || tieButSmaller) {
+                bestCount = entry.getValue();
+                unit = entry.getKey();
+            }
+        }
+        return unit;
+    }
+
     private void checkNamingConvention(String code, List<RuleViolation> out) {
         Pattern declaration = Pattern.compile("\\b(int|double|float|char|long|short|boolean|String|byte|auto)\\s+([A-Za-z_]\\w*)");
         Matcher matcher = declaration.matcher(code);
@@ -176,6 +222,11 @@ public class StaticCheckServiceImpl implements StaticCheckService {
     }
 
     private void checkMemoryLeak(String code, List<RuleViolation> out) {
+        // 用了智能指针就交给 RAII 释放，此时 new/delete 的全局计数不再可比，直接跳过以免误报
+        if (SMART_POINTER.matcher(code).find()) {
+            return;
+        }
+
         int allocations = countMatches(code, "\\bnew\\b") + countMatches(code, "\\bmalloc\\s*\\(");
         int deallocations = countMatches(code, "\\bdelete\\b") + countMatches(code, "\\bfree\\s*\\(");
 
@@ -191,8 +242,10 @@ public class StaticCheckServiceImpl implements StaticCheckService {
     }
 
     private void checkNullPointerDereference(String code, List<RuleViolation> out) {
-        // 匹配「int *p;」「int *p = NULL;」「int *p = nullptr;」等未初始化 / 空指针声明。
-        Pattern declaration = Pattern.compile("\\b\\w+\\s*\\*\\s*(\\w+)\\s*(?:=\\s*(NULL|nullptr|0))?\\s*;");
+        // 匹配「int *p;」「int *p = NULL;」「Foo *p = nullptr;」等未初始化 / 空指针声明。
+        // 要求 * 前面是类型名（内置类型或大写开头的自定义类型），否则 `x * y;` 这类乘法语句会被误判成指针声明。
+        Pattern declaration = Pattern.compile(
+                "\\b" + POINTER_TYPE + "\\s*\\*\\s*(\\w+)\\s*(?:=\\s*(NULL|nullptr|0))?\\s*;");
         Matcher matcher = declaration.matcher(code);
 
         while (matcher.find()) {

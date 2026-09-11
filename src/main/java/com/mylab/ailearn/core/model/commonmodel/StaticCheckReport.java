@@ -13,11 +13,6 @@ public record StaticCheckReport(List<RuleViolation> violations) {
         violations = violations == null ? List.of() : List.copyOf(violations);
     }
 
-    /** 是否发现了至少一处违规。 */
-    public boolean hasErrors() {
-        return !violations.isEmpty();
-    }
-
     /** 违规条数。 */
     public int errorCount() {
         return violations.size();

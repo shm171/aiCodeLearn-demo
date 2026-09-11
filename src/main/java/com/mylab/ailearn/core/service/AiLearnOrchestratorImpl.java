@@ -6,6 +6,7 @@ import com.mylab.ailearn.core.model.commonmodel.SourceFile;
 import com.mylab.ailearn.core.model.commonmodel.SubmissionGradingResult;
 import com.mylab.ailearn.core.model.specialmodel.ClassDashboard;
 import com.mylab.ailearn.core.model.specialmodel.StudentDashboard;
+import com.mylab.ailearn.core.model.specialmodel.WeakPointReport;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -63,6 +64,20 @@ public class AiLearnOrchestratorImpl implements AiLearnOrchestrator {
     @Transactional
     public ErrorRecord markErrorMastered(Long ownerUserId, Long errorId) {
         return errorArchiveService.markMastered(ownerUserId, errorId);
+    }
+
+    /** 读侧：查询某学生已归档的全部源码提交。数据范围由传入的 ownerUserId 决定。 */
+    @Override
+    @Transactional(readOnly = true)
+    public List<SourceFile> listSubmissions(Long ownerUserId) {
+        return fileUploadService.listByOwner(ownerUserId);
+    }
+
+    /** 读侧：生成某学生的薄弱知识点报告。数据范围由传入的 ownerUserId 决定。 */
+    @Override
+    @Transactional(readOnly = true)
+    public WeakPointReport weakPointReport(Long ownerUserId) {
+        return studentReportService.buildWeakPointReport(ownerUserId);
     }
 
     /** 读侧：生成某学生的个人看板。数据范围由传入的 ownerUserId 决定。 */

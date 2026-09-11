@@ -113,6 +113,51 @@ class StaticCheckServiceImplTest {
         assertThat(ruleTypes(checker.check(file))).contains(RuleType.NAMING_CONVENTION);
     }
 
+    @Test
+    void acceptsTwoSpaceIndentation() {
+        // 缩进单位从文件本身推断，2 空格缩进是合法风格，不应整份判为不一致
+        SourceFile file = cpp("int main() {\n  int a = 1;\n  return a;\n}");
+
+        assertThat(ruleTypes(checker.check(file))).doesNotContain(RuleType.INDENTATION);
+    }
+
+    @Test
+    void acceptsEightSpaceIndentation() {
+        SourceFile file = cpp("int main() {\n        int a = 1;\n        return a;\n}");
+
+        assertThat(ruleTypes(checker.check(file))).doesNotContain(RuleType.INDENTATION);
+    }
+
+    @Test
+    void doesNotTreatMultiplicationAsPointerDeclaration() {
+        // `x * y;` 是乘法语句，不是「指针未赋有效地址就被解引用」
+        SourceFile file = cpp("int x = 1;\nint y = 2;\nint main() {\n    x * y;\n    return 0;\n}");
+
+        assertThat(ruleTypes(checker.check(file))).doesNotContain(RuleType.NULL_POINTER_DEREFERENCE);
+    }
+
+    @Test
+    void stillDetectsUninitializedPointerDereference() {
+        SourceFile file = cpp("int *p;\nint main() {\n    *p = 5;\n    return 0;\n}");
+
+        assertThat(ruleTypes(checker.check(file))).contains(RuleType.NULL_POINTER_DEREFERENCE);
+    }
+
+    @Test
+    void doesNotReportLeakWhenSmartPointerIsUsed() {
+        // 出现智能指针时由 RAII 释放，new/delete 的全局计数不再可比，跳过以免误报
+        String content = """
+                #include <memory>
+                int main() {
+                    int *raw = new int(3);
+                    std::unique_ptr<int> owned = std::make_unique<int>(3);
+                    return 0;
+                }
+                """;
+
+        assertThat(ruleTypes(checker.check(cpp(content)))).doesNotContain(RuleType.MEMORY_LEAK);
+    }
+
     private SourceFile cpp(String content) {
         return file("main.cpp", ProgrammingLanguage.CPP, content);
     }

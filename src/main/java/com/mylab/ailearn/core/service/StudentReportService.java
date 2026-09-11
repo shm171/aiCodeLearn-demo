@@ -14,11 +14,9 @@ import java.util.List;
  * 学生学习报告：基于错题与提交数据，生成薄弱知识点报告、错题分布、学习曲线、
  * 刷题清单与学生个人看板。
  *
- * <p>每个聚合方法都提供两种入参形式：</p>
- * <ul>
- *   <li>传 {@link List}{@code <ErrorRecord>}（纯函数，便于复用与单元测试）；</li>
- *   <li>传 {@code ownerUserId}（从数据库取数后走同样的纯函数逻辑）。</li>
- * </ul>
+ * <p>聚合方法都以 {@link List}{@code <ErrorRecord>} 作为纯函数入参，便于复用与单元测试；
+ * 需要自己从库里取数的场景（薄弱知识点报告、学生个人看板）另有带 {@code ownerUserId} 的重载，
+ * 内部取数后走同一套纯函数逻辑。</p>
  * <p>部分看板 / 曲线方法还支持同时传入提交列表，以便统计每月提交数与正确率。</p>
  */
 public interface StudentReportService {
@@ -33,7 +31,8 @@ public interface StudentReportService {
     WeakPointReport buildWeakPointReport(List<ErrorRecord> records);
 
     /**
-     * 基于某学生的错题生成薄弱知识点报告（含刷题清单）。
+     * 取某学生的错题，生成其薄弱知识点报告。门面方法
+     * {@code AiLearnOrchestrator#weakPointReport} 走的就是这个重载。
      *
      * @param ownerUserId 学生用户 ID
      * @return 薄弱知识点报告，永不返回 null
@@ -47,14 +46,6 @@ public interface StudentReportService {
      * @return 按错误分类统计的饼图数据
      */
     ErrorDistribution buildErrorDistribution(List<ErrorRecord> records);
-
-    /**
-     * 基于某学生的错题生成错题分布（饼图）数据。
-     *
-     * @param ownerUserId 学生用户 ID
-     * @return 按错误分类统计的饼图数据
-     */
-    ErrorDistribution buildErrorDistribution(Long ownerUserId);
 
     /**
      * 基于一批错题生成月度学习曲线（折线）数据。
@@ -72,14 +63,6 @@ public interface StudentReportService {
      * @return 按月统计的错题数与提交数曲线
      */
     LearningCurve buildLearningCurve(List<ErrorRecord> records, List<SourceFile> submissions);
-
-    /**
-     * 基于某学生的错题与提交生成学生个人月度学习曲线（折线）数据。
-     *
-     * @param ownerUserId 学生用户 ID
-     * @return 按月统计的错题数与提交数曲线
-     */
-    LearningCurve buildLearningCurve(Long ownerUserId);
 
     /**
      * 基于一批错题生成刷题清单：按「同类型错题的出现频率」降序、再按归档时间倒序排序。
@@ -101,7 +84,7 @@ public interface StudentReportService {
      * 这样同一批数据无论何时计算都得到相同结果，便于测试与横向对比。</p>
      *
      * @param records 错题列表
-     * @param limit   返回条数上限
+     * @param limit   返回条数上限；小于等于 0 时返回空列表
      * @return 按权重降序的薄弱知识点列表
      */
     List<WeakPoint> aggregateWeakPoints(List<ErrorRecord> records, int limit);

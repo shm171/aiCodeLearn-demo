@@ -22,8 +22,10 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * 双层批改的默认实现：先规则静态检查，再 LLM 深度批改，最后合并、去重并计分。
@@ -170,16 +172,33 @@ public class GradingServiceImpl implements GradingService {
         return errors;
     }
 
-    // 错误清单去重
+    /**
+     * 错误清单去重：同一「分类 + 错误代码 + 错误类型」只保留一条。
+     *
+     * <p>保留先出现的那条（规则静态检查排在 LLM 之前），但会<b>合并行号</b>：
+     * 同一类错误出现在多个位置时，合并后学生才能看到全部出错位置，
+     * 而不是只剩最先出现的那一处。</p>
+     */
     private List<GradedError> dedupe(List<GradedError> errors) {
         Map<String, GradedError> dedup = new LinkedHashMap<>();
         for (GradedError error : errors) {
             String key = (error.category() == null ? "" : error.category().name())
                     + "|" + (error.errorCode() == null ? "" : error.errorCode())
                     + "|" + (error.errorType() == null ? "" : error.errorType());
-            dedup.putIfAbsent(key, error);
+            dedup.merge(key, error, GradingServiceImpl::mergeLines);
         }
         return new ArrayList<>(dedup.values());
+    }
+
+    /** 同一错误类型重复出现时，保留先出现的条目并把行号并起来；没有新行号则复用原对象。 */
+    private static GradedError mergeLines(GradedError kept, GradedError duplicate) {
+        Set<Integer> lines = new LinkedHashSet<>(kept.line());
+        lines.addAll(duplicate.line());
+        if (lines.size() == kept.line().size()) {
+            return kept;
+        }
+        return new GradedError(kept.category(), kept.errorType(), kept.errorCode(),
+                kept.message(), kept.fixSuggestion(), kept.source(), List.copyOf(lines));
     }
 
     // 计分
