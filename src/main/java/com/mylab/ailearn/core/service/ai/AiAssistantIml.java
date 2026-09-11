@@ -1,4 +1,4 @@
-package com.mylab.ailearn.core.service;
+package com.mylab.ailearn.core.service.ai;
 
 
 import com.mylab.ailearn.core.service.ai.tool.LlmErrorRecordGet;
@@ -8,25 +8,23 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 
 /**
- * AI 学习助手：基于 Spring AI {@link ChatClient} 提供与批改系统的对话问答能力。
+ * {@link AiAssistant} 的 Spring AI 实现。
  *
- * <p>助手可以调用 {@link LlmErrorRecordGet} 工具，按用户 ID 从数据库调取批改记录（错题），
- * 用于总结薄弱点、推荐训练章节与讲解易错知识点。对话记忆通过
- * {@link ChatMemory#CONVERSATION_ID} 按「用户 + 会话」隔离，避免不同会话串扰。</p>
+ * <p>用容器里的 {@code ChatClient}（已挂会话记忆增强器）调用 DeepSeek，并向模型注册
+ * {@link LlmErrorRecordGet} 工具，使助手可以按用户 ID 查询错题。记忆键是「用户 ID + 会话 ID」，
+ * 因此同一用户的不同会话、以及不同用户的会话互不串扰。</p>
  *
- * <p><b>安全边界（重要）</b>：{@link #aiChat} 把 {@code ownerUserId} 写进系统提示词，
- * 这只是给模型的上下文，<b>不构成任何数据权限</b>——真正查库时用的是模型自己生成的
- * 工具调用参数。要做数据隔离，必须在 {@link LlmErrorRecordGet} 侧改用服务端可信身份，
- * 而不是模型给出的 ID（当前尚未实现）。</p>
+ * <p>系统提示词在构造时拼好，调用时再把当前用户 ID 追加进去；关于身份的注意事项见
+ * {@link AiAssistant} 的接口注释。</p>
  */
 @Service
-public class AiAssistant {
+public class AiAssistantIml implements AiAssistant {
 
     private final ChatClient chatClient;
     private final LlmErrorRecordGet llmErrorRecordGet;
     private final String systemPrompt;
 
-    public AiAssistant(ChatClient chatClient, LlmErrorRecordGet llmErrorRecordGet) {
+    public AiAssistantIml(ChatClient chatClient, LlmErrorRecordGet llmErrorRecordGet) {
         this.chatClient = chatClient;
         this.llmErrorRecordGet = llmErrorRecordGet;
         this.systemPrompt = "你是一个关于批改Java和C++代码批改系统的ai助手" +
@@ -43,13 +41,12 @@ public class AiAssistant {
     }
 
     /**
-     * 流式 AI 对话：逐段返回助手回答，供 Controller 以 text/event-stream 输出。
+     * {@inheritDoc}
      *
-     * @param message        用户输入的消息
-     * @param ownerUserId    当前用户 ID，仅作为提示词上下文交给模型，不构成数据权限（见类注释）
-     * @param conversationId 会话 ID，用于隔离不同对话的记忆（同一用户不同会话互不串扰）
-     * @return 流式回答内容
+     * <p>实现细节：把当前用户 ID 追加进系统提示词后发起流式请求，
+     * 并用「用户 ID_会话 ID」作为 {@link ChatMemory#CONVERSATION_ID} 的参数值。</p>
      */
+    @Override
     public Flux<String> aiChat(String message, Long ownerUserId, String conversationId) {
         String userId = String.valueOf(ownerUserId);
         String systemPromptFinal = systemPrompt + "该用户ID为：" + userId;

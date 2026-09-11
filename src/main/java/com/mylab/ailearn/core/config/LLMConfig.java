@@ -18,7 +18,8 @@ import org.springframework.context.annotation.Configuration;
  * Spring AI 相关 Bean 的装配。
  *
  * <p>当前只接入 DeepSeek（走 OpenAI 兼容协议）。Bean 名固定为 {@code "DeepSeek"}，
- * 批改适配器与流式对话服务都按这个名字注入，改名会同时影响两处。</p>
+ * 批改适配器按这个名字注入（{@code @Qualifier("DeepSeek")}），改名会同时影响模型 Bean
+ * 与下面 {@code chatClient} 的装配。</p>
  *
  * <p><b>运行前提</b>：{@code DEEPSEEK_APIKEY} 必须存在，否则容器启动时解析占位符就会失败；
  * 会话记忆使用 JDBC 存储，需要可用的数据库（表结构由 Spring AI 自行初始化）。</p>

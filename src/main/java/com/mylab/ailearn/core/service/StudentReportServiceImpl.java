@@ -89,13 +89,6 @@ public class StudentReportServiceImpl implements StudentReportService {
         return new ErrorDistribution(slices, data.size());
     }
 
-    /** 基于某学生的错题生成错题分布（饼图）数据。 */
-    @Override
-    @Transactional(readOnly = true)
-    public ErrorDistribution buildErrorDistribution(Long ownerUserId) {
-        return buildErrorDistribution(store().findByOwnerUserId(ownerUserId));
-    }
-
     /** 基于一批错题生成月度学习曲线（折线）数据。 */
     @Override
     public LearningCurve buildLearningCurve(List<ErrorRecord> records) {
@@ -125,15 +118,6 @@ public class StudentReportServiceImpl implements StudentReportService {
                         entry.getValue()[1]))
                 .collect(Collectors.toList());
         return new LearningCurve(points);
-    }
-
-    /** 基于某学生的错题生成学生个人月度学习曲线（折线）数据。 */
-    @Override
-    @Transactional(readOnly = true)
-    public LearningCurve buildLearningCurve(Long ownerUserId) {
-        return buildLearningCurve(
-                store().findByOwnerUserId(ownerUserId),
-                sourceFileStore().findByOwnerUserId(ownerUserId));
     }
 
     /** 基于一批错题生成刷题清单：按错题频率与归档时间倒序排序（不去重）。 */
@@ -194,6 +178,9 @@ public class StudentReportServiceImpl implements StudentReportService {
      */
     @Override
     public List<WeakPoint> aggregateWeakPoints(List<ErrorRecord> records, int limit) {
+        if (limit <= 0) {
+            return List.of();
+        }
         List<ErrorRecord> data = ServiceSupport.nullToEmpty(records);
         LocalDateTime now = data.stream()
                 .map(ErrorRecord::createdAt)
@@ -248,21 +235,29 @@ public class StudentReportServiceImpl implements StudentReportService {
         return Math.pow(0.5, ageDays / (double) WEIGHT_HALF_LIFE_DAYS);
     }
 
-    /** 正确率 = 无错题的提交数 / 总提交数（0.0 ~ 1.0，无提交时为 0）。 */
+    /**
+     * 正确率 = 已落库提交中「没有产生任何错题」的占比（0.0 ~ 1.0）。
+     *
+     * <p>只统计有 id 的提交：没有 id 的提交既无法与错题关联、也无从判断对错，
+     * 把它们算进分母会凭空拉低正确率（分子本来就按有 id 的提交统计）。
+     * 没有任何可判断的提交时返回 0。</p>
+     */
     private double accuracyRate(List<ErrorRecord> records, List<SourceFile> submissions) {
-        if (submissions.isEmpty()) {
+        List<Long> submissionIds = submissions.stream()
+                .map(SourceFile::id)
+                .filter(Objects::nonNull)
+                .toList();
+        if (submissionIds.isEmpty()) {
             return 0.0;
         }
         Set<Long> errorSourceFileIds = records.stream()
                 .map(ErrorRecord::sourceFileId)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
-        long cleanSubmissions = submissions.stream()
-                .map(SourceFile::id)
-                .filter(Objects::nonNull)
+        long cleanSubmissions = submissionIds.stream()
                 .filter(id -> !errorSourceFileIds.contains(id))
                 .count();
-        return cleanSubmissions / (double) submissions.size();
+        return cleanSubmissions / (double) submissionIds.size();
     }
 
     /** 生成一句话诊断（最薄弱知识点）。供学生报告与教师看板复用。 */

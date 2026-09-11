@@ -94,12 +94,7 @@
             <artifactId>mysql-connector-j</artifactId>
             <scope>runtime</scope>
         </dependency>
-        <!-- Spring AI Alibaba Graph + Spring AI ChatClient：Service 层接入所需依赖（仅新增，不动其它配置） -->
-        <dependency>
-            <groupId>com.alibaba.cloud.ai</groupId>
-            <artifactId>spring-ai-alibaba-graph-core</artifactId>
-            <version>2.0.0-M1.1</version>
-        </dependency>
+        <!-- Spring AI ChatClient：Service 层接入所需依赖（仅新增，不动其它配置） -->
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-client-chat</artifactId>
