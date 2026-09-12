@@ -23,11 +23,7 @@ import java.util.Locale;
 import java.util.Set;
 
 /**
- * 作业提交与批改入口。
- *
- * <p>队友的编排门面把「上传归档 → 语言识别与章节匹配 → 双层批改 → 错题落库」
- * 合并为一次调用（{@link AiLearnOrchestrator#submitAndGrade}），
- * 因此本接口一次上传即返回解析结果 + 批改结果，无需再单独调用批改接口。</p>
+ * 作业提交与批改入口：一次上传即返回解析 + 批改结果（门面已把流程合并为 submitAndGrade 一次调用）。
  */
 @RestController
 @RequestMapping("/core/submissions")

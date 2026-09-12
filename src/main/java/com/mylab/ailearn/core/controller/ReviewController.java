@@ -31,10 +31,7 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * 错题归档与复习入口。
- *
- * <p>门面提供的是「全量错题列表 + 学生看板」两个原子能力；
- * 分页、按分类过滤、单条查询都在本层内存中完成适配。</p>
+ * 错题归档与复习入口：分页与分类过滤在适配层内存完成（门面只提供全量列表）。
  */
 @RestController
 @RequestMapping("/core/review")
@@ -66,7 +63,7 @@ public class ReviewController {
             ErrorCategory parsed = parseCategory(category);
             stream = stream.filter(record -> record.category() == parsed);
         }
-        // severity 参数当前版本无法生效（ErrorRecord 无该字段），仅做兼容保留。
+
 
         List<ErrorRecord> filtered = stream
                 .sorted(Comparator.comparing(ErrorRecord::createdAt,

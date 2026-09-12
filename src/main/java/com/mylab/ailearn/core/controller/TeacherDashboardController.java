@@ -16,10 +16,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 教师数据看板入口。
- *
- * <p>当前版本门面只提供全班聚合视图（{@link AiLearnOrchestrator#classDashboard()}），
- * 按班级过滤的能力尚未实现，classId 参数暂时预留。</p>
+ * 教师数据看板入口：当前版本返回全局聚合，classId 为预留参数。
  */
 @RestController
 @RequestMapping("/core/teacher")
@@ -42,7 +39,7 @@ public class TeacherDashboardController {
             @Parameter(description = "班级 ID（预留参数）：当前版本门面未支持按班级过滤，传入也会返回全局聚合数据")
             @RequestParam(required = false) String classId
     ) {
-        // 取当前登录教师 ID 仅用于通过认证校验；看板数据由门面按全班维度聚合。
+
         currentUserResolver.currentUserId();
         return ResponseEntity.ok(orchestrator.classDashboard());
     }

@@ -10,13 +10,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
-/**
- * 从 Spring Security 上下文解析当前登录用户的真实 ID。
- *
- * <p>JwtAuthenticationFilter 校验 Token 后会把以 email 为用户名的 UserDetails
- * 写入 SecurityContext；这里再按 email 查库取回稳定的用户 ID，
- * 保证 core 模块拿到的 ownerUserId 一定属于真实登录用户。</p>
- */
+
+/** 从 SecurityContext 取登录邮箱，查库换出真实用户 ID。 */
 @Component
 @RequiredArgsConstructor
 public class CurrentUserResolverImpl implements CurrentUserResolver {
