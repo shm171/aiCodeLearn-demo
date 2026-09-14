@@ -4,7 +4,6 @@ import com.mylab.ailearn.core.model.commonmodel.ParseResult;
 import com.mylab.ailearn.core.model.commonmodel.SourceFile;
 import com.mylab.ailearn.core.service.spi.SourceFileStore;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,7 +18,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class FileUploadServiceImpl implements FileUploadService {
 
-    private final ObjectProvider<SourceFileStore> sourceFileStoreProvider;
+    private final SourceFileStore sourceFileStore;
     private final ChapterMatchService chapterMatchService;
 
     @Override
@@ -37,17 +36,13 @@ public class FileUploadServiceImpl implements FileUploadService {
                 content,
                 LocalDateTime.now());
 
-        return store().save(file);
+        return sourceFileStore.save(file);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<SourceFile> listByOwner(Long ownerUserId) {
         ServiceSupport.requireOwner(ownerUserId);
-        return List.copyOf(ServiceSupport.nullToEmpty(store().findByOwnerUserId(ownerUserId)));
-    }
-
-    private SourceFileStore store() {
-        return ServiceSupport.required(sourceFileStoreProvider, "SourceFileStore");
+        return List.copyOf(ServiceSupport.nullToEmpty(sourceFileStore.findByOwnerUserId(ownerUserId)));
     }
 }

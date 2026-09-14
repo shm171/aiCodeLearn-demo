@@ -7,5 +7,7 @@ import java.util.List;
 /** error_record 表的数据访问接口。 */
 public interface ErrorRecordJpaRepository extends JpaRepository<ErrorRecordEntity, Long> {
 
-    List<ErrorRecordEntity> findByOwnerUserId(Long ownerUserId);
+    List<ErrorRecordEntity> findByOwnerUserIdOrderByCreatedAtDescIdDesc(Long ownerUserId);
+
+    List<ErrorRecordEntity> findAllByOrderByCreatedAtDescIdDesc();
 }

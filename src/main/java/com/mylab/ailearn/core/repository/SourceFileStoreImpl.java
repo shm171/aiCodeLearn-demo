@@ -24,7 +24,9 @@ public class SourceFileStoreImpl implements SourceFileStore {
     public SourceFile save(SourceFile file) {
         SourceFileEntity entity = file.id() == null
                 ? new SourceFileEntity()
-                : jpaRepository.findById(file.id()).orElseGet(SourceFileEntity::new);
+                : jpaRepository.findById(file.id())
+                        .orElseThrow(() -> new IllegalArgumentException(
+                                "source file not found: " + file.id()));
 
         entity.setOwnerUserId(file.ownerUserId());
         entity.setFilename(file.filename());
@@ -46,13 +48,17 @@ public class SourceFileStoreImpl implements SourceFileStore {
     @Override
     @Transactional(readOnly = true)
     public List<SourceFile> findByOwnerUserId(Long ownerUserId) {
-        return jpaRepository.findByOwnerUserId(ownerUserId).stream().map(this::toRecord).toList();
+        return jpaRepository.findByOwnerUserIdOrderBySubmittedAtDescIdDesc(ownerUserId).stream()
+                .map(this::toRecord)
+                .toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<SourceFile> findAll() {
-        return jpaRepository.findAll().stream().map(this::toRecord).toList();
+        return jpaRepository.findAllByOrderBySubmittedAtDescIdDesc().stream()
+                .map(this::toRecord)
+                .toList();
     }
 
     private SourceFile toRecord(SourceFileEntity entity) {

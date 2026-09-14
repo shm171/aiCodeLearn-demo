@@ -10,7 +10,6 @@ import com.mylab.ailearn.core.model.specialmodel.WeakPoint;
 import com.mylab.ailearn.core.service.spi.ErrorRecordStore;
 import com.mylab.ailearn.core.service.spi.SourceFileStore;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -48,8 +47,8 @@ public class TeacherDashboardServiceImpl implements TeacherDashboardService {
     /** 待关注：相比上一窗口的上升倍数阈值。 */
     private static final double ATTENTION_RISE_RATIO = 1.5;
 
-    private final ObjectProvider<ErrorRecordStore> errorRecordStoreProvider;
-    private final ObjectProvider<SourceFileStore> sourceFileStoreProvider;
+    private final ErrorRecordStore errorRecordStore;
+    private final SourceFileStore sourceFileStore;
     private final StudentReportService studentReportService;
 
     /** 基于一组错题生成教师班级看板。 */
@@ -83,7 +82,7 @@ public class TeacherDashboardServiceImpl implements TeacherDashboardService {
     @Override
     @Transactional(readOnly = true)
     public ClassDashboard buildClassDashboard() {
-        return buildClassDashboard(store().findAll(), sourceFileStore().findAll());
+        return buildClassDashboard(errorRecordStore.findAll(), sourceFileStore.findAll());
     }
 
     private List<StudentStat> buildStudentStats(List<ErrorRecord> records, List<SourceFile> submissions) {
@@ -154,13 +153,4 @@ public class TeacherDashboardServiceImpl implements TeacherDashboardService {
                 && recent >= previous * ATTENTION_RISE_RATIO;
     }
 
-    /** 解析错题持久化端口（SPI）。 */
-    private ErrorRecordStore store() {
-        return ServiceSupport.required(errorRecordStoreProvider, "ErrorRecordStore");
-    }
-
-    /** 解析源码文件持久化端口（SPI）。 */
-    private SourceFileStore sourceFileStore() {
-        return ServiceSupport.required(sourceFileStoreProvider, "SourceFileStore");
-    }
 }

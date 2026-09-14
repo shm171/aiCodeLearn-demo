@@ -11,8 +11,9 @@ import com.mylab.ailearn.core.model.specialmodel.MonthlyPoint;
 import com.mylab.ailearn.core.model.specialmodel.PieSlice;
 import com.mylab.ailearn.core.model.specialmodel.StudentDashboard;
 import com.mylab.ailearn.core.model.specialmodel.WeakPointReport;
+import com.mylab.ailearn.core.service.spi.ErrorRecordStore;
+import com.mylab.ailearn.core.service.spi.SourceFileStore;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.ObjectProvider;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -25,7 +26,8 @@ import static org.mockito.Mockito.mock;
  */
 class StudentReportServiceImplTest {
 
-    private final StudentReportServiceImpl service = new StudentReportServiceImpl(mock(ObjectProvider.class), mock(ObjectProvider.class));
+    private final StudentReportServiceImpl service = new StudentReportServiceImpl(
+            mock(ErrorRecordStore.class), mock(SourceFileStore.class));
 
     @Test
     void buildsErrorDistributionByCategory() {

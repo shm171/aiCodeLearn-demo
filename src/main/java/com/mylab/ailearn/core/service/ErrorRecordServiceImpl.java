@@ -6,7 +6,6 @@ import com.mylab.ailearn.core.model.commonmodel.GradingResult;
 import com.mylab.ailearn.core.model.commonmodel.SourceFile;
 import com.mylab.ailearn.core.service.spi.ErrorRecordStore;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,7 +21,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ErrorRecordServiceImpl implements ErrorRecordService {
 
-    private final ObjectProvider<ErrorRecordStore> errorRecordStoreProvider;
+    private final ErrorRecordStore errorRecordStore;
 
     // 记录一次批改产生的全部错误。
     @Override
@@ -41,7 +40,7 @@ public class ErrorRecordServiceImpl implements ErrorRecordService {
                 .map(error -> toRecord(ownerUserId, sourceFile, error, now))
                 .toList();
 
-        return List.copyOf(ServiceSupport.nullToEmpty(store().saveAll(records)));
+        return List.copyOf(ServiceSupport.nullToEmpty(errorRecordStore.saveAll(records)));
     }
 
     private ErrorRecord toRecord(Long ownerUserId, SourceFile sourceFile, GradedError error, LocalDateTime now) {
@@ -59,7 +58,4 @@ public class ErrorRecordServiceImpl implements ErrorRecordService {
                 false);
     }
 
-    private ErrorRecordStore store() {
-        return ServiceSupport.required(errorRecordStoreProvider, "ErrorRecordStore");
-    }
 }

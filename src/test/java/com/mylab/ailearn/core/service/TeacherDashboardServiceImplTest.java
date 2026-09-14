@@ -4,8 +4,9 @@ import com.mylab.ailearn.core.enums.CourseChapter;
 import com.mylab.ailearn.core.enums.ErrorCategory;
 import com.mylab.ailearn.core.model.commonmodel.ErrorRecord;
 import com.mylab.ailearn.core.model.specialmodel.ClassDashboard;
+import com.mylab.ailearn.core.service.spi.ErrorRecordStore;
+import com.mylab.ailearn.core.service.spi.SourceFileStore;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.ObjectProvider;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -18,8 +19,10 @@ import static org.mockito.Mockito.mock;
  */
 class TeacherDashboardServiceImplTest {
 
-    private final StudentReportServiceImpl studentReport = new StudentReportServiceImpl(mock(ObjectProvider.class), mock(ObjectProvider.class));
-    private final TeacherDashboardServiceImpl service = new TeacherDashboardServiceImpl(mock(ObjectProvider.class), mock(ObjectProvider.class), studentReport);
+    private final StudentReportServiceImpl studentReport = new StudentReportServiceImpl(
+            mock(ErrorRecordStore.class), mock(SourceFileStore.class));
+    private final TeacherDashboardServiceImpl service = new TeacherDashboardServiceImpl(
+            mock(ErrorRecordStore.class), mock(SourceFileStore.class), studentReport);
 
     @Test
     void buildsClassDashboardSortedByStudentErrorCount() {

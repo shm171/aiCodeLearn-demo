@@ -7,5 +7,7 @@ import java.util.List;
 /** source_file 表的数据访问接口。 */
 public interface SourceFileJpaRepository extends JpaRepository<SourceFileEntity, Long> {
 
-    List<SourceFileEntity> findByOwnerUserId(Long ownerUserId);
+    List<SourceFileEntity> findByOwnerUserIdOrderBySubmittedAtDescIdDesc(Long ownerUserId);
+
+    List<SourceFileEntity> findAllByOrderBySubmittedAtDescIdDesc();
 }

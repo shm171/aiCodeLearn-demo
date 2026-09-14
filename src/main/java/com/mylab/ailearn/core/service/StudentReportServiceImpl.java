@@ -13,7 +13,6 @@ import com.mylab.ailearn.core.model.specialmodel.WeakPointReport;
 import com.mylab.ailearn.core.service.spi.ErrorRecordStore;
 import com.mylab.ailearn.core.service.spi.SourceFileStore;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -48,8 +47,8 @@ public class StudentReportServiceImpl implements StudentReportService {
     /** 权重时间衰减半衰期（天）：每过半衰期，历史错题对权重的贡献减半。 */
     private static final int WEIGHT_HALF_LIFE_DAYS = 30;
 
-    private final ObjectProvider<ErrorRecordStore> errorRecordStoreProvider;
-    private final ObjectProvider<SourceFileStore> sourceFileStoreProvider;
+    private final ErrorRecordStore errorRecordStore;
+    private final SourceFileStore sourceFileStore;
 
     /** 基于一批错题生成薄弱知识点报告（含刷题清单）。 */
     @Override
@@ -65,7 +64,8 @@ public class StudentReportServiceImpl implements StudentReportService {
     @Override
     @Transactional(readOnly = true)
     public WeakPointReport buildWeakPointReport(Long ownerUserId) {
-        return buildWeakPointReport(store().findByOwnerUserId(ownerUserId));
+        ServiceSupport.requireOwner(ownerUserId);
+        return buildWeakPointReport(errorRecordStore.findByOwnerUserId(ownerUserId));
     }
 
     /** 基于一批错题生成错题分布（饼图）数据。 */
@@ -93,7 +93,8 @@ public class StudentReportServiceImpl implements StudentReportService {
     @Override
     @Transactional(readOnly = true)
     public ErrorDistribution buildErrorDistribution(Long ownerUserId) {
-        return buildErrorDistribution(store().findByOwnerUserId(ownerUserId));
+        ServiceSupport.requireOwner(ownerUserId);
+        return buildErrorDistribution(errorRecordStore.findByOwnerUserId(ownerUserId));
     }
 
     /** 基于一批错题生成月度学习曲线（折线）数据。 */
@@ -131,9 +132,10 @@ public class StudentReportServiceImpl implements StudentReportService {
     @Override
     @Transactional(readOnly = true)
     public LearningCurve buildLearningCurve(Long ownerUserId) {
+        ServiceSupport.requireOwner(ownerUserId);
         return buildLearningCurve(
-                store().findByOwnerUserId(ownerUserId),
-                sourceFileStore().findByOwnerUserId(ownerUserId));
+                errorRecordStore.findByOwnerUserId(ownerUserId),
+                sourceFileStore.findByOwnerUserId(ownerUserId));
     }
 
     /** 基于一批错题生成刷题清单：按错题频率与归档时间倒序排序（不去重）。 */
@@ -181,9 +183,10 @@ public class StudentReportServiceImpl implements StudentReportService {
     @Override
     @Transactional(readOnly = true)
     public StudentDashboard buildStudentDashboard(Long ownerUserId) {
+        ServiceSupport.requireOwner(ownerUserId);
         return buildStudentDashboard(
-                store().findByOwnerUserId(ownerUserId),
-                sourceFileStore().findByOwnerUserId(ownerUserId));
+                errorRecordStore.findByOwnerUserId(ownerUserId),
+                sourceFileStore.findByOwnerUserId(ownerUserId));
     }
 
     /**
@@ -277,11 +280,4 @@ public class StudentReportServiceImpl implements StudentReportService {
         return "最薄弱知识点：" + first.errorType() + "（出现 " + first.count() + " 次）";
     }
 
-    private ErrorRecordStore store() {
-        return ServiceSupport.required(errorRecordStoreProvider, "ErrorRecordStore");
-    }
-
-    private SourceFileStore sourceFileStore() {
-        return ServiceSupport.required(sourceFileStoreProvider, "SourceFileStore");
-    }
 }

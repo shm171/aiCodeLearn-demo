@@ -25,7 +25,7 @@ public class ErrorRecordStoreImpl implements ErrorRecordStore {
     public ErrorRecord save(ErrorRecord record) {
         ErrorRecordEntity entity = record.id() == null
                 ? new ErrorRecordEntity()
-                : jpaRepository.findById(record.id()).orElseGet(ErrorRecordEntity::new);
+                : existingEntity(record.id());
 
         applyRecord(entity, record);
         return toRecord(jpaRepository.save(entity));
@@ -37,7 +37,7 @@ public class ErrorRecordStoreImpl implements ErrorRecordStore {
         List<ErrorRecordEntity> entities = records.stream().map(record -> {
             ErrorRecordEntity entity = record.id() == null
                     ? new ErrorRecordEntity()
-                    : jpaRepository.findById(record.id()).orElseGet(ErrorRecordEntity::new);
+                    : existingEntity(record.id());
             applyRecord(entity, record);
             return entity;
         }).toList();
@@ -47,13 +47,17 @@ public class ErrorRecordStoreImpl implements ErrorRecordStore {
     @Override
     @Transactional(readOnly = true)
     public List<ErrorRecord> findByOwnerUserId(Long ownerUserId) {
-        return jpaRepository.findByOwnerUserId(ownerUserId).stream().map(this::toRecord).toList();
+        return jpaRepository.findByOwnerUserIdOrderByCreatedAtDescIdDesc(ownerUserId).stream()
+                .map(this::toRecord)
+                .toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<ErrorRecord> findAll() {
-        return jpaRepository.findAll().stream().map(this::toRecord).toList();
+        return jpaRepository.findAllByOrderByCreatedAtDescIdDesc().stream()
+                .map(this::toRecord)
+                .toList();
     }
 
     @Override
@@ -65,10 +69,14 @@ public class ErrorRecordStoreImpl implements ErrorRecordStore {
     @Override
     @Transactional
     public ErrorRecord markMastered(Long errorId, boolean mastered) {
-        ErrorRecordEntity entity = jpaRepository.findById(errorId)
-                .orElseThrow(() -> new IllegalArgumentException("error record not found: " + errorId));
+        ErrorRecordEntity entity = existingEntity(errorId);
         entity.setMastered(mastered);
         return toRecord(jpaRepository.save(entity));
+    }
+
+    private ErrorRecordEntity existingEntity(Long id) {
+        return jpaRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("error record not found: " + id));
     }
 
     private void applyRecord(ErrorRecordEntity entity, ErrorRecord record) {

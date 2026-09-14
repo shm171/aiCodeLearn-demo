@@ -3,7 +3,6 @@ package com.mylab.ailearn.core.service;
 import com.mylab.ailearn.core.model.commonmodel.ErrorRecord;
 import com.mylab.ailearn.core.service.spi.ErrorRecordStore;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,7 +17,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ErrorArchiveServiceImpl implements ErrorArchiveService {
 
-    private final ObjectProvider<ErrorRecordStore> errorRecordStoreProvider;
+    private final ErrorRecordStore errorRecordStore;
 
     /**
      * 查询某学生的全部错题。
@@ -27,7 +26,7 @@ public class ErrorArchiveServiceImpl implements ErrorArchiveService {
     @Transactional(readOnly = true)
     public List<ErrorRecord> listByOwner(Long ownerUserId) {
         ServiceSupport.requireOwner(ownerUserId);
-        return List.copyOf(ServiceSupport.nullToEmpty(store().findByOwnerUserId(ownerUserId)));
+        return List.copyOf(ServiceSupport.nullToEmpty(errorRecordStore.findByOwnerUserId(ownerUserId)));
     }
 
     /**
@@ -40,15 +39,11 @@ public class ErrorArchiveServiceImpl implements ErrorArchiveService {
         if (errorId == null || errorId <= 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "errorId 无效");
         }
-        ErrorRecord record = store().findById(errorId)
+        ErrorRecord record = errorRecordStore.findById(errorId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "错题不存在"));
         if (!ownerUserId.equals(record.ownerUserId())) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "错题不存在");
         }
-        return store().markMastered(errorId, true);
-    }
-
-    private ErrorRecordStore store() {
-        return ServiceSupport.required(errorRecordStoreProvider, "ErrorRecordStore");
+        return errorRecordStore.markMastered(errorId, true);
     }
 }
