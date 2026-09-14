@@ -1,6 +1,7 @@
 package com.mylab.ailearn.base.user.controller;
 
 import com.mylab.ailearn.base.global.configs.OpenApiConfig;
+import com.mylab.ailearn.base.global.security.CurrentUserOrAdmin;
 import com.mylab.ailearn.base.user.dtos.sendback.ProfileDto;
 import com.mylab.ailearn.base.user.dtos.sendback.UserDto;
 import com.mylab.ailearn.base.user.dtos.sendto.ProfileUpdateRequest;
@@ -39,18 +40,21 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
+    @CurrentUserOrAdmin
     @Operation(summary = "查询账号", security = @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH))
     public ResponseEntity<UserDto> getUser(@PathVariable long id) {
         return ResponseEntity.ok(userService.getUserById(id));
     }
 
     @GetMapping("/{id}/profile")
+    @CurrentUserOrAdmin
     @Operation(summary = "查询用户档案", security = @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH))
     public ResponseEntity<ProfileDto> getProfile(@PathVariable long id) {
         return ResponseEntity.ok(userService.getProfileByUserId(id));
     }
 
     @PutMapping("/{id}")
+    @CurrentUserOrAdmin
     @Operation(summary = "修改账号信息", security = @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH))
     public ResponseEntity<UserDto> updateUser(
             @PathVariable long id,
@@ -60,6 +64,7 @@ public class UserController {
     }
 
     @PutMapping("/{id}/profile")
+    @CurrentUserOrAdmin
     @Operation(summary = "修改档案用户名", description = "普通档案接口不能修改角色",
             security = @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH))
     public ResponseEntity<ProfileDto> updateProfile(
@@ -70,6 +75,7 @@ public class UserController {
     }
 
     @DeleteMapping("/{id}")
+    @CurrentUserOrAdmin
     @Operation(summary = "删除用户", security = @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH))
     public ResponseEntity<Void> deleteUser(@PathVariable long id) {
         userService.deleteUser(id);
