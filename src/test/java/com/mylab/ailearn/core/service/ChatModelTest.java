@@ -7,6 +7,7 @@ import com.mylab.ailearn.core.model.commonmodel.GradedError;
 import com.mylab.ailearn.core.model.commonmodel.GradingResult;
 import com.mylab.ailearn.core.model.commonmodel.SourceFile;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -26,6 +27,7 @@ import java.util.Arrays;
  * <p>断言很少，主要用于人工观察输出，不建议作为回归测试运行。</p>
  */
 @SpringBootTest
+@EnabledIfEnvironmentVariable(named = "RUN_INTEGRATION_TESTS", matches = "(?i)true")
 public class ChatModelTest {
     @Autowired
     private GradingService service;

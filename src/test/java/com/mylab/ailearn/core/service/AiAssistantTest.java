@@ -1,6 +1,7 @@
 package com.mylab.ailearn.core.service;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -18,6 +19,7 @@ import java.util.UUID;
  * <p>使用的测试数据：用户 ID 固定为 1，会话 ID 为 "0001"。</p>
  */
 @SpringBootTest
+@EnabledIfEnvironmentVariable(named = "RUN_INTEGRATION_TESTS", matches = "(?i)true")
 public class AiAssistantTest {
     @Autowired
     private AiAssistant aiAssistant;
