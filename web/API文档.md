@@ -1,4 +1,4 @@
-# EduCode 后端接口文档（前端联调用）
+﻿# EduCode 后端接口文档（前端联调用）
 
 > 本文档根据后端实际代码整理，前端写接口时以此为准。
 > 后端基础地址：`http://localhost:8080`
@@ -241,7 +241,261 @@ token 无效时返回 `false`。
 
 ---
 
-## 三、尚未实现的接口（后续开发）
+### 8. 上传源码并批改（一步完成）
+
+- **接口地址**：`POST /core/submissions`
+- **是否需要登录**：是
+- **说明**：上传源码文件，后端自动完成静态检查 + LLM批改，一步返回完整批改结果，不需要再调用第二个接口
+
+**请求格式**：`multipart/form-data`
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| file | file | 是 | 源码文件，支持 .java、.cpp、.cc、.cxx |
+
+**成功响应（200）：**
+```json
+{
+  "sourceFile": {
+    "id": 1,
+    "filename": "test.cpp",
+    "language": "CPP",
+    "submittedAt": "2026-09-15T10:30:00"
+  },
+  "gradingResult": {
+    "id": 1,
+    "score": 85,
+    "accuracyRate": 0.85,
+    "status": "COMPLETED",
+    "overallFeedback": "代码整体不错，但有几个小问题需要注意",
+    "stages": [
+      { "stage": "STATIC_CHECK", "status": "COMPLETED" },
+      { "stage": "LLM_REVIEW", "status": "COMPLETED" }
+    ],
+    "issues": [
+      {
+        "source": "STATIC_CHECK",
+        "severity": "WARNING",
+        "category": "代码风格",
+        "lineNumber": 5,
+        "message": "变量命名不规范",
+        "suggestion": "建议使用有意义的变量名"
+      }
+    ]
+  }
+}
+```
+
+**注意**：
+- `accuracyRate` 是0.0到1.0的小数，页面显示百分比时乘以100
+- `gradingResult.status` 和 `gradingResult.stages` 决定成绩是否完整可信
+- `severity` 取值：`ERROR`（严重）、`WARNING`（警告）、`INFO`（建议）
+
+---
+
+### 9. 错题列表（分页查询）
+
+- **接口地址**：`GET /core/review/errors`
+- **是否需要登录**：是
+- **说明**：分页查询当前用户的错题列表，可按错误类型过滤
+
+**查询参数：**
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| category | string | 否 | 按错误类型过滤，如"数组越界" |
+| page | number | 否 | 页码，从0开始，默认0 |
+| size | number | 否 | 每页条数，默认10 |
+
+**成功响应（200）：**
+```json
+{
+  "content": [
+    {
+      "errorId": 1,
+      "sourceFileId": 1,
+      "category": "数组越界",
+      "severity": "ERROR",
+      "codeSnippet": "int arr[10]; arr[10] = 5;",
+      "message": "数组下标越界",
+      "suggestion": "数组下标从0开始，最大为9",
+      "mastered": false,
+      "createdAt": "2026-09-15T10:30:00"
+    }
+  ],
+  "totalElements": 8,
+  "totalPages": 1,
+  "number": 0,
+  "size": 10
+}
+```
+
+---
+
+### 10. 错题详情
+
+- **接口地址**：`GET /core/review/errors/{errorId}`
+- **是否需要登录**：是
+- **说明**：查询当前用户的一条错题详情
+
+**路径参数：**
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| errorId | number | 错题ID |
+
+**成功响应（200）：**
+```json
+{
+  "errorId": 1,
+  "sourceFileId": 1,
+  "sourceCode": "完整的源代码...",
+  "category": "数组越界",
+  "severity": "ERROR",
+  "lineNumber": 6,
+  "message": "数组下标越界",
+  "suggestion": "数组下标从0开始，最大为9",
+  "knowledgePoint": "数组边界",
+  "correctExample": "int arr[10]; arr[9] = 5;",
+  "mastered": false,
+  "createdAt": "2026-09-15T10:30:00"
+}
+```
+
+---
+
+### 11. 标记错题为已掌握
+
+- **接口地址**：`POST /core/review/errors/{errorId}/mastered`
+- **是否需要登录**：是
+- **说明**：把当前用户的一条错题标记为已掌握
+
+**路径参数：**
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| errorId | number | 错题ID |
+
+**成功响应（200）：**
+```json
+{
+  "errorId": 1,
+  "mastered": true
+}
+```
+
+**注意**：必须调用后端接口，不能只改浏览器本地状态。
+
+---
+
+### 12. 学生复习报告
+
+- **接口地址**：`GET /core/review/package`
+- **是否需要登录**：是
+- **说明**：获取学生的完整学习报告，包括错题分布、薄弱点、复习清单、月度曲线、正确率等
+
+**成功响应（200）：**
+```json
+{
+  "totalSubmissions": 15,
+  "accuracyRate": 0.73,
+  "totalErrors": 8,
+  "masteredCount": 3,
+  "errorDistribution": [
+    { "category": "数组越界", "count": 2 },
+    { "category": "变量未定义", "count": 1 }
+  ],
+  "weakPoints": [
+    { "topic": "数组边界", "errorCount": 2, "weight": 0.8 }
+  ],
+  "monthlyTrend": [
+    { "month": "2026-09", "submissions": 5, "accuracyRate": 0.8 }
+  ],
+  "reviewList": [
+    { "errorId": 1, "category": "数组越界", "priority": "HIGH" }
+  ]
+}
+```
+
+---
+
+### 13. 薄弱知识点
+
+- **接口地址**：`GET /core/review/weak-topics`
+- **是否需要登录**：是
+- **说明**：获取学生的薄弱知识点列表，按权重排序
+
+**成功响应（200）：**
+```json
+[
+  {
+    "topic": "数组边界",
+    "errorCount": 2,
+    "weight": 0.8,
+    "lastSeenAt": "2026-09-15T10:30:00"
+  },
+  {
+    "topic": "变量作用域",
+    "errorCount": 1,
+    "weight": 0.5,
+    "lastSeenAt": "2026-09-10T14:20:00"
+  }
+]
+```
+
+---
+
+### 14. AI学习助手（SSE流式）
+
+- **接口地址**：`POST /core/assistant/chat`
+- **是否需要登录**：是
+- **说明**：AI学习助手，使用SSE流式返回，支持多轮对话
+
+**请求体（JSON）：**
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| message | string | 是 | 用户消息 |
+| conversationId | string | 否 | 会话ID，首次请求不传，后续请求传首次响应头里的X-Conversation-Id |
+
+**响应格式**：`text/event-stream`（SSE流式）
+
+**注意**：
+- 首次响应头 `X-Conversation-Id` 需要在后续请求的 `conversationId` 中原样传回
+- 使用SSE流式接收，需要用EventSource或fetch + ReadableStream处理
+
+---
+
+### 15. 教师统计看板（给b队友用的）
+
+- **接口地址**：`GET /core/teacher/dashboard`
+- **是否需要登录**：是（仅TEACHER或ADMIN角色）
+- **说明**：获取教师端统计数据，当前是全局聚合，classId暂不生效
+
+**成功响应（200）：**
+```json
+{
+  "totalStudents": 50,
+  "totalSubmissions": 200,
+  "averageAccuracy": 0.75,
+  "errorDistribution": [...],
+  "studentRanking": [...]
+}
+```
+
+---
+
+## 三、尚未实现的接口（扩展项，不影响比赛）
+
+| 功能模块 | 预计接口 | 说明 |
+|---------|---------|------|
+| AI生成类似题 | 暂无 | 后端未实现，前端继续用模拟数据 |
+| 邮箱验证码注册 | 暂无 | 扩展项 |
+| 找回密码 | 暂无 | 扩展项 |
+| 班级/课程管理 | 暂无 | 需要正式的班级、课程和师生关系表 |
+
+
+
 
 以下接口后端还没写，前端开发时先用 Mock 数据占位，等后端实现后再替换：
 
@@ -287,3 +541,4 @@ token 无效时返回 `false`。
 ---
 
 > 本文档随后端开发进度更新。后端新增接口后，以 Swagger 实时文档为准。
+
