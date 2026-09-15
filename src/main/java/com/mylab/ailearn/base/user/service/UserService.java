@@ -49,6 +49,7 @@ public class UserService implements UserDetailsService {
         return userMapper.toDto(savedUser);
     }
 
+    @Transactional(readOnly = true)
     public UserDto getUserById(long id) {
         return userMapper.toDto(findUserById(id));
     }
