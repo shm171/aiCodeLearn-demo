@@ -58,6 +58,13 @@ public class AiLearnOrchestratorImpl implements AiLearnOrchestrator {
         return errorArchiveService.listByOwner(ownerUserId);
     }
 
+    /** 读侧：查询某学生已归档的全部源码提交（按提交时间倒序）。数据范围由传入的 ownerUserId 决定。 */
+    @Override
+    @Transactional(readOnly = true)
+    public List<SourceFile> listMySubmissions(Long ownerUserId) {
+        return fileUploadService.listByOwner(ownerUserId);
+    }
+
     /** 写侧：把某学生的一条错题标记为「已掌握」；归属校验在归档服务内部完成。 */
     @Override
     @Transactional

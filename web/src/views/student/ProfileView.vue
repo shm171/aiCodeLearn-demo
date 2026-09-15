@@ -8,10 +8,10 @@
           {{ userStore.email ? userStore.email.charAt(0).toUpperCase() : 'U' }}
         </el-avatar>
         <div class="user-detail">
-          <h2>{{ username || '未设置昵称' }}</h2>
+          <h2>{{ userStore.username || '未设置昵称' }}</h2>
           <p class="user-email">{{ userStore.email }}</p>
           <el-tag type="primary" effect="light" size="small">
-            <el-icon><User /></el-icon>学员
+            <el-icon><User /></el-icon>{{ roleText }}
           </el-tag>
         </div>
       </div>
@@ -90,19 +90,19 @@
           </template>
           <div class="data-item">
             <span>总提交次数</span>
-            <span class="data-value">12 次</span>
+            <span class="data-value">{{ learningStats.totalSubmissions }} 次</span>
           </div>
           <div class="data-item">
-            <span>通过次数</span>
-            <span class="data-value">9 次</span>
+            <span>错题数量</span>
+            <span class="data-value">{{ learningStats.totalErrors }} 道</span>
           </div>
           <div class="data-item">
             <span>平均正确率</span>
-            <span class="data-value success">78%</span>
+            <span class="data-value success">{{ learningStats.accuracyRate }}%</span>
           </div>
           <div class="data-item">
-            <span>累计学习天数</span>
-            <span class="data-value">8 天</span>
+            <span>待复习错题</span>
+            <span class="data-value">{{ learningStats.unmasteredCount }} 道</span>
           </div>
         </el-card>
       </el-col>
@@ -111,32 +111,106 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '../../stores/user'
+import { getUserProfileApi, updateUserProfileApi } from '../../api/user'
+import { getReportApi } from '../../api/review'
 import { User, Setting, Lock, Key, Message, DataAnalysis } from '@element-plus/icons-vue'
 
 const userStore = useUserStore()
 const saving = ref(false)
-const username = ref(localStorage.getItem('username') || '')
+const loadingProfile = ref(false)
 const form = ref({
-  username: localStorage.getItem('username') || '',
+  username: userStore.username || '',
 })
 
-function handleSave() {
+// 角色中文名
+const roleText = computed(() => {
+  const map = { STUDENT: '学员', TEACHER: '教师', ADMIN: '管理员' }
+  return map[userStore.role] || '学员'
+})
+
+// 学习数据（来自学习报告接口）
+const learningStats = ref({
+  totalSubmissions: 0,
+  totalErrors: 0,
+  accuracyRate: 0,
+  unmasteredCount: 0,
+})
+
+// 页面加载：拉取真实用户档案
+async function loadProfile() {
+  if (!userStore.userId) {
+    ElMessage.warning('未获取到用户ID，请重新注册登录')
+    return
+  }
+  loadingProfile.value = true
+  try {
+    const profile = await getUserProfileApi(userStore.userId)
+    userStore.setProfile({
+      username: profile.username,
+      role: profile.role,
+    })
+    form.value.username = profile.username || ''
+  } catch (error) {
+    // 401 由 request.js 统一处理跳登录，其他错误提示即可
+    if (error.response?.status !== 401) {
+      ElMessage.error('加载个人信息失败，请稍后重试')
+    }
+  } finally {
+    loadingProfile.value = false
+  }
+}
+
+// 加载学习数据
+async function loadLearningStats() {
+  try {
+    const report = await getReportApi()
+    // accuracyRate 是 0.0~1.0 的小数，显示百分比要乘以100
+    learningStats.value = {
+      totalSubmissions: report.totalSubmissions ?? 0,
+      totalErrors: report.totalErrors ?? 0,
+      accuracyRate: Math.round((report.accuracyRate ?? 0) * 100),
+      unmasteredCount: (report.practiceList || []).filter((e) => !e.mastered).length,
+    }
+  } catch (error) {
+    // 学习数据加载失败不影响页面主体，静默处理
+  }
+}
+
+// 保存昵称：调用真实接口
+async function handleSave() {
   if (!form.value.username.trim()) {
     ElMessage.warning('昵称不能为空')
     return
   }
+  if (!userStore.userId) {
+    ElMessage.warning('未获取到用户ID，请重新注册登录')
+    return
+  }
   saving.value = true
-  // 暂时存在本地，等后端接口好了再对接
-  setTimeout(() => {
-    localStorage.setItem('username', form.value.username)
-    username.value = form.value.username
-    saving.value = false
+  try {
+    const profile = await updateUserProfileApi(userStore.userId, form.value.username.trim())
+    userStore.setProfile({
+      username: profile.username,
+      role: profile.role,
+    })
+    form.value.username = profile.username || ''
     ElMessage.success('保存成功')
-  }, 500)
+  } catch (error) {
+    if (error.response?.status !== 401) {
+      ElMessage.error(error.response?.data?.detail || '保存失败，请稍后重试')
+    }
+  } finally {
+    saving.value = false
+  }
 }
+
+onMounted(() => {
+  loadProfile()
+  loadLearningStats()
+})
 </script>
 
 <style scoped>

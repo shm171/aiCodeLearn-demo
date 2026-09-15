@@ -99,35 +99,35 @@
       </div>
     </section>
 
-    <!-- ===== 3. 最近提交 ===== -->
+    <!-- ===== 3. 最近错题 ===== -->
     <section class="section" v-if="userStore.isLoggedIn">
       <div class="section-header">
         <div>
-          <h2 class="section-title">最近提交</h2>
-          <p class="section-sub">查看你的批改历史</p>
+          <h2 class="section-title">最近错题</h2>
+          <p class="section-sub">来自最近作业批改的错题归档</p>
         </div>
-        <button class="btn-link" @click="ElMessage.info('历史记录功能开发中')">查看全部</button>
+        <button class="btn-link" @click="router.push('/submissions')">查看全部</button>
       </div>
       <div class="glass-card">
         <el-table :data="recentSubmissions" style="width: 100%">
           <el-table-column prop="id" label="#" width="60" />
-          <el-table-column prop="title" label="作业题目" />
-          <el-table-column prop="language" label="语言" width="100">
+          <el-table-column prop="title" label="错题类型" />
+          <el-table-column prop="language" label="分类" width="110">
             <template #default="{ row }">
               <span class="lang-tag">{{ row.language }}</span>
             </template>
           </el-table-column>
-          <el-table-column prop="score" label="得分" width="100">
+          <el-table-column prop="score" label="出错行号" width="100">
             <template #default="{ row }">
-              <span class="score">{{ row.score }}分</span>
+              <span class="score">{{ row.score }}</span>
             </template>
           </el-table-column>
           <el-table-column prop="status" label="状态" width="100">
             <template #default="{ row }">
-              <span class="status-tag" :class="row.status === '已批改' ? 'done' : 'pending'">{{ row.status }}</span>
+              <span class="status-tag" :class="row.status === '已掌握' ? 'done' : 'pending'">{{ row.status }}</span>
             </template>
           </el-table-column>
-          <el-table-column prop="time" label="提交时间" width="160" />
+          <el-table-column prop="time" label="归档时间" width="160" />
         </el-table>
       </div>
     </section>
@@ -155,11 +155,12 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '../stores/user'
-import { ArrowRight, Promotion, DocumentChecked, TrendCharts, Warning, Calendar, MagicStick, CircleCheck } from '@element-plus/icons-vue'
+import { getReportApi, getErrorListApi } from '../api/review'
+import { ArrowRight, Promotion, DocumentChecked, TrendCharts, Warning, Notebook, MagicStick, CircleCheck } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -168,25 +169,79 @@ const aiAssistantVisible = ref(false)
 const aiInput = ref('')
 const aiMessages = ref([])
 
-const stats = [
-  { label: '提交次数', value: 12, icon: DocumentChecked, bg: 'rgba(96, 165, 250, 0.15)', color: '#60a5fa' },
-  { label: '平均正确率', value: '78%', icon: TrendCharts, bg: 'rgba(52, 211, 153, 0.15)', color: '#34d399' },
-  { label: '错题数量', value: 5, icon: Warning, bg: 'rgba(251, 191, 36, 0.15)', color: '#fbbf24' },
-  { label: '学习天数', value: 8, icon: Calendar, bg: 'rgba(196, 181, 253, 0.15)', color: '#c4b5fd' },
-]
+// 数据概览：登录后从学习报告接口拉取真实数据
+const stats = ref([
+  { label: '提交次数', value: 0, icon: DocumentChecked, bg: 'rgba(96, 165, 250, 0.15)', color: '#60a5fa' },
+  { label: '平均正确率', value: '0%', icon: TrendCharts, bg: 'rgba(52, 211, 153, 0.15)', color: '#34d399' },
+  { label: '错题数量', value: 0, icon: Warning, bg: 'rgba(251, 191, 36, 0.15)', color: '#fbbf24' },
+  { label: '待复习错题', value: 0, icon: Notebook, bg: 'rgba(196, 181, 253, 0.15)', color: '#c4b5fd' },
+])
 
-const recentSubmissions = [
-  { id: 12, title: 'C++：斐波那契数列', language: 'C++', score: 95, status: '已批改', time: '2026-08-24 14:30' },
-  { id: 11, title: 'C语言：冒泡排序', language: 'C', score: 72, status: '已批改', time: '2026-08-23 16:20' },
-  { id: 10, title: 'Java：列表操作', language: 'Java', score: 88, status: '已批改', time: '2026-08-22 10:15' },
-  { id: 9, title: 'C语言：指针练习', language: 'C', score: 55, status: '已批改', time: '2026-08-21 19:45' },
-]
+// 最近错题：从错题列表接口取前几条
+const recentSubmissions = ref([])
+
+// 错误分类枚举 → 中文名
+function categoryLabel(category) {
+  const map = { FORMAT_ERROR: '格式错误', SYNTAX_ERROR: '语法错误', LOGIC_ERROR: '逻辑错误' }
+  return map[category] || category || '未分类'
+}
+
+function formatTime(timeStr) {
+  if (!timeStr) return ''
+  try {
+    const d = new Date(timeStr)
+    const pad = (n) => String(n).padStart(2, '0')
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+  } catch {
+    return timeStr
+  }
+}
+
+// 登录后加载首页真实数据
+async function loadHomeData() {
+  if (!userStore.isLoggedIn) return
+  try {
+    const [report, errorRes] = await Promise.all([
+      getReportApi().catch(() => null),
+      getErrorListApi({ page: 0, size: 5 }).catch(() => null),
+    ])
+
+    if (report) {
+      // accuracyRate 是 0.0~1.0 的小数，显示百分比要乘以100
+      const unmasteredCount = (report.practiceList || []).filter((e) => !e.mastered).length
+      stats.value = [
+        { label: '提交次数', value: report.totalSubmissions ?? 0, icon: DocumentChecked, bg: 'rgba(96, 165, 250, 0.15)', color: '#60a5fa' },
+        { label: '平均正确率', value: `${Math.round((report.accuracyRate ?? 0) * 100)}%`, icon: TrendCharts, bg: 'rgba(52, 211, 153, 0.15)', color: '#34d399' },
+        { label: '错题数量', value: report.totalErrors ?? 0, icon: Warning, bg: 'rgba(251, 191, 36, 0.15)', color: '#fbbf24' },
+        { label: '待复习错题', value: unmasteredCount, icon: Notebook, bg: 'rgba(196, 181, 253, 0.15)', color: '#c4b5fd' },
+      ]
+    }
+
+    // 最近错题：取错题列表前5条
+    const list = Array.isArray(errorRes) ? errorRes : (errorRes?.content || [])
+    recentSubmissions.value = list.map((e) => ({
+      id: e.id ?? '',
+      title: e.errorType || categoryLabel(e.category) || '代码问题',
+      language: categoryLabel(e.category),
+      score: Array.isArray(e.line) && e.line.length ? `第 ${e.line.join('、')} 行` : '-',
+      status: e.mastered ? '已掌握' : '未掌握',
+      time: formatTime(e.createdAt),
+    }))
+  } catch (error) {
+    // 首页数据加载失败不阻塞页面展示，静默处理
+    console.error('加载首页数据失败:', error)
+  }
+}
 
 const platformFeatures = [
   { title: 'AI 双层批改', desc: '静态语法检查 + 大模型深度分析，全方位检测代码问题' },
   { title: '智能错题归档', desc: '自动识别错误知识点，分类整理，形成个人错题库' },
   { title: '个性化学习报告', desc: '基于学习数据生成可视化报告，精准定位薄弱环节' },
 ]
+
+onMounted(() => {
+  loadHomeData()
+})
 
 function handleFeatureClick(path) {
   if (path === '/submit' || path === '/report' || path === '/wrong-questions') {

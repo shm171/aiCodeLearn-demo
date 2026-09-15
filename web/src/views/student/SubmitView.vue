@@ -1,6 +1,6 @@
 <!-- 提交作业页：上传文件/在线写代码 + AI批改结果展示 -->
 <template>
-  <div class="submit-page" v-loading="submitting || grading" element-loading-text="AI 正在批改中，请稍候..." element-loading-background="rgba(10, 10, 12, 0.85)">
+  <div class="submit-page" v-loading="submitting" element-loading-text="AI 正在批改中，请稍候..." element-loading-background="rgba(10, 10, 12, 0.85)">
     <el-card class="submit-card" shadow="never">
       <template #header>
         <div class="card-header">
@@ -78,7 +78,7 @@
         :disabled="!canSubmit"
         @click="handleSubmit"
       >
-        {{ submitting ? (grading ? 'AI 批改中...' : '上传中...') : '提交作业' }}
+        {{ submitting ? 'AI 批改中...' : '提交作业' }}
       </el-button>
 
       <!-- ===== 批改结果展示 ===== -->
@@ -86,6 +86,17 @@
         <el-divider content-position="left">
           <span class="divider-text">批改结果</span>
         </el-divider>
+
+        <!-- 批改未完整完成提示：status / stages 决定成绩是否可信 -->
+        <el-alert
+          v-if="!scoreAdoptable"
+          type="warning"
+          :closable="false"
+          show-icon
+          class="score-alert"
+          title="本次批改未完整完成，分数仅供参考"
+          :description="statusDescription"
+        />
 
         <!-- 得分概览 -->
         <div class="score-overview">
@@ -118,29 +129,29 @@
             <el-icon><ChatDotRound /></el-icon>
             <span>AI 整体评语</span>
           </div>
-          <p class="feedback-text">{{ gradingResult.overallFeedback || '本次代码整体表现良好，继续加油！' }}</p>
+          <p class="feedback-text">{{ gradingResult.feedback || '本次代码整体表现良好，继续加油！' }}</p>
         </div>
 
         <!-- 错误列表 -->
-        <div v-if="gradingResult.issues && gradingResult.issues.length > 0" class="issues-section">
-          <h4 class="issues-title">问题列表（{{ gradingResult.issues.length }} 个）</h4>
+        <div v-if="gradingResult.errors && gradingResult.errors.length > 0" class="issues-section">
+          <h4 class="issues-title">问题列表（{{ gradingResult.errors.length }} 个）</h4>
           <div
-            v-for="(issue, index) in gradingResult.issues"
+            v-for="(issue, index) in gradingResult.errors"
             :key="index"
             class="issue-card"
-            :class="'severity-' + (issue.severity || '').toLowerCase()"
+            :class="'severity-' + categoryMeta(issue.category).severity.toLowerCase()"
           >
             <div class="issue-header">
-              <el-tag :type="severityTagType(issue.severity)" size="small" effect="dark">
-                {{ severityText(issue.severity) }}
+              <el-tag :type="categoryMeta(issue.category).tagType" size="small" effect="dark">
+                {{ categoryMeta(issue.category).label }}
               </el-tag>
-              <span class="issue-category">{{ issue.category || '代码问题' }}</span>
-              <span v-if="issue.lineNumber" class="issue-line">第 {{ issue.lineNumber }} 行</span>
+              <span class="issue-category">{{ issue.errorType || '代码问题' }}</span>
+              <span v-if="issue.line && issue.line.length" class="issue-line">第 {{ issue.line.join('、') }} 行</span>
             </div>
             <p class="issue-message">{{ issue.message }}</p>
-            <div v-if="issue.suggestion" class="issue-suggestion">
+            <div v-if="issue.fixSuggestion" class="issue-suggestion">
               <span class="suggestion-label">💡 修改建议：</span>
-              <span>{{ issue.suggestion }}</span>
+              <span>{{ issue.fixSuggestion }}</span>
             </div>
           </div>
         </div>
@@ -167,7 +178,7 @@ import {
   Upload, UploadFilled, Document, Edit,
   ChatDotRound, CircleCheckFilled
 } from '@element-plus/icons-vue'
-import { uploadSubmissionApi, gradeSubmissionApi } from '../../api/submission'
+import { uploadSubmissionApi } from '../../api/submission'
 
 // ========== CodeMirror 导入 ==========
 import { EditorState } from '@codemirror/state'
@@ -183,7 +194,6 @@ const uploadRef = ref(null)
 const fileList = ref([])
 const selectedFile = ref(null)
 const submitting = ref(false)
-const grading = ref(false)
 const gradingResult = ref(null)
 
 // 编辑器相关
@@ -203,10 +213,20 @@ const canSubmit = computed(() => {
   return editorView && editorView.state.doc.toString().trim().length > 0
 })
 
+// 错误分类 → 严重程度/中文名/标签颜色 映射（后端没有severity字段，按category分档）
+function categoryMeta(category) {
+  const map = {
+    SYNTAX_ERROR: { severity: 'ERROR', label: '语法错误', tagType: 'danger' },
+    LOGIC_ERROR: { severity: 'WARNING', label: '逻辑错误', tagType: 'warning' },
+    FORMAT_ERROR: { severity: 'INFO', label: '格式错误', tagType: 'info' },
+  }
+  return map[category] || { severity: 'INFO', label: category || '代码问题', tagType: 'info' }
+}
+
 // 统计各严重程度数量
-const errorCount = computed(() => gradingResult.value?.issues?.filter(i => i.severity === 'ERROR').length || 0)
-const warningCount = computed(() => gradingResult.value?.issues?.filter(i => i.severity === 'WARNING').length || 0)
-const infoCount = computed(() => gradingResult.value?.issues?.filter(i => i.severity === 'INFO').length || 0)
+const errorCount = computed(() => (gradingResult.value?.errors || []).filter(i => categoryMeta(i.category).severity === 'ERROR').length)
+const warningCount = computed(() => (gradingResult.value?.errors || []).filter(i => categoryMeta(i.category).severity === 'WARNING').length)
+const infoCount = computed(() => (gradingResult.value?.errors || []).filter(i => categoryMeta(i.category).severity === 'INFO').length)
 
 // 得分等级样式
 const scoreLevel = computed(() => {
@@ -214,6 +234,27 @@ const scoreLevel = computed(() => {
   if (s >= 90) return 'score-high'
   if (s >= 70) return 'score-mid'
   return 'score-low'
+})
+
+// 成绩是否可信：status 和 stages 全部 COMPLETED 才是完整批改
+const scoreAdoptable = computed(() => {
+  const r = gradingResult.value
+  if (!r) return true
+  return r.status === 'COMPLETED' && (r.stages || []).every(s => s.outcome === 'COMPLETED')
+})
+
+// 批改状态说明文案
+const statusDescription = computed(() => {
+  const r = gradingResult.value
+  if (!r) return ''
+  const statusMap = { COMPLETED: '已完成', PARTIAL: '部分完成', UNAVAILABLE: '不可用' }
+  const outcomeMap = { COMPLETED: '已完成', PARTIAL: '部分完成', NOT_CONFIGURED: '未配置', UNAVAILABLE: '不可用' }
+  const stageMap = { RULE_STATIC_CHECK: '规则静态检查', LLM_REVIEW: 'AI深度批改' }
+  const parts = [`整体状态：${statusMap[r.status] || r.status}`]
+  ;(r.stages || []).forEach(s => {
+    parts.push(`${stageMap[s.stage] || s.stage}：${outcomeMap[s.outcome] || s.outcome}`)
+  })
+  return parts.join('；')
 })
 
 // ========== CodeMirror 初始化 ==========
@@ -341,21 +382,13 @@ async function handleSubmit() {
       return
     }
 
-    // 第一步：上传文件
+    // 一步完成：上传即批改，响应里直接带 gradingResult
     const uploadRes = await uploadSubmissionApi(fileToUpload)
-    const submissionId = uploadRes.submissionId || uploadRes.id
+    gradingResult.value = uploadRes.gradingResult || null
 
-    if (!submissionId) {
-      throw new Error('上传成功但未获取到作业编号')
+    if (!gradingResult.value) {
+      throw new Error('未获取到批改结果，请稍后重试')
     }
-
-    // 第二步：触发AI批改
-    grading.value = true
-    // 模拟批改耗时，让用户看到"批改中"状态
-    await new Promise(resolve => setTimeout(resolve, 1500))
-
-    const gradeRes = await gradeSubmissionApi(submissionId)
-    gradingResult.value = gradeRes
 
     ElMessage.success('批改完成！')
   } catch (error) {
@@ -364,19 +397,7 @@ async function handleSubmit() {
     gradingResult.value = null
   } finally {
     submitting.value = false
-    grading.value = false
   }
-}
-
-// ========== 辅助函数 ==========
-function severityText(severity) {
-  const map = { ERROR: '严重', WARNING: '警告', INFO: '建议' }
-  return map[severity] || '未知'
-}
-
-function severityTagType(severity) {
-  const map = { ERROR: 'danger', WARNING: 'warning', INFO: 'info' }
-  return map[severity] || 'info'
 }
 
 function resetForm() {
@@ -579,6 +600,10 @@ function resetForm() {
 /* ===== 批改结果 ===== */
 .result-section {
   margin-top: 28px;
+}
+.score-alert {
+  margin-bottom: 16px;
+  border-radius: 10px;
 }
 .divider-text {
   font-size: 16px;

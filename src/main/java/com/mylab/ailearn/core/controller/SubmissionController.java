@@ -2,14 +2,21 @@ package com.mylab.ailearn.core.controller;
 
 import com.mylab.ailearn.base.global.configs.CurrentUserResolver;
 import com.mylab.ailearn.base.global.configs.OpenApiConfig;
+import com.mylab.ailearn.core.model.commonmodel.SourceFile;
 import com.mylab.ailearn.core.model.commonmodel.SubmissionGradingResult;
 import com.mylab.ailearn.core.service.AiLearnOrchestrator;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -19,6 +26,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
@@ -70,5 +78,35 @@ public class SubmissionController {
         }
         SubmissionGradingResult result = orchestrator.submitAndGrade(ownerUserId, filename, content);
         return ResponseEntity.ok(result);
+    }
+
+    @GetMapping
+    @Operation(summary = "分页查询我的提交历史",
+            description = "需要 JWT。按提交时间倒序返回当前登录学生的源码提交列表，"
+                    + "默认每页 10 条。只返回当前登录学生自己的提交。",
+            security = @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH))
+    public ResponseEntity<Page<SourceFile>> listMySubmissions(
+            @PageableDefault(size = 10) Pageable pageable
+    ) {
+        Long ownerUserId = currentUserResolver.currentUserId();
+
+        // 门面已按提交时间倒序返回全量，分页在适配层内存完成（与错题列表一致）
+        List<SourceFile> all = orchestrator.listMySubmissions(ownerUserId);
+        int start = (int) Math.min(pageable.getOffset(), all.size());
+        int end = Math.min(start + pageable.getPageSize(), all.size());
+        return ResponseEntity.ok(new PageImpl<>(all.subList(start, end), pageable, all.size()));
+    }
+
+    @GetMapping("/{submissionId}")
+    @Operation(summary = "查询单条提交详情",
+            description = "需要 JWT。返回源码原文。提交不存在或不属于当前学生时返回 404。",
+            security = @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH))
+    public ResponseEntity<SourceFile> getMySubmission(@PathVariable long submissionId) {
+        Long ownerUserId = currentUserResolver.currentUserId();
+        SourceFile file = orchestrator.listMySubmissions(ownerUserId).stream()
+                .filter(f -> f.id() != null && f.id() == submissionId)
+                .findFirst()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "submission not found"));
+        return ResponseEntity.ok(file);
     }
 }

@@ -7,11 +7,6 @@
         <h1 class="page-title">学习报告</h1>
         <p class="page-sub">AI 智能分析你的编程学习数据</p>
       </div>
-      <el-select v-model="period" class="period-select" @change="loadAllData">
-        <el-option label="近7天" value="7" />
-        <el-option label="近30天" value="30" />
-        <el-option label="全部" value="all" />
-      </el-select>
     </div>
 
     <!-- 数据概览 -->
@@ -25,22 +20,22 @@
     <!-- 图表区域 -->
     <div class="charts-row">
       <div class="chart-card">
-        <div class="chart-title">编程语言分布</div>
+        <div class="chart-title">错误分类分布</div>
         <div ref="langChartRef" class="chart"></div>
       </div>
       <div class="chart-card">
-        <div class="chart-title">错误类型分布</div>
+        <div class="chart-title">月度学习曲线</div>
         <div ref="errorChartRef" class="chart"></div>
       </div>
     </div>
 
     <div class="charts-row">
       <div class="chart-card">
-        <div class="chart-title">提交趋势</div>
+        <div class="chart-title">知识点掌握度</div>
         <div ref="trendChartRef" class="chart"></div>
       </div>
       <div class="chart-card">
-        <div class="chart-title">知识点掌握度</div>
+        <div class="chart-title">薄弱知识点排行</div>
         <div ref="knowledgeChartRef" class="chart"></div>
       </div>
     </div>
@@ -100,15 +95,14 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import * as echarts from 'echarts'
 import { Refresh } from '@element-plus/icons-vue'
-import { getWeakTopicsApi, getErrorListApi } from '../../api/review'
+import { getReportApi, getWeakTopicsApi } from '../../api/review'
 
 const router = useRouter()
-const period = ref('7')
 const refreshing = ref(false)
 const loading = ref(false)
 
@@ -124,115 +118,96 @@ const stats = ref([
   { label: '总提交次数', value: 0 },
   { label: '平均正确率', value: '0%' },
   { label: '错题数量', value: 0 },
-  { label: '学习天数', value: 0 },
+  { label: '待复习错题', value: 0 },
 ])
 
 const weakPoints = ref([])
 const reviewQuestions = ref([])
 const suggestions = ref([])
 
-// Mock数据（接口返回空时使用）
-const mockStats = [
-  { label: '总提交次数', value: 42 },
-  { label: '平均正确率', value: '76%' },
-  { label: '错题数量', value: 18 },
-  { label: '学习天数', value: 15 },
-]
-const mockWeakPoints = [
-  { name: '指针与内存', mastery: 38 },
-  { name: '递归算法', mastery: 45 },
-  { name: '排序算法', mastery: 62 },
-]
-const mockReviewQuestions = [
-  { id: 1, title: '数组遍历越界问题', knowledge: '数组' },
-  { id: 2, title: '冒泡排序条件错误', knowledge: '排序' },
-  { id: 3, title: '递归缺少终止条件', knowledge: '递归' },
-]
-const mockSuggestions = [
-  '每天坚持提交1-2道编程题，保持代码手感',
-  '重点复习指针与内存管理相关知识点',
-  '建议完成错题本中未掌握的题目后再做新题',
-  '尝试用不同语言实现同一算法，加深理解',
-]
+// 错误分类枚举 → 中文名
+function categoryLabel(category) {
+  const map = { FORMAT_ERROR: '格式错误', SYNTAX_ERROR: '语法错误', LOGIC_ERROR: '逻辑错误' }
+  return map[category] || category || '未分类'
+}
 
 // 加载所有数据
 async function loadAllData() {
   loading.value = true
   try {
-    // 并行加载薄弱知识点和错题列表
-    const [weakRes, errorRes] = await Promise.all([
+    // 并行加载学习报告和薄弱知识点
+    const [reportRes, weakRes] = await Promise.all([
+      getReportApi().catch(() => null),
       getWeakTopicsApi().catch(() => null),
-      getErrorListApi().catch(() => null),
     ])
 
-    // 处理薄弱知识点
-    if (weakRes && Array.isArray(weakRes) && weakRes.length > 0) {
-      weakPoints.value = weakRes.map(item => ({
-        name: item.topic || '未知知识点',
-        mastery: Math.max(10, Math.min(95, 100 - (item.weight || 0.5) * 100)),
-        errorCount: item.errorCount || 0,
-      }))
-    } else {
-      weakPoints.value = mockWeakPoints
-    }
+    if (!reportRes) throw new Error('report unavailable')
 
-    // 处理错题列表
-    const errorList = errorRes ? (Array.isArray(errorRes) ? errorRes : (errorRes.records || errorRes.list || [])) : []
-    if (errorList.length > 0) {
-      // 更新统计数据
-      const errorCount = errorList.length
-      const masteredCount = errorList.filter(e => e.mastered).length
-      const accuracy = errorCount > 0 ? Math.round((1 - errorCount / (errorCount + 24)) * 100) : 100
-      stats.value = [
-        { label: '总提交次数', value: errorCount + 24 },
-        { label: '平均正确率', value: accuracy + '%' },
-        { label: '错题数量', value: errorCount },
-        { label: '学习天数', value: Math.min(30, Math.ceil(errorCount / 2)) },
-      ]
-      // 推荐复习的错题（取前3个未掌握的）
-      reviewQuestions.value = errorList
-        .filter(e => !e.mastered)
-        .slice(0, 3)
-        .map((e, i) => ({
-          id: e.errorId || i,
-          title: e.category || `错题 ${i + 1}`,
-          knowledge: e.category || '编程基础',
-        }))
-      // 根据薄弱知识点生成学习建议
-      suggestions.value = generateSuggestions(weakPoints.value, errorCount)
-    } else {
-      stats.value = mockStats
-      reviewQuestions.value = mockReviewQuestions
-      suggestions.value = mockSuggestions
-    }
+    // 数据概览：accuracyRate 是 0.0~1.0 的小数，显示百分比要乘以100
+    const unmasteredCount = (reportRes.practiceList || []).filter((e) => !e.mastered).length
+    stats.value = [
+      { label: '总提交次数', value: reportRes.totalSubmissions ?? 0 },
+      { label: '平均正确率', value: `${Math.round((reportRes.accuracyRate ?? 0) * 100)}%` },
+      { label: '错题数量', value: reportRes.totalErrors ?? 0 },
+      { label: '待复习错题', value: unmasteredCount },
+    ]
+
+    // 薄弱知识点：mastery 是 0.0~1.0 小数，乘以100转百分比
+    const weakList =
+      reportRes.topWeakPoints && reportRes.topWeakPoints.length > 0
+        ? reportRes.topWeakPoints
+        : Array.isArray(weakRes)
+          ? weakRes
+          : []
+    weakPoints.value = weakList.map((item) => ({
+      name: item.errorType || categoryLabel(item.category),
+      mastery: Math.round((item.mastery ?? 0) * 100),
+      errorCount: item.count || 0,
+    }))
+
+    // 推荐复习错题：取前3个未掌握的
+    reviewQuestions.value = (reportRes.practiceList || [])
+      .filter((e) => !e.mastered)
+      .slice(0, 3)
+      .map((e, i) => ({
+        id: e.id ?? i,
+        title: e.errorType || categoryLabel(e.category) || `错题 ${i + 1}`,
+        knowledge: categoryLabel(e.category),
+      }))
+
+    // 学习建议：后端一句话诊断 + 根据薄弱点补充
+    suggestions.value = buildSuggestions(reportRes)
 
     // 更新图表
-    updateCharts(errorList)
+    updateCharts(reportRes)
   } catch (error) {
     console.error('加载学习报告失败:', error)
-    stats.value = mockStats
-    weakPoints.value = mockWeakPoints
-    reviewQuestions.value = mockReviewQuestions
-    suggestions.value = mockSuggestions
-    initChartsWithMock()
+    stats.value = stats.value.map((s) => ({ ...s, value: s.label === '平均正确率' ? '0%' : 0 }))
+    weakPoints.value = []
+    reviewQuestions.value = []
+    suggestions.value = ['暂无学习数据，先去提交一份作业吧！']
+    updateCharts(null)
   } finally {
     loading.value = false
   }
 }
 
-// 根据数据生成学习建议
-function generateSuggestions(weak, errorCount) {
+// 根据报告数据生成学习建议
+function buildSuggestions(report) {
   const tips = []
+  if (report.summary) tips.push(report.summary)
+  const weak = weakPoints.value
   if (weak.length > 0) {
     tips.push(`重点复习「${weak[0].name}」相关知识点，这是你最薄弱的环节`)
   }
-  if (errorCount > 10) {
+  if (report.totalErrors > 10) {
     tips.push('错题数量较多，建议每天复习3-5道错题，不要只做新题')
-  } else {
+  } else if (report.totalSubmissions > 0) {
     tips.push('每天坚持提交1-2道编程题，保持代码手感')
   }
-  tips.push('提交代码前先自己检查一遍，减少低级错误')
-  tips.push('尝试用不同语言实现同一算法，加深理解')
+  if (report.totalSubmissions > 0 && report.accuracyRate < 0.7) {
+    tips.push('提交代码前先自己检查一遍，减少低级错误')
+  }
   return tips.slice(0, 4)
 }
 
@@ -258,154 +233,162 @@ const accentColor = '#c4b5fd'
 // 高区分度配色：淡紫、天蓝、翠绿、金黄、橙红
 const chartColors = ['#c4b5fd', '#60a5fa', '#34d399', '#fbbf24', '#f87171', '#a78bfa']
 
+// 通用深色 tooltip 配置
+const darkTooltip = {
+  backgroundColor: 'rgba(18,18,22,0.97)',
+  borderColor: 'rgba(255,255,255,0.08)',
+  textStyle: { color: '#d4d4d8' },
+}
+
+// 空数据的占位提示
+function emptyChartOption() {
+  return {
+    title: {
+      text: '暂无数据',
+      left: 'center',
+      top: 'middle',
+      textStyle: { color: '#52525b', fontSize: 14, fontWeight: 'normal' },
+    },
+  }
+}
+
 function initCharts() {
   // 销毁旧图表
-  charts.forEach(c => c && c.dispose())
+  charts.forEach((c) => c && c.dispose())
   charts = []
 
-  // 1. 语言分布饼图
+  // 1. 错误分类分布饼图
   const c1 = echarts.init(langChartRef.value)
   charts.push(c1)
 
-  // 2. 错误类型饼图
+  // 2. 月度学习曲线折线图
   const c2 = echarts.init(errorChartRef.value)
   charts.push(c2)
 
-  // 3. 趋势折线图
+  // 3. 知识点掌握度柱状图
   const c3 = echarts.init(trendChartRef.value)
   charts.push(c3)
 
-  // 4. 知识点柱状图
+  // 4. 薄弱知识点排行柱状图
   const c4 = echarts.init(knowledgeChartRef.value)
   charts.push(c4)
 }
 
-function updateCharts(errorList) {
+function updateCharts(report) {
   if (charts.length === 0) initCharts()
 
-  const hasData = errorList && errorList.length > 0
+  const weak = weakPoints.value
+  const distribution = report?.distribution?.slices || []
+  const curvePoints = report?.studentCurve?.points || []
 
-  // 1. 语言分布
-  const langData = hasData
-    ? countByField(errorList, 'language')
-    : [{ value: 25, name: 'C++' }, { value: 17, name: 'C语言' }, { value: 8, name: 'Java' }]
-  charts[0].setOption({
-    tooltip: { trigger: 'item', backgroundColor: 'rgba(18,18,22,0.97)', borderColor: 'rgba(255,255,255,0.08)', textStyle: { color: '#d4d4d8' } },
-    legend: { bottom: 0, textStyle: { color: textColor, fontSize: 11 } },
-    color: chartColors,
-    series: [{
-      type: 'pie', radius: ['45%', '68%'], center: ['50%', '45%'],
-      itemStyle: { borderColor: '#0c0c0e', borderWidth: 2 },
-      label: { show: false },
-      data: langData,
-    }],
-  })
-
-  // 2. 错误类型分布
-  const errorData = hasData
-    ? countByField(errorList, 'category')
-    : [{ value: 8, name: '语法错误' }, { value: 5, name: '逻辑错误' }, { value: 3, name: '内存问题' }, { value: 2, name: '算法优化' }]
-  charts[1].setOption({
-    tooltip: { trigger: 'item', backgroundColor: 'rgba(18,18,22,0.97)', borderColor: 'rgba(255,255,255,0.08)', textStyle: { color: '#d4d4d8' } },
-    legend: { bottom: 0, textStyle: { color: textColor, fontSize: 11 } },
-    color: chartColors,
-    series: [{
-      type: 'pie', radius: ['45%', '68%'], center: ['50%', '45%'],
-      itemStyle: { borderColor: '#0c0c0e', borderWidth: 2 },
-      label: { show: false },
-      data: errorData,
-    }],
-  })
-
-  // 3. 趋势折线图
-  const days = period.value === '7' ? 7 : (period.value === '30' ? 30 : 14)
-  const trendData = generateTrendData(days, hasData ? errorList.length : 42)
-  charts[2].setOption({
-    tooltip: { trigger: 'axis', backgroundColor: 'rgba(18,18,22,0.97)', borderColor: 'rgba(255,255,255,0.08)', textStyle: { color: '#d4d4d8' } },
-    grid: { left: '3%', right: '4%', bottom: '3%', top: '8%', containLabel: true },
-    xAxis: {
-      type: 'category', data: trendData.labels,
-      axisLine: { lineStyle: { color: splitColor } },
-      axisLabel: { color: textColor, fontSize: 11 },
-      axisTick: { show: false },
-    },
-    yAxis: {
-      type: 'value', axisLine: { show: false },
-      axisLabel: { color: textColor, fontSize: 11 },
-      splitLine: { lineStyle: { color: splitColor } },
-    },
-    series: [{
-      type: 'line', smooth: true, data: trendData.values,
-      symbol: 'circle', symbolSize: 6,
-      areaStyle: {
-        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-          { offset: 0, color: 'rgba(196,181,253,0.15)' },
-          { offset: 1, color: 'rgba(196,181,253,0)' },
-        ]),
-      },
-      lineStyle: { color: accentColor, width: 2 },
-      itemStyle: { color: accentColor, borderColor: '#0c0c0e', borderWidth: 2 },
-    }],
-  })
-
-  // 4. 知识点掌握度
-  const knowledgeData = weakPoints.value.length > 0
-    ? weakPoints.value.map(w => ({ name: w.name, value: w.mastery }))
-    : [{ name: '递归', value: 45 }, { name: '指针', value: 38 }, { name: '循环', value: 82 }, { name: '函数', value: 75 }, { name: '数组', value: 88 }]
-  charts[3].setOption({
-    tooltip: { trigger: 'axis', backgroundColor: 'rgba(18,18,22,0.97)', borderColor: 'rgba(255,255,255,0.08)', textStyle: { color: '#d4d4d8' } },
-    grid: { left: '3%', right: '10%', bottom: '3%', top: '5%', containLabel: true },
-    xAxis: { type: 'value', max: 100, axisLine: { show: false }, axisLabel: { color: textColor, fontSize: 11 }, splitLine: { lineStyle: { color: splitColor } } },
-    yAxis: {
-      type: 'category', data: knowledgeData.map(k => k.name),
-      axisLine: { lineStyle: { color: splitColor } },
-      axisLabel: { color: textColor, fontSize: 11 },
-      axisTick: { show: false },
-    },
-    series: [{
-      type: 'bar',
-      data: knowledgeData.map(k => ({
-        value: k.value,
-        itemStyle: {
-          color: k.value < 50 ? '#f87171' : (k.value < 75 ? '#fbbf24' : '#34d399'),
-          borderRadius: [0, 7, 7, 0],
-        },
-      })),
-      barWidth: 16,
-    }],
-  })
-}
-
-function initChartsWithMock() {
-  updateCharts([])
-}
-
-// 辅助函数：按字段统计数量
-function countByField(list, field) {
-  const map = {}
-  list.forEach(item => {
-    const key = item[field] || '其他'
-    map[key] = (map[key] || 0) + 1
-  })
-  return Object.entries(map).map(([name, value]) => ({ name, value }))
-}
-
-// 生成趋势数据
-function generateTrendData(days, total) {
-  const labels = []
-  const values = []
-  const now = new Date()
-  const avg = Math.max(1, Math.round(total / days))
-  for (let i = days - 1; i >= 0; i--) {
-    const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000)
-    labels.push(`${d.getMonth() + 1}/${d.getDate()}`)
-    values.push(Math.max(0, avg + Math.round((Math.random() - 0.5) * avg * 1.5)))
+  // 1. 错误分类分布（饼图）
+  if (distribution.length > 0) {
+    charts[0].setOption({
+      tooltip: { trigger: 'item', ...darkTooltip },
+      legend: { bottom: 0, textStyle: { color: textColor, fontSize: 11 } },
+      color: chartColors,
+      series: [{
+        type: 'pie', radius: ['45%', '68%'], center: ['50%', '45%'],
+        itemStyle: { borderColor: '#0c0c0e', borderWidth: 2 },
+        label: { show: false },
+        data: distribution.map((s) => ({ name: s.label, value: s.value })),
+      }],
+    })
+  } else {
+    charts[0].setOption(emptyChartOption())
   }
-  return { labels, values }
+
+  // 2. 月度学习曲线（折线图：提交数 + 错题数两条线）
+  if (curvePoints.length > 0) {
+    const labels = curvePoints.map((p) => `${p.year}/${String(p.month).padStart(2, '0')}`)
+    const seriesData = (key) => curvePoints.map((p) => p[key] || 0)
+    charts[1].setOption({
+      tooltip: { trigger: 'axis', ...darkTooltip },
+      legend: { bottom: 0, textStyle: { color: textColor, fontSize: 11 } },
+      grid: { left: '3%', right: '4%', bottom: '16%', top: '8%', containLabel: true },
+      xAxis: {
+        type: 'category', data: labels,
+        axisLine: { lineStyle: { color: splitColor } },
+        axisLabel: { color: textColor, fontSize: 11 },
+        axisTick: { show: false },
+      },
+      yAxis: {
+        type: 'value', axisLine: { show: false },
+        axisLabel: { color: textColor, fontSize: 11 },
+        splitLine: { lineStyle: { color: splitColor } },
+      },
+      series: [{
+        name: '提交数', type: 'line', smooth: true, data: seriesData('submissionCount'),
+        symbol: 'circle', symbolSize: 6,
+        lineStyle: { color: accentColor, width: 2 },
+        itemStyle: { color: accentColor, borderColor: '#0c0c0e', borderWidth: 2 },
+      }, {
+        name: '错题数', type: 'line', smooth: true, data: seriesData('errorCount'),
+        symbol: 'circle', symbolSize: 6,
+        lineStyle: { color: '#60a5fa', width: 2 },
+        itemStyle: { color: '#60a5fa', borderColor: '#0c0c0e', borderWidth: 2 },
+      }],
+    })
+  } else {
+    charts[1].setOption(emptyChartOption())
+  }
+
+  // 3. 知识点掌握度（横向柱状图，mastery 已转成 0~100）
+  const knowledgeData = weak.map((w) => ({ name: w.name, value: w.mastery }))
+  if (knowledgeData.length > 0) {
+    charts[2].setOption({
+      tooltip: { trigger: 'axis', ...darkTooltip, formatter: (params) => `${params[0].name}：掌握度 ${params[0].value}%` },
+      grid: { left: '3%', right: '10%', bottom: '3%', top: '5%', containLabel: true },
+      xAxis: { type: 'value', max: 100, axisLine: { show: false }, axisLabel: { color: textColor, fontSize: 11 }, splitLine: { lineStyle: { color: splitColor } } },
+      yAxis: {
+        type: 'category', data: knowledgeData.map((k) => k.name),
+        axisLine: { lineStyle: { color: splitColor } },
+        axisLabel: { color: textColor, fontSize: 11 },
+        axisTick: { show: false },
+      },
+      series: [{
+        type: 'bar',
+        data: knowledgeData.map((k) => ({
+          value: k.value,
+          itemStyle: {
+            color: k.value < 50 ? '#f87171' : k.value < 75 ? '#fbbf24' : '#34d399',
+            borderRadius: [0, 7, 7, 0],
+          },
+        })),
+        barWidth: 16,
+      }],
+    })
+  } else {
+    charts[2].setOption(emptyChartOption())
+  }
+
+  // 4. 薄弱知识点排行（按错题条数横向柱状图）
+  const rankData = weak.map((w) => ({ name: w.name, value: w.errorCount }))
+  if (rankData.length > 0) {
+    charts[3].setOption({
+      tooltip: { trigger: 'axis', ...darkTooltip },
+      grid: { left: '3%', right: '10%', bottom: '3%', top: '5%', containLabel: true },
+      xAxis: { type: 'value', axisLine: { show: false }, axisLabel: { color: textColor, fontSize: 11 }, splitLine: { lineStyle: { color: splitColor } } },
+      yAxis: {
+        type: 'category', data: rankData.map((k) => k.name),
+        axisLine: { lineStyle: { color: splitColor } },
+        axisLabel: { color: textColor, fontSize: 11 },
+        axisTick: { show: false },
+      },
+      series: [{
+        type: 'bar',
+        data: rankData.map((k) => ({ value: k.value, itemStyle: { color: '#c4b5fd', borderRadius: [0, 7, 7, 0] } })),
+        barWidth: 16,
+        label: { show: true, position: 'right', color: textColor, fontSize: 11 },
+      }],
+    })
+  } else {
+    charts[3].setOption(emptyChartOption())
+  }
 }
 
 function handleResize() {
-  charts.forEach(c => c && c.resize())
+  charts.forEach((c) => c && c.resize())
 }
 
 onMounted(() => {
@@ -416,7 +399,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
-  charts.forEach(c => c && c.dispose())
+  charts.forEach((c) => c && c.dispose())
 })
 </script>
 

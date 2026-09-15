@@ -27,6 +27,9 @@
           <router-link to="/submit" class="nav-item" :class="{ active: route.path === '/submit' }" v-if="userStore.isLoggedIn">
             提交作业
           </router-link>
+          <router-link to="/submissions" class="nav-item" :class="{ active: route.path === '/submissions' }" v-if="userStore.isLoggedIn">
+            提交历史
+          </router-link>
           <router-link to="/wrong-questions" class="nav-item" :class="{ active: route.path === '/wrong-questions' }" v-if="userStore.isLoggedIn">
             错题本
           </router-link>

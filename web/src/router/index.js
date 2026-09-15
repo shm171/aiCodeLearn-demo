@@ -30,6 +30,13 @@ const routes = [
         component: () => import('../views/student/SubmitView.vue'),
         meta: { title: '提交作业', requiresAuth: true },
       },
+      // 提交历史：需要登录
+      {
+        path: 'submissions',
+        name: 'submissions',
+        component: () => import('../views/student/SubmissionHistoryView.vue'),
+        meta: { title: '提交历史', requiresAuth: true },
+      },
       // 个人中心：需要登录
       {
         path: 'profile',

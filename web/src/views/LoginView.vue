@@ -137,6 +137,8 @@ async function handleLogin() {
   try {
     const data = await loginApi(loginForm.email, loginForm.password)
     userStore.setLoginInfo(data.token, loginForm.email)
+    // 登录响应只有token，用注册时保存的用户ID拉取真实用户信息
+    await userStore.fetchUserInfo()
     ElMessage.success('登录成功')
     router.push('/')
   } catch (error) {
@@ -186,7 +188,9 @@ async function handleRegister() {
   await registerFormRef.value.validate()
   registerLoading.value = true
   try {
-    await registerApi(registerForm.email, registerForm.password, registerForm.username, registerForm.role)
+    const data = await registerApi(registerForm.email, registerForm.password, registerForm.username, registerForm.role)
+    // 保存注册返回的用户ID，登录后要用它查用户档案
+    userStore.setUserId(data.id, registerForm.email)
     ElMessage.success('注册成功，请登录')
     activeTab.value = 'login'
     loginForm.email = registerForm.email

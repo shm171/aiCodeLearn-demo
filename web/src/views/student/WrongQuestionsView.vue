@@ -31,13 +31,13 @@
         <button class="filter-tab" :class="{ active: filter === 'mastered' }" @click="filter = 'mastered'">已掌握</button>
       </div>
       <div class="filter-right">
-        <el-select v-model="severityFilter" placeholder="严重程度" clearable class="filter-select">
-          <el-option label="🔴 严重" value="ERROR" />
-          <el-option label="🟡 警告" value="WARNING" />
-          <el-option label="🟢 建议" value="INFO" />
+        <el-select v-model="categoryKeyFilter" placeholder="错误分类" clearable class="filter-select">
+          <el-option label="🔴 语法错误" value="SYNTAX_ERROR" />
+          <el-option label="🟡 逻辑错误" value="LOGIC_ERROR" />
+          <el-option label="🟢 格式错误" value="FORMAT_ERROR" />
         </el-select>
-        <el-select v-model="categoryFilter" placeholder="错误类型" clearable class="filter-select">
-          <el-option v-for="c in categoryList" :key="c" :label="c" :value="c" />
+        <el-select v-model="typeFilter" placeholder="错误类型" clearable class="filter-select">
+          <el-option v-for="t in typeList" :key="t" :label="t" :value="t" />
         </el-select>
         <el-button :icon="Refresh" @click="loadErrors" :loading="loading">刷新</el-button>
       </div>
@@ -55,12 +55,12 @@
         <div class="question-header">
           <div class="question-title">
             <span class="q-id">#{{ q.errorId }}</span>
-            <span class="q-name">{{ q.category || '代码问题' }}</span>
-            <el-tag :type="severityTagType(q.severity)" size="small" effect="dark">
-              {{ severityText(q.severity) }}
+            <span class="q-name">{{ q.errorType || q.category || '代码问题' }}</span>
+            <el-tag :type="categoryMeta(q.categoryKey).tagType" size="small" effect="dark">
+              {{ q.category }}
             </el-tag>
-            <el-tag v-if="q.language" type="info" size="small" effect="plain" class="lang-tag">
-              {{ q.language }}
+            <el-tag v-if="q.chapter" type="info" size="small" effect="plain" class="lang-tag">
+              {{ q.chapter }}
             </el-tag>
           </div>
           <div class="header-right">
@@ -74,18 +74,12 @@
         <div class="question-body">
           <div class="error-info">
             <div class="error-label">问题描述</div>
-            <p class="error-text">{{ q.message || q.suggestion || '暂无详细描述' }}</p>
-            <div v-if="q.suggestion" class="suggestion-box">
+            <p class="error-text">{{ q.errorType || q.category || '暂无详细描述' }}</p>
+            <div v-if="q.fixSuggestion" class="suggestion-box">
               <span class="suggestion-label">💡 修改建议：</span>
-              <span>{{ q.suggestion }}</span>
+              <span>{{ q.fixSuggestion }}</span>
             </div>
-          </div>
-          <div class="code-preview">
-            <div class="code-header">
-              <span class="code-filename">代码片段</span>
-              <span v-if="q.lineNumber" class="code-line">第 {{ q.lineNumber }} 行</span>
-            </div>
-            <pre class="code-content"><code>{{ q.codeSnippet || '// 暂无代码片段' }}</code></pre>
+            <div v-if="q.lineText" class="line-info">出错行号：第 {{ q.lineText }} 行</div>
           </div>
         </div>
 
@@ -98,8 +92,9 @@
             <el-icon :size="13"><MagicStick /></el-icon>
             AI 生成类似题
           </button>
-          <button class="action-btn" @click="toggleMastered(q)" v-if="!q.mastered">标记已掌握</button>
-          <button class="action-btn" @click="toggleMastered(q)" v-else>取消掌握</button>
+          <button class="action-btn" @click="markMastered(q)" v-if="!q.mastered" :disabled="q.mastering">
+            {{ q.mastering ? '标记中...' : '标记已掌握' }}
+          </button>
         </div>
       </div>
     </div>
@@ -114,52 +109,29 @@
     <el-dialog v-model="detailDialogVisible" title="错题详情" width="720px" top="6vh" :z-index="3000" class="detail-dialog">
       <div v-if="currentQuestion" class="detail-content">
         <div class="detail-header">
-          <el-tag :type="severityTagType(currentQuestion.severity)" size="small" effect="dark">
-            {{ severityText(currentQuestion.severity) }}
+          <el-tag :type="categoryMeta(currentQuestion.categoryKey).tagType" size="small" effect="dark">
+            {{ currentQuestion.category }}
           </el-tag>
-          <span class="detail-category">{{ currentQuestion.category }}</span>
-          <el-tag v-if="currentQuestion.language" type="info" size="small" effect="plain">
-            {{ currentQuestion.language }}
+          <span class="detail-category">{{ currentQuestion.errorType || '代码问题' }}</span>
+          <el-tag v-if="currentQuestion.chapter" type="info" size="small" effect="plain">
+            {{ currentQuestion.chapter }}
           </el-tag>
           <span class="detail-time">{{ formatTime(currentQuestion.createdAt) }}</span>
         </div>
 
         <div class="detail-section">
           <div class="detail-label">📝 问题描述</div>
-          <p class="detail-text">{{ currentQuestion.message || '暂无描述' }}</p>
+          <p class="detail-text">{{ currentQuestion.errorType || '暂无描述' }}</p>
         </div>
 
-        <div v-if="currentQuestion.suggestion" class="detail-section">
+        <div v-if="currentQuestion.fixSuggestion" class="detail-section">
           <div class="detail-label">💡 修改建议</div>
-          <p class="detail-text suggestion">{{ currentQuestion.suggestion }}</p>
+          <p class="detail-text suggestion">{{ currentQuestion.fixSuggestion }}</p>
         </div>
 
-        <div class="detail-section">
-          <div class="detail-label">📄 完整源代码</div>
-          <div class="detail-code full-code">
-            <pre><code>{{ currentQuestion.fullCode || currentQuestion.codeSnippet || '// 暂无代码' }}</code></pre>
-          </div>
-        </div>
-
-        <div v-if="currentQuestion.detailedExplanation" class="detail-section">
-          <div class="detail-label">🔍 详细解释</div>
-          <div class="detail-text detail-paragraph">
-            <p v-for="(para, idx) in currentQuestion.detailedExplanation.split('\n\n')" :key="idx">{{ para }}</p>
-          </div>
-        </div>
-
-        <div v-if="currentQuestion.knowledgePoint" class="detail-section">
-          <div class="detail-label">📚 相关知识点</div>
-          <div class="detail-text detail-paragraph knowledge-box">
-            <p v-for="(para, idx) in currentQuestion.knowledgePoint.split('\n\n')" :key="idx">{{ para }}</p>
-          </div>
-        </div>
-
-        <div v-if="currentQuestion.example" class="detail-section">
-          <div class="detail-label">✏️ 正确写法示例</div>
-          <div class="detail-code example-code">
-            <pre><code>{{ currentQuestion.example }}</code></pre>
-          </div>
+        <div v-if="currentQuestion.lineText" class="detail-section">
+          <div class="detail-label">📍 出错行号</div>
+          <p class="detail-text">第 {{ currentQuestion.lineText }} 行</p>
         </div>
       </div>
     </el-dialog>
@@ -184,7 +156,7 @@
           <div class="similar-main">
             <!-- 左边：题目信息 -->
             <div class="similar-left">
-              <div class="similar-label">AI 根据错题「{{ currentQuestion.category || '代码问题' }}」生成（{{ currentQuestion.language || '通用' }}）</div>
+              <div class="similar-label">AI 根据错题「{{ currentQuestion.errorType || currentQuestion.category || '代码问题' }}」生成</div>
               <h4 class="similar-title">{{ similarQuestions[currentSimilarIndex].title }}</h4>
               <p class="similar-desc">{{ similarQuestions[currentSimilarIndex].description }}</p>
               <div class="similar-hint">考察知识点：{{ currentQuestion.category }}</div>
@@ -202,7 +174,7 @@
             <!-- 右边：代码编辑器 + 提交 + 批改结果 -->
             <div class="similar-right">
               <div class="editor-header">
-                <span class="editor-filename">practice.{{ currentQuestion.language === 'C++' ? 'cpp' : 'java' }}</span>
+                <span class="editor-filename">practice.cpp</span>
                 <el-button size="small" text @click="clearEditor">清空</el-button>
               </div>
               <div ref="similarEditorRef" class="similar-code-editor"></div>
@@ -218,17 +190,17 @@
               <div class="grading-result" v-if="similarGradingResult">
                 <div class="result-header">
                   <span class="result-score">{{ similarGradingResult.score }}分</span>
-                  <span class="result-feedback">{{ similarGradingResult.overallFeedback }}</span>
+                  <span class="result-feedback">{{ similarGradingResult.feedback }}</span>
                 </div>
                 <div class="result-issues">
-                  <div class="issue-item" v-for="(issue, idx) in similarGradingResult.issues" :key="idx">
-                    <el-tag :type="issue.severity === 'ERROR' ? 'danger' : issue.severity === 'WARNING' ? 'warning' : 'info'" size="small">
-                      {{ issue.severity === 'ERROR' ? '严重' : issue.severity === 'WARNING' ? '警告' : '建议' }}
+                  <div class="issue-item" v-for="(issue, idx) in similarGradingResult.errors" :key="idx">
+                    <el-tag :type="categoryMeta(issue.category).tagType" size="small">
+                      {{ categoryMeta(issue.category).label }}
                     </el-tag>
                     <div class="issue-content">
-                      <div class="issue-category">{{ issue.category }} <span v-if="issue.lineNumber">（第{{ issue.lineNumber }}行）</span></div>
+                      <div class="issue-category">{{ issue.errorType }} <span v-if="issue.line && issue.line.length">（第{{ issue.line.join('、') }}行）</span></div>
                       <div class="issue-message">{{ issue.message }}</div>
-                      <div class="issue-suggestion" v-if="issue.suggestion">💡 {{ issue.suggestion }}</div>
+                      <div class="issue-suggestion" v-if="issue.fixSuggestion">💡 {{ issue.fixSuggestion }}</div>
                     </div>
                   </div>
                 </div>
@@ -246,11 +218,10 @@
 
 <script setup>
 import { ref, computed, onMounted, nextTick } from 'vue'
-import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { MagicStick, Notebook, Loading, Refresh, View } from '@element-plus/icons-vue'
-import { getErrorListApi } from '../../api/review'
-import { uploadSubmissionApi, gradeSubmissionApi } from '../../api/submission'
+import { getErrorListApi, getErrorDetailApi, markMasteredApi } from '../../api/review'
+import { uploadSubmissionApi } from '../../api/submission'
 
 // ========== CodeMirror 导入 ==========
 import { EditorState } from '@codemirror/state'
@@ -259,13 +230,11 @@ import { java } from '@codemirror/lang-java'
 import { cpp } from '@codemirror/lang-cpp'
 import { oneDark } from '@codemirror/theme-one-dark'
 
-const router = useRouter()
-
 // 状态
 const loading = ref(false)
 const filter = ref('all')
-const severityFilter = ref('')
-const categoryFilter = ref('')
+const categoryKeyFilter = ref('')
+const typeFilter = ref('')
 const wrongQuestions = ref([])
 const detailDialogVisible = ref(false)
 const similarDialogVisible = ref(false)
@@ -280,200 +249,109 @@ let similarEditorView = null
 const similarSubmitting = ref(false)
 const similarGradingResult = ref(null)
 
-// 从localStorage读取已掌握的错题ID
-const masteredIds = ref(new Set(JSON.parse(localStorage.getItem('masteredErrorIds') || '[]')))
-
 // 计算属性
-const categoryList = computed(() => [...new Set(wrongQuestions.value.map(q => q.category).filter(Boolean))])
+const typeList = computed(() => [...new Set(wrongQuestions.value.map(q => q.errorType).filter(Boolean))])
 const masteredCount = computed(() => wrongQuestions.value.filter(q => q.mastered).length)
 
 const filteredQuestions = computed(() => {
   let list = wrongQuestions.value
   if (filter.value === 'unmastered') list = list.filter(q => !q.mastered)
   else if (filter.value === 'mastered') list = list.filter(q => q.mastered)
-  if (severityFilter.value) list = list.filter(q => q.severity === severityFilter.value)
-  if (categoryFilter.value) list = list.filter(q => q.category === categoryFilter.value)
+  if (categoryKeyFilter.value) list = list.filter(q => q.categoryKey === categoryKeyFilter.value)
+  if (typeFilter.value) list = list.filter(q => q.errorType === typeFilter.value)
   return list
 })
 
-// 临时模拟错题数据（等后端接口完善后删除）
-const mockWrongQuestions = [
-  {
-    errorId: 1001,
-    category: '数组越界',
-    severity: 'ERROR',
-    language: 'C++',
-    message: '数组长度为5，下标范围是0-4，循环条件i<=5会访问arr[5]，导致运行时越界异常',
-    suggestion: '将循环条件改为 i < 5，即 for (int i = 0; i < 5; i++)',
-    codeSnippet: 'for (int i = 0; i <= 5; i++) {\n    cout << arr[i] << endl;\n}',
-    lineNumber: 6,
-    createdAt: '2026-09-10T14:30:00',
-    fullCode: '#include <iostream>\nusing namespace std;\n\nint main() {\n    int arr[5] = {1, 2, 3, 4, 5};\n    for (int i = 0; i <= 5; i++) {\n        cout << arr[i] << endl;\n    }\n    return 0;\n}',
-    detailedExplanation: '数组越界是C/C++中最常见的运行时错误之一。在这个程序中，你定义了一个长度为5的数组arr，它的合法下标是0、1、2、3、4。但是你的for循环条件写的是i <= 5，当i等于5时，程序会尝试访问arr[5]，而这个位置并不属于这个数组，属于未定义行为。\n\n在实际运行中，这可能导致三种结果：1）程序崩溃（段错误）；2）读取到内存中的随机值；3）修改了其他变量的值，导致程序逻辑异常。C/C++不会自动检查数组下标是否越界，这需要程序员自己保证。',
-    knowledgePoint: '数组下标从0开始：C/C++中数组的第一个元素下标是0，最后一个元素下标是长度-1。例如长度为n的数组，合法下标范围是0到n-1。\n\n循环条件判断：遍历数组时，循环条件应该是i < 数组长度，而不是i <= 数组长度。\n\n越界的危害：数组越界可能导致程序崩溃、数据损坏、安全漏洞（缓冲区溢出攻击）。',
-    example: '正确写法：\nint arr[5] = {1, 2, 3, 4, 5};\nfor (int i = 0; i < 5; i++) {  // 注意是 < 不是 <=\n    cout << arr[i] << endl;\n}\n\n另一种安全写法（C++11及以上）：\nfor (int x : arr) {  // 范围for循环，自动遍历每个元素\n    cout << x << endl;\n}',
-  },
-  {
-    errorId: 1002,
-    category: '变量未定义',
-    severity: 'ERROR',
-    language: 'C++',
-    message: '变量sum未声明就直接使用，会导致编译失败',
-    suggestion: '在使用前声明变量：int sum = 0;',
-    codeSnippet: 'int a = 10, b = 20;\nsum = a + b;\ncout << sum << endl;',
-    lineNumber: 3,
-    createdAt: '2026-09-10T10:15:00',
-    fullCode: '#include <iostream>\nusing namespace std;\n\nint main() {\n    int a = 10, b = 20;\n    sum = a + b;\n    cout << sum << endl;\n    return 0;\n}',
-    detailedExplanation: '在C/C++中，所有变量在使用之前必须先声明。声明变量的作用是告诉编译器这个变量的名字、类型，编译器会为它分配内存空间。你在第3行直接使用了sum变量，但前面没有声明过它，所以编译器会报错"sum was not declared in this scope"。\n\n这个错误属于编译时错误，程序根本无法运行，必须修复后才能编译通过。常见的原因包括：忘记声明变量、变量名拼写错误、变量作用域不对（在函数内声明的变量在函数外使用）。',
-    knowledgePoint: '变量声明：C++中声明变量的格式是 类型 变量名; 例如 int sum; 可以在声明时同时初始化：int sum = 0;\n\n变量作用域：变量只在它声明的代码块（大括号{}）内有效。在函数内声明的变量叫局部变量，只能在函数内使用。\n\n初始化的重要性：声明变量时最好同时初始化，否则变量的值是不确定的（内存中的随机值）。',
-    example: '正确写法：\nint main() {\n    int a = 10, b = 20;\n    int sum = a + b;  // 先声明再使用\n    cout << sum << endl;\n    return 0;\n}\n\n如果需要在多个函数中使用，可以声明为全局变量：\nint sum;  // 全局变量，所有函数都能访问\nint main() {\n    sum = 10 + 20;\n    return 0;\n}',
-  },
-  {
-    errorId: 1003,
-    category: '缺少分号',
-    severity: 'WARNING',
-    language: 'C++',
-    message: 'cout输出语句末尾缺少分号，C++语句必须以分号结尾',
-    suggestion: '在 cout << "Hello" << endl 末尾添加分号 ;',
-    codeSnippet: 'cout << "Hello EduCode" << endl\nreturn 0;',
-    lineNumber: 5,
-    createdAt: '2026-09-09T16:45:00',
-    fullCode: '#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << "Hello EduCode" << endl\n    return 0;\n}',
-    detailedExplanation: '在C++中，分号是语句的结束标志。每一条可执行语句都必须以分号结尾，告诉编译器这条语句到这里结束了。你在第5行的cout语句后面没有写分号，编译器会把第5行和第6行（return 0;）当成一条语句来解析，导致语法错误。\n\n这个错误虽然简单，但是新手最常犯的错误之一。缺少分号会导致编译失败，而且编译器的报错信息可能不太直观（可能会指向缺少分号的下一行），需要你自己往上找。',
-    knowledgePoint: '分号的作用：C++中分号表示一条语句的结束。一条语句可以写在多行，只要最后有分号就行；多条语句也可以写在一行，用分号分隔。\n\n不需要分号的地方：预处理指令（#include、#define）、函数定义的大括号后面、类定义的大括号后面、if/for/while的条件后面（如果后面直接跟大括号）。\n\n常见遗漏位置：cout/cin语句、赋值语句、函数调用语句、return语句。',
-    example: '正确写法：\nint main() {\n    cout << "Hello EduCode" << endl;  // 末尾有分号\n    return 0;  // 末尾有分号\n}\n\n一条语句写多行（合法）：\ncout << "Hello" \n     << " World" \n     << endl;  // 最后才有分号\n\n多条语句写一行（合法但不推荐）：\nint a = 1; int b = 2; cout << a + b << endl;',
-  },
-  {
-    errorId: 1004,
-    category: '空指针异常',
-    severity: 'ERROR',
-    language: 'Java',
-    message: '对象引用为null时调用方法，会抛出NullPointerException',
-    suggestion: '调用方法前先判断对象是否为null，或确保对象已正确初始化',
-    codeSnippet: 'String str = null;\nif (str.length() > 0) {\n    System.out.println(str);\n}',
-    lineNumber: 2,
-    createdAt: '2026-09-09T11:20:00',
-    fullCode: 'public class NullPointerExample {\n    public static void main(String[] args) {\n        String str = null;\n        if (str.length() > 0) {\n            System.out.println(str);\n        }\n    }\n}',
-    detailedExplanation: '空指针异常（NullPointerException，简称NPE）是Java中最常见的运行时异常之一。当一个引用变量的值是null（表示它不指向任何对象），而你尝试通过它调用方法或访问属性时，就会抛出这个异常。\n\n在这个例子中，你把str赋值为null，然后在第2行调用str.length()。因为str没有指向任何String对象，所以无法调用length()方法，JVM会抛出NullPointerException，程序崩溃。\n\n这个错误在实际开发中非常常见，特别是在处理方法返回值、从集合中取元素、接收外部传入的参数时。Java 8及以上版本可以使用Optional类来更优雅地处理可能为null的情况。',
-    knowledgePoint: 'null的含义：null表示引用变量不指向任何对象。它不是一个对象，所以不能调用任何方法。\n\n引用类型 vs 基本类型：基本类型（int、double、boolean等）不能为null，它们有默认值（0、0.0、false）；引用类型（String、数组、自定义类等）可以为null。\n\n防御式编程：在不确定对象是否为null时，调用方法前先判断 if (obj != null)。\n\nJava 8+ Optional：使用Optional可以更优雅地处理可能为null的值，避免显式的null判断。',
-    example: '正确写法1 - 先判断null：\nString str = getStringFromSomewhere();\nif (str != null && str.length() > 0) {\n    System.out.println(str);\n}\n\n正确写法2 - 使用Optional（Java 8+）：\nOptional<String> strOpt = Optional.ofNullable(getStringFromSomewhere());\nstrOpt.filter(s -> s.length() > 0)\n      .ifPresent(System.out::println);\n\n正确写法3 - 提供默认值：\nString str = getStringFromSomewhere();\nString safeStr = (str != null) ? str : "";\nif (safeStr.length() > 0) {\n    System.out.println(safeStr);\n}',
-  },
-  {
-    errorId: 1005,
-    category: '类型不匹配',
-    severity: 'WARNING',
-    language: 'Java',
-    message: '将double类型的值赋给int变量，会丢失小数部分精度',
-    suggestion: '如果需要保留小数，变量类型改为double；如果只要整数，建议显式强制转换 (int)',
-    codeSnippet: 'double price = 19.99;\nint intPrice = price;\nSystem.out.println(intPrice);',
-    lineNumber: 2,
-    createdAt: '2026-09-08T15:30:00',
-    fullCode: 'public class TypeMismatchExample {\n    public static void main(String[] args) {\n        double price = 19.99;\n        int intPrice = price;\n        System.out.println(intPrice);\n    }\n}',
-    detailedExplanation: '在Java中，将一个取值范围更大、精度更高的类型（double）赋值给取值范围更小、精度更低的类型（int）时，会发生隐式类型转换，小数部分会被直接截断丢弃。在这个例子中，19.99赋值给int变量后，会变成19，丢失了0.99的小数部分。\n\n需要注意的是，这种隐式转换在Java中其实是编译错误的（可能损失精度），需要显式强制转换。但在C/C++中，这种转换是允许的，只会给出警告。不管是哪种语言，这种转换都可能导致数据丢失，需要谨慎使用。\n\n如果你确实需要取整，应该使用Math.round()（四舍五入）、Math.floor()（向下取整）、Math.ceil()（向上取整）等方法，而不是直接强制转换。',
-    knowledgePoint: '基本数据类型：Java中有8种基本类型，按精度从低到高：byte < short < int < long < float < double，还有char和boolean。\n\n自动类型转换（隐式）：从低精度到高精度可以自动转换，不需要强制转换，例如 int -> double。\n\n强制类型转换（显式）：从高精度到低精度需要强制转换，格式是 (目标类型)值，例如 (int)3.14。强制转换可能丢失精度或溢出。\n\n取整方法：Math.round()四舍五入、Math.floor()向下取整、Math.ceil()向上取整，这些方法返回的是long或double类型。',
-    example: '正确写法1 - 保留小数，用double：\ndouble price = 19.99;\ndouble doublePrice = price;  // 类型相同，直接赋值\nSystem.out.println(doublePrice);  // 输出19.99\n\n正确写法2 - 四舍五入取整：\ndouble price = 19.99;\nint intPrice = (int) Math.round(price);  // 四舍五入后强制转换\nSystem.out.println(intPrice);  // 输出20\n\n正确写法3 - 显式强制转换（截断小数）：\ndouble price = 19.99;\nint intPrice = (int) price;  // 显式强制转换，截断小数\nSystem.out.println(intPrice);  // 输出19\n\n正确写法4 - 向上取整（比如算需要多少个盒子）：\ndouble items = 25.0;\ndouble capacity = 10.0;\nint boxes = (int) Math.ceil(items / capacity);  // 向上取整\nSystem.out.println(boxes);  // 输出3',
-  },
-  {
-    errorId: 1006,
-    category: '逻辑错误',
-    severity: 'WARNING',
-    language: 'Java',
-    message: '判断条件使用了赋值运算符=而不是比较运算符==，会导致条件永远为真',
-    suggestion: '将 if (flag = true) 改为 if (flag == true)，或者直接写 if (flag)',
-    codeSnippet: 'boolean flag = false;\nif (flag = true) {\n    System.out.println("always true");\n}',
-    lineNumber: 2,
-    createdAt: '2026-09-08T09:10:00',
-    fullCode: 'public class LogicErrorExample {\n    public static void main(String[] args) {\n        boolean flag = false;\n        if (flag = true) {\n            System.out.println("always true");\n        }\n    }\n}',
-    detailedExplanation: '这是一个非常经典的逻辑错误。在if条件中，你写的是flag = true，这是一个赋值语句，作用是把true赋值给flag，然后整个表达式的值就是true。所以不管flag原来是什么值，这个if条件永远为真，里面的代码一定会执行。\n\n你本来想写的应该是flag == true，这是一个比较表达式，判断flag是否等于true，结果可能是true也可能是false。\n\n在Java中，因为if条件必须是boolean类型，所以如果flag是boolean类型，flag = true是合法的（因为赋值表达式的值是boolean），但这是逻辑错误。如果flag是int类型，if (flag = 5)在Java中是编译错误（因为int不能转成boolean），但在C/C++中是合法的，而且也是常见的bug。',
-    knowledgePoint: '赋值运算符=：作用是把右边的值赋给左边的变量，整个表达式的值就是赋的值。例如 a = 5 的结果是5。\n\n比较运算符==：作用是判断左右两边是否相等，结果是boolean类型（true或false）。例如 a == 5 的结果是true或false。\n\nboolean变量的判断：如果变量本身就是boolean类型，不需要写 == true 或 == false，直接写 if (flag) 或 if (!flag) 更简洁，也能避免把==写成=的错误。\n\n常量放前面的习惯：有些程序员习惯把常量放前面，例如 if (true == flag)，这样如果不小心写成 if (true = flag) 会编译错误（因为不能给常量赋值），从而提前发现错误。',
-    example: '正确写法1 - 直接判断boolean变量（推荐）：\nboolean flag = false;\nif (flag) {  // 直接判断，不需要==true\n    System.out.println("flag is true");\n}\n\n正确写法2 - 使用==比较：\nboolean flag = false;\nif (flag == true) {  // 注意是两个等号\n    System.out.println("flag is true");\n}\n\n正确写法3 - 判断false：\nboolean flag = false;\nif (!flag) {  // !表示取反，flag为false时!flag为true\n    System.out.println("flag is false");\n}\n\n正确写法4 - 数字比较（注意不要写成=）：\nint score = 85;\nif (score >= 60) {  // >=是大于等于\n    System.out.println("及格");\n}\nif (score != 100) {  // !=是不等于\n    System.out.println("不是满分");\n}',
-  },
-  {
-    errorId: 1007,
-    category: '死循环',
-    severity: 'ERROR',
-    language: 'Java',
-    message: 'while循环内没有更新循环变量i，导致条件永远为真，程序陷入死循环',
-    suggestion: '在循环体内添加 i++ 或 i = i + 1，确保循环能正常退出',
-    codeSnippet: 'int i = 0;\nwhile (i < 10) {\n    System.out.println(i);\n    // 缺少 i++\n}',
-    lineNumber: 2,
-    createdAt: '2026-09-07T20:00:00',
-    fullCode: 'public class InfiniteLoopExample {\n    public static void main(String[] args) {\n        int i = 0;\n        while (i < 10) {\n            System.out.println(i);\n            // 缺少 i++\n        }\n    }\n}',
-    detailedExplanation: '死循环是指循环条件永远为真，循环永远不会结束的情况。在这个例子中，你在while循环外面把i初始化为0，循环条件是i < 10。但是在循环体内，你只打印了i的值，没有修改i的值，所以i永远是0，条件i < 10永远为真，循环会一直执行下去，不停地打印0，直到你手动终止程序（或者内存耗尽）。\n\n死循环是编程中常见的错误，可能导致程序卡死、CPU占用100%、系统无响应等问题。在实际开发中，写循环时一定要注意：1）循环变量是否正确初始化；2）循环条件是否正确；3）循环体内是否更新了循环变量；4）是否有其他退出循环的方式（break、return等）。\n\n有些死循环是故意的，比如服务器程序需要一直运行等待请求，这时候用while(true)是正常的，但循环体内一定要有break或return的退出路径。',
-    knowledgePoint: '循环三要素：1）初始化：循环开始前设置初始状态；2）条件：判断是否继续循环；3）更新：每次循环后修改状态，使条件最终能变为假。\n\nwhile循环：先判断条件，条件为真才执行循环体。如果一开始条件就为假，循环体一次都不会执行。\n\ndo-while循环：先执行一次循环体，再判断条件。循环体至少执行一次。\n\nfor循环：把初始化、条件、更新写在一起，更紧凑，适合已知循环次数的情况。\n\nbreak和continue：break立即跳出整个循环；continue跳过本次循环，直接进入下一次循环判断。',
-    example: '正确写法1 - while循环中更新变量：\nint i = 0;\nwhile (i < 10) {\n    System.out.println(i);\n    i++;  // 更新循环变量\n}\n\n正确写法2 - 用for循环（更推荐，三要素在一起）：\nfor (int i = 0; i < 10; i++) {  // 初始化;条件;更新\n    System.out.println(i);\n}\n\n正确写法3 - 用break退出循环：\nint i = 0;\nwhile (true) {  // 条件永远为真\n    System.out.println(i);\n    i++;\n    if (i >= 10) {\n        break;  // 满足条件时跳出循环\n    }\n}\n\n正确写法4 - 遍历数组（用增强for循环，不会死循环）：\nint[] arr = {1, 2, 3, 4, 5};\nfor (int x : arr) {  // 自动遍历每个元素，不需要管理下标\n    System.out.println(x);\n}',
-  },
-  {
-    errorId: 1008,
-    category: '内存泄漏',
-    severity: 'INFO',
-    language: 'C++',
-    message: 'new分配的内存没有用delete释放，会导致内存泄漏',
-    suggestion: '在不再使用指针时，用 delete ptr; 释放内存，并将指针置为nullptr',
-    codeSnippet: 'int* ptr = new int[100];\nfor (int i = 0; i < 100; i++) {\n    ptr[i] = i;\n}\n// 缺少 delete[] ptr;',
-    lineNumber: 1,
-    createdAt: '2026-09-07T14:25:00',
-    fullCode: '#include <iostream>\nusing namespace std;\n\nint main() {\n    int* ptr = new int[100];\n    for (int i = 0; i < 100; i++) {\n        ptr[i] = i;\n    }\n    // 缺少 delete[] ptr;\n    return 0;\n}',
-    detailedExplanation: '内存泄漏是指程序动态分配了内存（用new或malloc），但在使用完后没有释放（用delete或free），导致这块内存一直被占用，无法被其他程序使用。在这个例子中，你用new分配了100个int的数组（大约400字节），使用完后没有用delete[]释放，虽然程序结束后操作系统会回收所有内存，但如果这是在一个长时间运行的程序（比如服务器）中，并且反复执行这段代码，内存泄漏会越来越严重，最终导致内存耗尽，程序崩溃。\n\nC++不像Java有自动垃圾回收机制，需要程序员手动管理内存。这是C++的灵活性所在，也是容易出错的地方。现代C++推荐使用智能指针（std::unique_ptr、std::shared_ptr）来自动管理内存，避免手动new/delete导致的内存泄漏。\n\n需要注意的是，用new[]分配的数组必须用delete[]释放，用new分配的单个对象用delete释放，不能混用。',
-    knowledgePoint: '动态内存分配：C++中用new在堆上分配内存，用delete释放。new返回的是指针，需要手动管理。\n\n栈 vs 堆：栈上的变量（局部变量）在函数结束时自动释放；堆上的变量（new出来的）需要手动释放，否则一直存在。\n\nnew/delete配对：new对应delete，new[]对应delete[]，不能混用。\n\n内存泄漏的危害：长时间运行的程序中，内存泄漏会导致可用内存越来越少，最终程序崩溃。\n\n智能指针：C++11引入了std::unique_ptr和std::shared_ptr，它们会自动释放内存，不需要手动delete，是现代C++推荐的内存管理方式。',
-    example: '正确写法1 - 手动释放（传统方式）：\nint* ptr = new int[100];\nfor (int i = 0; i < 100; i++) {\n    ptr[i] = i;\n}\n// 使用完后释放\ndelete[] ptr;  // 注意是delete[]，因为是数组\nptr = nullptr;  // 置空，避免悬空指针\n\n正确写法2 - 使用智能指针（推荐，C++11+）：\n#include <memory>\nstd::unique_ptr<int[]> ptr(new int[100]);  // unique_ptr自动管理\nfor (int i = 0; i < 100; i++) {\n    ptr[i] = i;\n}\n// 不需要手动delete，ptr离开作用域时自动释放\n\n正确写法3 - 使用vector（更推荐，不需要手动管理内存）：\n#include <vector>\nstd::vector<int> arr(100);  // vector自动管理内存\nfor (int i = 0; i < 100; i++) {\n    arr[i] = i;\n}\n// 不需要手动释放，vector离开作用域时自动释放\n\n正确写法4 - 单个对象的new/delete：\nint* p = new int(42);  // 分配单个int，初始值42\ncout << *p << endl;\ndelete p;  // 释放单个对象，用delete不是delete[]\np = nullptr;',
-  },
-]
+// 错误分类 → 中文名/严重程度/标签颜色 映射（后端没有severity字段，按category分档）
+function categoryMeta(category) {
+  const map = {
+    SYNTAX_ERROR: { label: '语法错误', severity: 'ERROR', tagType: 'danger' },
+    LOGIC_ERROR: { label: '逻辑错误', severity: 'WARNING', tagType: 'warning' },
+    FORMAT_ERROR: { label: '格式错误', severity: 'INFO', tagType: 'info' },
+  }
+  return map[category] || { label: category || '代码问题', severity: 'INFO', tagType: 'info' }
+}
 
-// 加载错题列表
+// 章节枚举 → 展示文案
+function chapterText(chapter) {
+  const map = {
+    FUNDAMENTALS: 'CH1 程序基础与开发环境',
+    DATA_TYPES: 'CH2 数据类型与表达式',
+    CONTROL_FLOW: 'CH3 选择与循环结构',
+    ARRAYS: 'CH4 数组与字符串',
+    POINTERS: 'CH5 指针与引用',
+    FUNCTIONS: 'CH6 函数与递归',
+    OOP: 'CH7 面向对象初步',
+    FILE_IO: 'CH8 文件与流',
+    COMPREHENSIVE: 'CH9 综合练习',
+  }
+  return map[chapter] || ''
+}
+
+// 后端错题记录 → 页面展示模型
+function normalizeError(item) {
+  return {
+    errorId: item.id,
+    categoryKey: item.category,
+    category: categoryMeta(item.category).label,
+    chapter: chapterText(item.chapter),
+    errorType: item.errorType,
+    fixSuggestion: item.fixSuggestion,
+    lineText: Array.isArray(item.line) && item.line.length ? item.line.join('、') : '',
+    createdAt: item.createdAt,
+    mastered: !!item.mastered,
+    generating: false,
+    mastering: false,
+  }
+}
+
+// 加载错题列表：从后端真实接口拉取
 async function loadErrors() {
   loading.value = true
   try {
-    const data = await getErrorListApi()
-    // 适配后端返回的数据格式
-    const list = Array.isArray(data) ? data : (data.records || data.list || data.content || [])
-    if (list.length > 0) {
-      wrongQuestions.value = list.map(item => ({
-        ...item,
-        mastered: masteredIds.value.has(item.errorId),
-        generating: false,
-      }))
-    } else {
-      // 后端返回空时使用临时模拟数据
-      wrongQuestions.value = mockWrongQuestions.map(item => ({
-        ...item,
-        mastered: masteredIds.value.has(item.errorId),
-        generating: false,
-      }))
-    }
+    const data = await getErrorListApi({ page: 0, size: 100 })
+    // Spring 分页结构：数据在 content 里
+    const list = Array.isArray(data) ? data : (data?.content || [])
+    wrongQuestions.value = list.map(normalizeError)
   } catch (error) {
     console.error('加载错题失败:', error)
-    // 接口失败时使用临时模拟数据
-    wrongQuestions.value = mockWrongQuestions.map(item => ({
-      ...item,
-      mastered: masteredIds.value.has(item.errorId),
-      generating: false,
-    }))
+    wrongQuestions.value = []
+    if (error.response?.status !== 401) {
+      ElMessage.error(error.response?.data?.detail || '加载错题失败，请稍后重试')
+    }
   } finally {
     loading.value = false
   }
 }
 
-// 查看详情
-function viewDetail(q) {
-  currentQuestion.value = q
+// 查看详情：调详情接口拿最新数据，失败时用列表数据兜底
+async function viewDetail(q) {
+  try {
+    const detail = await getErrorDetailApi(q.errorId)
+    currentQuestion.value = normalizeError(detail)
+  } catch (error) {
+    currentQuestion.value = q
+  }
   detailDialogVisible.value = true
 }
 
-// 标记已掌握/取消掌握
-function toggleMastered(q) {
-  q.mastered = !q.mastered
-  if (q.mastered) {
-    masteredIds.value.add(q.errorId)
+// 标记已掌握：必须调后端接口，成功后更新本地状态
+async function markMastered(q) {
+  q.mastering = true
+  try {
+    const updated = await markMasteredApi(q.errorId)
+    q.mastered = updated.mastered !== false
     ElMessage.success('已标记为掌握')
-  } else {
-    masteredIds.value.delete(q.errorId)
-    ElMessage.info('已取消掌握标记')
+  } catch (error) {
+    if (error.response?.status !== 401) {
+      ElMessage.error(error.response?.data?.detail || '操作失败，请稍后重试')
+    }
+  } finally {
+    q.mastering = false
   }
-  localStorage.setItem('masteredErrorIds', JSON.stringify([...masteredIds.value]))
 }
 
-// AI生成类似题（根据错题语言和类型生成3道题）
+// AI生成类似题（前端模拟，后端暂无此接口）：根据错题类型生成3道题
 function generateSimilar(q) {
   currentQuestion.value = q
   similarDialogVisible.value = true
@@ -484,7 +362,7 @@ function generateSimilar(q) {
   setTimeout(() => {
     similarLoading.value = false
     q.generating = false
-    similarQuestions.value = generateSimilarQuestions(q.category, q.language)
+    similarQuestions.value = generateSimilarQuestions(q.errorType || q.category)
     nextTick(() => {
       initSimilarEditor()
     })
@@ -500,7 +378,8 @@ function initSimilarEditor() {
     similarEditorView.destroy()
     similarEditorView = null
   }
-  const isCpp = currentQuestion.value?.language === 'C++'
+  // 错题记录里没有语言字段，默认按 C++ 高亮
+  const isCpp = true
   const langExtension = isCpp ? cpp() : java()
   
   const state = EditorState.create({
@@ -547,7 +426,7 @@ function clearEditor() {
   similarGradingResult.value = null
 }
 
-// 提交并批改
+// 提交并批改（一步完成：上传即批改，响应里直接带 gradingResult）
 async function submitSimilar() {
   if (!similarEditorView) return
   const code = similarEditorView.state.doc.toString()
@@ -555,28 +434,23 @@ async function submitSimilar() {
     ElMessage.warning({ message: '请先写代码再提交', zIndex: 9999 })
     return
   }
-  
+
   similarSubmitting.value = true
   similarGradingResult.value = null
-  
+
   try {
-    const isCpp = currentQuestion.value?.language === 'C++'
+    const isCpp = true
     const filename = `practice.${isCpp ? 'cpp' : 'java'}`
     const blob = new Blob([code], { type: 'text/plain' })
     const file = new File([blob], filename, { type: 'text/plain' })
-    
-    // 提交
+
+    // 提交（一步完成上传+批改）
     const uploadRes = await uploadSubmissionApi(file)
-    const submissionId = uploadRes?.submissionId || uploadRes?.id || uploadRes?.data?.submissionId
-    
-    if (!submissionId) {
-      ElMessage.error({ message: '提交失败，请重试', zIndex: 9999 })
+    similarGradingResult.value = uploadRes?.gradingResult || null
+    if (!similarGradingResult.value) {
+      ElMessage.error({ message: '未获取到批改结果，请重试', zIndex: 9999 })
       return
     }
-    
-    // 批改
-    const gradeRes = await gradeSubmissionApi(submissionId)
-    similarGradingResult.value = gradeRes
     ElMessage.success({ message: '批改完成', zIndex: 9999 })
   } catch (error) {
     console.error('提交批改失败:', error)
@@ -593,9 +467,9 @@ function closeSimilarDialog() {
   similarGradingResult.value = null
 }
 
-// 根据错误类型和语言生成类似题目
-function generateSimilarQuestions(category, language) {
-  const isCpp = language === 'C++'
+// 根据错误类型生成类似题目（前端模拟，后端暂无此接口）
+function generateSimilarQuestions(category) {
+  const isCpp = true
   const ext = isCpp ? '.cpp' : '.java'
   
   // 通用题目模板
@@ -834,16 +708,6 @@ function nextSimilar() {
 }
 
 // 辅助函数
-function severityText(severity) {
-  const map = { ERROR: '严重', WARNING: '警告', INFO: '建议' }
-  return map[severity] || '未知'
-}
-
-function severityTagType(severity) {
-  const map = { ERROR: 'danger', WARNING: 'warning', INFO: 'info' }
-  return map[severity] || 'info'
-}
-
 function formatTime(timeStr) {
   if (!timeStr) return ''
   try {
@@ -952,9 +816,14 @@ onMounted(() => {
 
 .question-body {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 12px;
   margin-bottom: 14px;
+}
+.line-info {
+  margin-top: 8px;
+  font-size: 11px;
+  color: #c4b5fd;
 }
 .error-info {
   padding: 12px;

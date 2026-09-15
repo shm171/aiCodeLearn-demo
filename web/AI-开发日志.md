@@ -4,6 +4,67 @@
 
 ---
 
+## 2026-09-15 第二十步：新增提交历史功能
+
+补齐"查看提交历史"功能（之前首页的"查看全部"按钮是占位提示）：
+
+- 后端新增两个只读接口（数据层 `FileUploadService.listByOwner` 已存在，改动很小）：
+  - `GET /core/submissions` - 分页查询我的提交历史（按提交时间倒序，默认每页 10 条，Spring Page 结构）
+  - `GET /core/submissions/{submissionId}` - 查询单条提交详情（含源码原文；不存在或不属于当前学生返回 404）
+  - 归属校验：只返回当前登录学生自己的提交，实测越权访问他人提交返回 404
+- 前端新建 `SubmissionHistoryView.vue`（深色玻璃风格）：
+  - 顶部统计：总提交 / 无错题提交 / 累计错题
+  - 表格：文件名、语言、章节、错题数、状态（有错题/无错题）、提交时间，带分页
+  - 详情弹窗：本次批改发现的错题列表（分类标签+行号+修改建议）+ 源码原文
+  - 错题数统计：前端用错题列表接口的 `sourceFileId` 字段与提交做关联（后端无需额外 DTO）
+- 接入：路由新增 `/submissions`（需登录），导航栏新增"提交历史"菜单，首页"最近错题"的"查看全部"指向新页面
+- 验证：后端 94 个单元测试全过；新接口 curl 测试（列表/详情/404/越权/空列表）全部通过；前端构建通过
+
+---
+
+## 2026-09-15 第十九步：合并后端分支 + 前端全部接入真实接口
+
+### 一、合并后端
+
+- `git merge origin/feature/backend-integration` 合并到 feature/web-frontend，7 个冲突文件全部保留 backend-integration 版本（最新完整后端）
+- 合并后发现 17 个旧架构遗留文件（core/dto 全部、GradingController、ReviewService、SubmissionService）——它们只存在于旧分支，与新版 GradingService 签名不兼容导致后端编译失败，已删除
+- 验证：`clean compile` 通过；94 个单元测试全部通过
+
+### 二、前端接口层改造
+
+- `api/submission.js`：只保留 `uploadSubmissionApi`（POST /core/submissions 一步完成上传+批改），删除 `gradeSubmissionApi`
+- `api/review.js`：新增 `markMasteredApi`、`getReportApi`；`getErrorListApi` 支持 category/page/size 参数
+- `api/user.js`：新增用户信息/档案查询修改 4 个接口（GET/PUT /user/{id}、GET/PUT /user/{id}/profile）
+- `utils/request.js`：超时调到 60 秒（批改含 AI 调用）；401/403 自动清除登录信息跳登录页（实测后端未认证统一返回 403，不是文档写的 401）
+- `stores/user.js`：保存 token/userId/邮箱/昵称/角色；登录后自动拉取真实用户信息；退出全清空
+
+### 三、页面接入真实数据
+
+- LoginView：注册成功保存用户 ID（登录响应只有 token，ID 只能从注册响应拿）；登录后调 GET /user/{id} 拉取用户信息
+- ProfileView：档案读取/保存走 GET/PUT /user/{id}/profile；学习数据卡片从学习报告接口取（总提交/错题数/正确率/待复习）
+- SubmitView：提交后直接从响应取 gradingResult；status/stages 不完整时显示"分数仅供参考"警告条；问题列表按 category 分档（SYNTAX_ERROR→严重、LOGIC_ERROR→警告、FORMAT_ERROR→建议）
+- WrongQuestionsView：删除 8 条模拟错题；列表/详情/标记已掌握全部走真实接口；筛选改为错误分类+错误类型；AI 类似题按约定保留前端模拟（后端暂无此接口）
+- ReportView：删除全部 mock；4 张图表（错误分类分布/月度学习曲线/知识点掌握度/薄弱知识点排行）+ AI 推荐区全部来自 /core/review/package；accuracyRate 是 0.0~1.0 小数，显示时×100
+- HomeView：数据概览从报告接口取，最近错题从错题列表接口取前 5 条
+
+### 四、端到端测试
+
+完整流程全部通过：注册 → 登录 → 提交含越界/括号错误的作业（返回 88 分 + 2 条违规）→ 错题列表 2 条 → 错题详情 → 标记已掌握 → 学习报告（正确率 0.667 计算正确）→ 档案 GET/PUT
+
+- `npm run build` 通过；vite 代理链路正常（/api → 8080）
+- 无错题提交不产生错题记录，正确率按"无错题提交数/总提交数"计算
+- 批改结果与前端字段适配一致：errors 数组、line 行号数组、fixSuggestion、feedback、stages
+
+### 五、运行注意事项
+
+- 后端启动必须设置 `DEEPSEEK_APIKEY` 环境变量（DeepSeek key），不设置会启动失败；key 未配置真实值时 LLM 批改走降级，前端显示"分数仅供参考"（规则检查正常）
+- 本机 MySQL 密码是 root123456，需设置 `MYSQL_ROOT_DB_PASSWORD=root123456`（配置默认值是 123456）
+- 剩余未做：AI 学习助手（SSE 流式）前端接入、AI 生成类似题接后端
+
+当前状态：前后端已打通，学员端所有页面（除 AI 助手/类似题）都使用真实接口，无模拟数据。
+
+---
+
 ## 2026-09-15 第十八步：后端核心接口全部完成，等待合并
 
 后端 feature/backend-integration 分支完成，核心功能全部实现：
