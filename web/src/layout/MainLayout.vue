@@ -12,7 +12,7 @@
     <header class="header" :class="{ scrolled: isScrolled }">
       <div class="nav-bar">
         <!-- 左侧：logo和网站名 -->
-        <div class="header-left" @click="router.push('/')">
+        <div class="header-left" @click="goHome">
           <div class="logo-wrap">
             <el-icon :size="20" color="#0a0a0c"><Cpu /></el-icon>
           </div>
@@ -21,20 +21,23 @@
 
         <!-- 中间：导航菜单 -->
         <nav class="nav-menu">
-          <router-link to="/" class="nav-item" :class="{ active: route.path === '/' }">
+          <router-link v-if="!userStore.isTeacher" to="/" class="nav-item" :class="{ active: route.path === '/' }">
             首页
           </router-link>
-          <router-link to="/submit" class="nav-item" :class="{ active: route.path === '/submit' }" v-if="userStore.isLoggedIn">
+          <router-link to="/submit" class="nav-item" :class="{ active: route.path === '/submit' }" v-if="userStore.isLoggedIn && !userStore.isTeacher">
             提交作业
           </router-link>
-          <router-link to="/submissions" class="nav-item" :class="{ active: route.path === '/submissions' }" v-if="userStore.isLoggedIn">
+          <router-link to="/submissions" class="nav-item" :class="{ active: route.path === '/submissions' }" v-if="userStore.isLoggedIn && !userStore.isTeacher">
             提交历史
           </router-link>
-          <router-link to="/wrong-questions" class="nav-item" :class="{ active: route.path === '/wrong-questions' }" v-if="userStore.isLoggedIn">
+          <router-link to="/wrong-questions" class="nav-item" :class="{ active: route.path === '/wrong-questions' }" v-if="userStore.isLoggedIn && !userStore.isTeacher">
             错题本
           </router-link>
-          <router-link to="/report" class="nav-item" :class="{ active: route.path === '/report' }" v-if="userStore.isLoggedIn">
+          <router-link to="/report" class="nav-item" :class="{ active: route.path === '/report' }" v-if="userStore.isLoggedIn && !userStore.isTeacher">
             学习报告
+          </router-link>
+                  <router-link to="/teacher/dashboard" class="nav-item" :class="{ active: route.path === '/teacher/dashboard' }" v-if="userStore.isTeacher">
+            教师看板
           </router-link>
         </nav>
 
@@ -96,13 +99,21 @@ onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
 })
 
+function goHome() {
+  router.push(userStore.isTeacher ? '/teacher/dashboard' : '/')
+}
+
 function handleCommand(command) {
   if (command === 'logout') {
     userStore.logout()
     ElMessage.success('已退出登录')
     router.push('/login')
   } else if (command === 'profile') {
-    router.push('/profile')
+    if (userStore.isTeacher) {
+      router.push({ path: '/teacher/dashboard', query: { profile: '1' } })
+    } else {
+      router.push('/profile')
+    }
   }
 }
 </script>

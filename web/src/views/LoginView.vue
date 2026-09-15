@@ -140,7 +140,10 @@ async function handleLogin() {
     // 登录响应只有token，用注册时保存的用户ID拉取真实用户信息
     await userStore.fetchUserInfo()
     ElMessage.success('登录成功')
-    router.push('/')
+    const redirect = typeof router.currentRoute.value.query.redirect === 'string'
+      ? router.currentRoute.value.query.redirect
+      : ''
+    router.push(redirect || userStore.homePath)
   } catch (error) {
     if (error.response?.status === 401) {
       ElMessage.error('邮箱或密码错误')
