@@ -1,6 +1,6 @@
 <!-- 学习报告 ReportView.vue - 对接真实接口 -->
 <template>
-  <div class="report-page">
+  <div class="report-page" v-loading="loading" element-loading-text="正在生成学习报告..." element-loading-background="rgba(10, 10, 12, 0.85)">
     <!-- 页面标题 -->
     <div class="page-header">
       <div>

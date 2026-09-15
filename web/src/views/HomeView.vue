@@ -23,35 +23,64 @@
           <button class="btn-primary" @click="router.push('/login')" v-else>
             开始使用
           </button>
-          <button class="btn-ghost" @click="scrollToSection('features')">
-            了解功能
-          </button>
         </div>
       </div>
       <div class="hero-visual">
-        <div class="code-card">
-          <div class="code-card-header">
-            <span class="dot"></span>
-            <span class="dot"></span>
-            <span class="dot"></span>
-            <span class="code-filename">solution.cpp</span>
-          </div>
-          <div class="code-card-body">
-            <div class="code-line"><span class="ln">1</span><span class="kw">#include</span> <span class="str">&lt;iostream&gt;</span></div>
-            <div class="code-line"><span class="ln">2</span><span class="kw">using namespace</span> std;</div>
-            <div class="code-line"><span class="ln">3</span>&nbsp;</div>
-            <div class="code-line"><span class="ln">4</span><span class="kw">int</span> <span class="fn">main</span>() {</div>
-            <div class="code-line"><span class="ln">5</span>&nbsp;&nbsp;<span class="kw">int</span> arr[<span class="num">5</span>];</div>
-            <div class="code-line error"><span class="ln">6</span>&nbsp;&nbsp;arr[<span class="num">5</span>] = <span class="num">10</span>;</div>
-            <div class="code-line"><span class="ln">7</span>&nbsp;&nbsp;<span class="kw">return</span> <span class="num">0</span>;</div>
-            <div class="code-line"><span class="ln">8</span>}</div>
-          </div>
-          <div class="ai-suggestion">
-            <div class="ai-dot"></div>
-            <div class="ai-text">
-              <span class="ai-label">AI 检测</span>
-              数组长度为5，下标范围 0-4，第6行 arr[5] 越界。建议改为 arr[4] = 10;
+        <div class="code-compare">
+          <!-- 左边：你的代码（有错误） -->
+          <div class="code-pane">
+            <div class="code-pane-header error-header">
+              <el-icon :size="14"><Warning /></el-icon>
+              <span>你的代码</span>
             </div>
+            <div class="code-pane-body">
+              <div class="code-line"><span class="ln">1</span><span class="kw">#include</span> <span class="str">&lt;iostream&gt;</span></div>
+              <div class="code-line"><span class="ln">2</span><span class="kw">using namespace</span> std;</div>
+              <div class="code-line"><span class="ln">3</span>&nbsp;</div>
+              <div class="code-line"><span class="ln">4</span><span class="kw">int</span> <span class="fn">main</span>() {</div>
+              <div class="code-line"><span class="ln">5</span>&nbsp;&nbsp;<span class="kw">int</span> arr[<span class="num">5</span>];</div>
+              <div class="code-line error-line"><span class="ln">6</span>&nbsp;&nbsp;arr[<span class="num">5</span>] = <span class="num">10</span>;</div>
+              <div class="code-line"><span class="ln">7</span>&nbsp;&nbsp;<span class="kw">return</span> <span class="num">0</span>;</div>
+              <div class="code-line"><span class="ln">8</span>}</div>
+            </div>
+          </div>
+
+          <!-- 中间：AI批改动画 -->
+          <div class="ai-bridge">
+            <div class="ai-icon-wrap">
+              <el-icon :size="28" class="ai-icon"><MagicStick /></el-icon>
+            </div>
+            <div class="ai-arrow">
+              <el-icon :size="20"><ArrowRight /></el-icon>
+            </div>
+            <span class="ai-bridge-text">AI 智能批改</span>
+          </div>
+
+          <!-- 右边：AI批改后（正确代码） -->
+          <div class="code-pane">
+            <div class="code-pane-header fixed-header">
+              <el-icon :size="14"><CircleCheck /></el-icon>
+              <span>AI 批改后</span>
+            </div>
+            <div class="code-pane-body">
+              <div class="code-line"><span class="ln">1</span><span class="kw">#include</span> <span class="str">&lt;iostream&gt;</span></div>
+              <div class="code-line"><span class="ln">2</span><span class="kw">using namespace</span> std;</div>
+              <div class="code-line"><span class="ln">3</span>&nbsp;</div>
+              <div class="code-line"><span class="ln">4</span><span class="kw">int</span> <span class="fn">main</span>() {</div>
+              <div class="code-line"><span class="ln">5</span>&nbsp;&nbsp;<span class="kw">int</span> arr[<span class="num">5</span>];</div>
+              <div class="code-line fixed-line"><span class="ln">6</span>&nbsp;&nbsp;arr[<span class="num">4</span>] = <span class="num">10</span>;</div>
+              <div class="code-line"><span class="ln">7</span>&nbsp;&nbsp;<span class="kw">return</span> <span class="num">0</span>;</div>
+              <div class="code-line"><span class="ln">8</span>}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- AI批改建议 -->
+        <div class="ai-suggestion">
+          <div class="ai-dot"></div>
+          <div class="ai-text">
+            <span class="ai-label">AI 检测</span>
+            第6行数组越界：长度为5的数组下标范围是 0-4，arr[5] 越界。已自动修正为 arr[4]
           </div>
         </div>
       </div>
@@ -60,54 +89,17 @@
     <!-- ===== 2. 数据概览（登录后显示） ===== -->
     <section class="stats-section" v-if="userStore.isLoggedIn">
       <div class="stat-card" v-for="stat in stats" :key="stat.label">
-        <div class="stat-value">{{ stat.value }}</div>
-        <div class="stat-label">{{ stat.label }}</div>
-      </div>
-    </section>
-
-    <!-- ===== 3. 核心功能区域 ===== -->
-    <section class="section" id="features">
-      <div class="section-header">
-        <h2 class="section-title">核心功能</h2>
-        <p class="section-sub">智能体驱动的编程学习全流程</p>
-      </div>
-      <div class="features-grid">
-        <div class="feature-card" @click="handleFeatureClick('/submit')">
-          <div class="feature-num">01</div>
-          <h3>智能批改</h3>
-          <p>上传代码，AI 双层批改，秒级反馈错误与改进建议</p>
-          <div class="feature-arrow">
-            <el-icon :size="16"><ArrowRight /></el-icon>
-          </div>
+        <div class="stat-icon" :style="{ background: stat.bg, color: stat.color }">
+          <el-icon :size="24"><component :is="stat.icon" /></el-icon>
         </div>
-        <div class="feature-card" @click="handleFeatureClick('/wrong-questions')">
-          <div class="feature-num">02</div>
-          <h3>错题本</h3>
-          <p>自动归档错误代码，分类整理，针对性复习巩固</p>
-          <div class="feature-arrow">
-            <el-icon :size="16"><ArrowRight /></el-icon>
-          </div>
-        </div>
-        <div class="feature-card" @click="handleFeatureClick('/report')">
-          <div class="feature-num">03</div>
-          <h3>学习报告</h3>
-          <p>数据可视化分析，掌握薄弱知识点，精准提升</p>
-          <div class="feature-arrow">
-            <el-icon :size="16"><ArrowRight /></el-icon>
-          </div>
-        </div>
-        <div class="feature-card" @click="openAIAssistant">
-          <div class="feature-num">04</div>
-          <h3>AI 学习助手</h3>
-          <p>随时提问，智能解答编程疑问，个性化学习建议</p>
-          <div class="feature-arrow">
-            <el-icon :size="16"><ArrowRight /></el-icon>
-          </div>
+        <div class="stat-meta">
+          <div class="stat-value">{{ stat.value }}</div>
+          <div class="stat-label">{{ stat.label }}</div>
         </div>
       </div>
     </section>
 
-    <!-- ===== 4. 最近提交 ===== -->
+    <!-- ===== 3. 最近提交 ===== -->
     <section class="section" v-if="userStore.isLoggedIn">
       <div class="section-header">
         <div>
@@ -140,21 +132,6 @@
       </div>
     </section>
 
-    <!-- ===== 5. 平台特色 ===== -->
-    <section class="section">
-      <div class="section-header">
-        <h2 class="section-title">为什么选择 EduCode</h2>
-        <p class="section-sub">智能体驱动，让学习更高效</p>
-      </div>
-      <div class="platform-grid">
-        <div class="platform-card" v-for="feat in platformFeatures" :key="feat.title">
-          <div class="platform-line"></div>
-          <h3>{{ feat.title }}</h3>
-          <p>{{ feat.desc }}</p>
-        </div>
-      </div>
-    </section>
-
     <!-- ===== AI 助手弹窗 ===== -->
     <el-dialog v-model="aiAssistantVisible" title="AI 学习助手" width="480px" class="ai-dialog">
       <div class="ai-chat">
@@ -182,7 +159,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '../stores/user'
-import { ArrowRight, Promotion } from '@element-plus/icons-vue'
+import { ArrowRight, Promotion, DocumentChecked, TrendCharts, Warning, Calendar, MagicStick, CircleCheck } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -192,10 +169,10 @@ const aiInput = ref('')
 const aiMessages = ref([])
 
 const stats = [
-  { label: '提交次数', value: 12 },
-  { label: '平均正确率', value: '78%' },
-  { label: '错题数量', value: 5 },
-  { label: '学习天数', value: 8 },
+  { label: '提交次数', value: 12, icon: DocumentChecked, bg: 'rgba(96, 165, 250, 0.15)', color: '#60a5fa' },
+  { label: '平均正确率', value: '78%', icon: TrendCharts, bg: 'rgba(52, 211, 153, 0.15)', color: '#34d399' },
+  { label: '错题数量', value: 5, icon: Warning, bg: 'rgba(251, 191, 36, 0.15)', color: '#fbbf24' },
+  { label: '学习天数', value: 8, icon: Calendar, bg: 'rgba(196, 181, 253, 0.15)', color: '#c4b5fd' },
 ]
 
 const recentSubmissions = [
@@ -253,6 +230,36 @@ function sendAIMessage() {
 .home {
   max-width: 1200px;
   margin: 0 auto;
+  position: relative;
+}
+/* 背景渐变光晕 */
+.home::before {
+  content: '';
+  position: fixed;
+  top: -20%;
+  right: -10%;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+}
+.home::after {
+  content: '';
+  position: fixed;
+  bottom: -10%;
+  left: -5%;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+}
+.home > * {
+  position: relative;
+  z-index: 1;
 }
 
 /* Hero 区域 */
@@ -351,78 +358,144 @@ function sendAIMessage() {
   text-decoration: underline;
 }
 
-/* 代码卡片 */
+/* AI批改代码对比 */
 .hero-visual {
   flex: 1;
 }
-.code-card {
-  background: rgba(255, 255, 255, 0.025);
+.code-compare {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 14px;
   overflow: hidden;
   backdrop-filter: blur(10px);
 }
-.code-card-header {
+.code-pane {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.code-pane-header {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.02);
+  padding: 10px 14px;
+  font-size: 12px;
+  font-weight: 600;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
-.dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.15);
+.error-header {
+  background: rgba(248, 113, 113, 0.08);
+  color: #f87171;
 }
-.code-filename {
-  margin-left: 10px;
-  font-size: 12px;
-  color: #52525b;
-  font-family: 'Consolas', monospace;
+.fixed-header {
+  background: rgba(52, 211, 153, 0.08);
+  color: #34d399;
 }
-.code-card-body {
-  padding: 16px;
+.code-pane-body {
+  padding: 14px;
   font-family: 'Consolas', 'Monaco', monospace;
-  font-size: 12px;
-  line-height: 2;
+  font-size: 11px;
+  line-height: 1.9;
+  flex: 1;
 }
 .code-line {
   display: flex;
-  gap: 14px;
+  gap: 12px;
   color: #a1a1aa;
 }
-.code-line.error {
-  background: rgba(165, 180, 252, 0.06);
-  margin: 0 -16px;
-  padding: 0 16px;
-  border-left: 2px solid #a5b4fc;
+.error-line {
+  background: rgba(248, 113, 113, 0.08);
+  margin: 0 -14px;
+  padding: 0 14px;
+  border-left: 2px solid #f87171;
+  animation: errorPulse 2s ease-in-out infinite;
+}
+.fixed-line {
+  background: rgba(52, 211, 153, 0.08);
+  margin: 0 -14px;
+  padding: 0 14px;
+  border-left: 2px solid #34d399;
+}
+@keyframes errorPulse {
+  0%, 100% { background: rgba(248, 113, 113, 0.08); }
+  50% { background: rgba(248, 113, 113, 0.15); }
 }
 .ln {
   color: #3f3f46;
-  min-width: 18px;
+  min-width: 16px;
   text-align: right;
   user-select: none;
 }
-.kw { color: #a5b4fc; }
+.kw { color: #c4b5fd; }
 .fn { color: #7dd3fc; }
 .num { color: #fcd34d; }
 .str { color: #86efac; }
+
+/* AI批改桥 */
+.ai-bridge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 12px;
+  background: rgba(196, 181, 253, 0.03);
+  border-left: 1px solid rgba(255, 255, 255, 0.05);
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  min-width: 70px;
+}
+.ai-icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(196, 181, 253, 0.2), rgba(139, 92, 246, 0.2));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: aiBreath 2.5s ease-in-out infinite;
+}
+.ai-icon {
+  color: #c4b5fd;
+}
+@keyframes aiBreath {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(196, 181, 253, 0.3); transform: scale(1); }
+  50% { box-shadow: 0 0 20px 5px rgba(196, 181, 253, 0.15); transform: scale(1.05); }
+}
+.ai-arrow {
+  color: #c4b5fd;
+  animation: arrowMove 1.5s ease-in-out infinite;
+}
+@keyframes arrowMove {
+  0%, 100% { transform: translateX(0); opacity: 0.6; }
+  50% { transform: translateX(4px); opacity: 1; }
+}
+.ai-bridge-text {
+  font-size: 10px;
+  color: #a1a1aa;
+  text-align: center;
+  line-height: 1.4;
+}
+
 .ai-suggestion {
   display: flex;
   gap: 10px;
   padding: 12px 16px;
-  background: rgba(165, 180, 252, 0.04);
-  border-top: 1px solid rgba(165, 180, 252, 0.1);
+  background: rgba(196, 181, 253, 0.04);
+  border-top: 1px solid rgba(196, 181, 253, 0.1);
+  margin-top: 12px;
+  border-radius: 10px;
 }
 .ai-dot {
   width: 6px;
   height: 6px;
-  background: #a5b4fc;
+  background: #c4b5fd;
   border-radius: 50%;
   margin-top: 7px;
   flex-shrink: 0;
+  animation: pulse 2s infinite;
 }
 .ai-text {
   font-size: 12px;
@@ -439,28 +512,47 @@ function sendAIMessage() {
 .stats-section {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
+  gap: 16px;
   margin-bottom: 56px;
 }
 .stat-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
   padding: 20px;
-  background: rgba(255, 255, 255, 0.025);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 12px;
-  transition: all 0.2s;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  transition: all 0.25s ease;
 }
 .stat-card:hover {
-  border-color: rgba(255, 255, 255, 0.12);
+  transform: translateY(-3px);
+  border-color: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.05);
+}
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.stat-meta {
+  display: flex;
+  flex-direction: column;
 }
 .stat-value {
-  font-size: 26px;
+  font-size: 24px;
   font-weight: 700;
   color: #f4f4f5;
-  margin-bottom: 4px;
+  line-height: 1.2;
 }
 .stat-label {
   font-size: 12px;
   color: #a1a1aa;
+  margin-top: 2px;
 }
 
 /* 区块 */

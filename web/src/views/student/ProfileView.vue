@@ -1,6 +1,6 @@
 <!-- 个人中心 ProfileView.vue -->
 <template>
-  <div class="profile-page">
+  <div class="profile-page" v-loading="saving" element-loading-text="正在保存个人信息..." element-loading-background="rgba(10, 10, 12, 0.85)">
     <!-- 顶部个人信息卡片 -->
     <el-card class="profile-header" shadow="never">
       <div class="header-content">
@@ -33,7 +33,7 @@
               <el-input :value="userStore.email" disabled />
             </el-form-item>
             <el-form-item label="昵称">
-              <el-input v-model="form.username" placeholder="请输入昵称" maxlength="20" show-word-limit />
+              <el-input v-model="form.username" placeholder="请输入昵称" maxlength="20" show-word-limit class="nickname-input" />
             </el-form-item>
             <el-form-item label="角色">
               <el-tag type="primary">学员</el-tag>
@@ -254,5 +254,16 @@ function handleSave() {
 }
 .data-value.success {
   color: #34d399;
+}
+
+/* 昵称输入框字数统计：平时隐藏，聚焦时显示，去掉白色背景 */
+.nickname-input :deep(.el-input__count) {
+  display: none;
+  background: transparent;
+  color: #71717a;
+  font-size: 12px;
+}
+.nickname-input:focus-within :deep(.el-input__count) {
+  display: flex;
 }
 </style>

@@ -195,8 +195,34 @@ html, body, #app {
   border-color: #d4c5fe !important;
 }
 .el-tag {
-  border: none !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
   border-radius: 6px !important;
+  backdrop-filter: blur(10px);
+}
+.el-tag--primary {
+  background: rgba(96, 165, 250, 0.12) !important;
+  color: #93c5fd !important;
+  border-color: rgba(96, 165, 250, 0.2) !important;
+}
+.el-tag--success {
+  background: rgba(52, 211, 153, 0.12) !important;
+  color: #6ee7b7 !important;
+  border-color: rgba(52, 211, 153, 0.2) !important;
+}
+.el-tag--warning {
+  background: rgba(251, 191, 36, 0.12) !important;
+  color: #fcd34d !important;
+  border-color: rgba(251, 191, 36, 0.2) !important;
+}
+.el-tag--danger {
+  background: rgba(248, 113, 113, 0.12) !important;
+  color: #fca5a5 !important;
+  border-color: rgba(248, 113, 113, 0.2) !important;
+}
+.el-tag--info {
+  background: rgba(161, 161, 170, 0.12) !important;
+  color: #d4d4d8 !important;
+  border-color: rgba(161, 161, 170, 0.2) !important;
 }
 .el-pagination button {
   background: rgba(255, 255, 255, 0.05) !important;
@@ -225,6 +251,10 @@ html, body, #app {
   background: rgba(16, 16, 20, 0.98) !important;
   border: 1px solid var(--glass-border) !important;
   border-radius: var(--radius-lg) !important;
+}
+/* 全局消息提示z-index，确保在弹窗上面 */
+.el-message {
+  z-index: 9999 !important;
 }
 .el-message-box__title {
   color: var(--text-primary) !important;

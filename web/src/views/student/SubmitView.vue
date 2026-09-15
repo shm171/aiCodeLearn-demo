@@ -1,6 +1,6 @@
 <!-- 提交作业页：上传文件/在线写代码 + AI批改结果展示 -->
 <template>
-  <div class="submit-page">
+  <div class="submit-page" v-loading="submitting || grading" element-loading-text="AI 正在批改中，请稍候..." element-loading-background="rgba(10, 10, 12, 0.85)">
     <el-card class="submit-card" shadow="never">
       <template #header>
         <div class="card-header">

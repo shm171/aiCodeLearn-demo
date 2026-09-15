@@ -9,7 +9,7 @@
     </div>
 
     <!-- 顶部导航栏：白透明圆角长方形 -->
-    <header class="header">
+    <header class="header" :class="{ scrolled: isScrolled }">
       <div class="nav-bar">
         <!-- 左侧：logo和网站名 -->
         <div class="header-left" @click="router.push('/')">
@@ -71,6 +71,7 @@
 </template>
 
 <script setup>
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
 import { ElMessage } from 'element-plus'
@@ -79,6 +80,18 @@ import { Cpu, ArrowDown } from '@element-plus/icons-vue'
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+
+// 滚动收缩导航栏
+const isScrolled = ref(false)
+function handleScroll() {
+  isScrolled.value = window.scrollY > 50
+}
+onMounted(() => {
+  window.addEventListener('scroll', handleScroll)
+})
+onUnmounted(() => {
+  window.removeEventListener('scroll', handleScroll)
+})
 
 function handleCommand(command) {
   if (command === 'logout') {
@@ -139,10 +152,16 @@ function handleCommand(command) {
 
 /* 导航栏 */
 .header {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 100;
   padding: 14px 32px;
+  transition: all 0.3s ease;
+}
+.header.scrolled {
+  padding: 6px 32px;
 }
 .nav-bar {
   max-width: 1200px;
@@ -157,6 +176,12 @@ function handleCommand(command) {
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 14px;
+  transition: all 0.3s ease;
+}
+.header.scrolled .nav-bar {
+  padding: 6px 16px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .header-left {
@@ -164,6 +189,7 @@ function handleCommand(command) {
   align-items: center;
   gap: 10px;
   cursor: pointer;
+  transition: all 0.3s ease;
 }
 .logo-wrap {
   width: 32px;
@@ -173,12 +199,22 @@ function handleCommand(command) {
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.3s ease;
+}
+.header.scrolled .logo-wrap {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
 }
 .site-name {
   font-size: 16px;
   font-weight: 600;
   color: #f4f4f5;
   letter-spacing: 0.3px;
+  transition: all 0.3s ease;
+}
+.header.scrolled .site-name {
+  font-size: 14px;
 }
 
 /* 导航菜单 */
@@ -197,6 +233,10 @@ function handleCommand(command) {
   font-size: 13px;
   font-weight: 500;
   transition: all 0.15s;
+}
+.header.scrolled .nav-item {
+  padding: 5px 12px;
+  font-size: 12px;
 }
 .nav-item:hover {
   color: #e4e4e7;
@@ -219,7 +259,11 @@ function handleCommand(command) {
   cursor: pointer;
   padding: 5px 10px;
   border-radius: 8px;
-  transition: background 0.15s;
+  transition: all 0.3s ease;
+}
+.header.scrolled .user-info {
+  padding: 3px 8px;
+  gap: 6px;
 }
 .user-info:hover {
   background: rgba(255, 255, 255, 0.06);
@@ -229,6 +273,12 @@ function handleCommand(command) {
   color: #c4b5fd;
   font-weight: 600;
   font-size: 12px;
+  transition: all 0.3s ease;
+}
+.header.scrolled .user-avatar {
+  width: 24px !important;
+  height: 24px !important;
+  font-size: 10px;
 }
 .user-email {
   font-size: 13px;
@@ -237,6 +287,11 @@ function handleCommand(command) {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  transition: all 0.3s ease;
+}
+.header.scrolled .user-email {
+  font-size: 12px;
+  max-width: 120px;
 }
 .login-btn {
   padding: 7px 18px;
@@ -247,7 +302,11 @@ function handleCommand(command) {
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all 0.3s ease;
+}
+.header.scrolled .login-btn {
+  padding: 5px 14px;
+  font-size: 12px;
 }
 .login-btn:hover {
   background: #fff;
@@ -256,8 +315,7 @@ function handleCommand(command) {
 /* 主体 */
 .main {
   position: relative;
-  z-index: 1;
-  padding: 20px 32px 48px;
+  padding: 80px 32px 48px;
   max-width: 1200px;
   margin: 0 auto;
   width: 100%;
