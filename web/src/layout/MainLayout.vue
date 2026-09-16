@@ -1,4 +1,4 @@
-<!-- 主布局：顶部导航栏 + 主体区域 -->
+﻿<!-- 主布局：顶部导航栏 + 主体区域 -->
 <template>
   <div class="layout">
     <!-- 背景装饰：暗紫色渐变光晕 -->
@@ -21,23 +21,20 @@
 
         <!-- 中间：导航菜单 -->
         <nav class="nav-menu">
-          <router-link v-if="!userStore.isTeacher" to="/" class="nav-item" :class="{ active: route.path === '/' }">
+          <router-link to="/" class="nav-item" :class="{ active: route.path === '/' }">
             首页
           </router-link>
-          <router-link to="/submit" class="nav-item" :class="{ active: route.path === '/submit' }" v-if="userStore.isLoggedIn && !userStore.isTeacher">
+          <router-link to="/submit" class="nav-item" :class="{ active: route.path === '/submit' }" v-if="userStore.isLoggedIn">
             提交作业
           </router-link>
-          <router-link to="/submissions" class="nav-item" :class="{ active: route.path === '/submissions' }" v-if="userStore.isLoggedIn && !userStore.isTeacher">
+          <router-link to="/submissions" class="nav-item" :class="{ active: route.path === '/submissions' }" v-if="userStore.isLoggedIn">
             提交历史
           </router-link>
-          <router-link to="/wrong-questions" class="nav-item" :class="{ active: route.path === '/wrong-questions' }" v-if="userStore.isLoggedIn && !userStore.isTeacher">
+          <router-link to="/wrong-questions" class="nav-item" :class="{ active: route.path === '/wrong-questions' }" v-if="userStore.isLoggedIn">
             错题本
           </router-link>
-          <router-link to="/report" class="nav-item" :class="{ active: route.path === '/report' }" v-if="userStore.isLoggedIn && !userStore.isTeacher">
+          <router-link to="/report" class="nav-item" :class="{ active: route.path === '/report' }" v-if="userStore.isLoggedIn">
             学习报告
-          </router-link>
-                  <router-link to="/teacher/dashboard" class="nav-item" :class="{ active: route.path === '/teacher/dashboard' }" v-if="userStore.isTeacher">
-            教师看板
           </router-link>
         </nav>
 
@@ -80,7 +77,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { Cpu, ArrowDown } from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -100,20 +97,24 @@ onUnmounted(() => {
 })
 
 function goHome() {
-  router.push(userStore.isTeacher ? '/teacher/dashboard' : '/')
+  router.push('/')
 }
 
 function handleCommand(command) {
   if (command === 'logout') {
-    userStore.logout()
-    ElMessage.success('已退出登录')
-    router.push('/login')
+    ElMessageBox.confirm('确定要退出登录吗？', '提示', {
+      confirmButtonText: '确定退出',
+      cancelButtonText: '取消',
+      type: 'warning',
+    })
+      .then(() => {
+        userStore.logout()
+        ElMessage.success('已退出登录')
+        router.push('/login')
+      })
+      .catch(() => {})
   } else if (command === 'profile') {
-    if (userStore.isTeacher) {
-      router.push({ path: '/teacher/dashboard', query: { profile: '1' } })
-    } else {
-      router.push('/profile')
-    }
+    router.push('/profile')
   }
 }
 </script>

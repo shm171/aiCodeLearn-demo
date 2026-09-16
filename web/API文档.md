@@ -30,7 +30,7 @@ Authorization: Bearer <token>
 
 - **接口地址**：`POST /user/register`
 - **是否需要登录**：否（公开接口）
-- **说明**：注册学生或教师账号，不能注册管理员
+- **说明**：注册学员账号（平台已改为纯学员端，不再支持教师角色）
 
 **请求体（JSON）：**
 
@@ -39,7 +39,7 @@ Authorization: Bearer <token>
 | email | string | 是 | 邮箱，必须是合法邮箱格式 |
 | password | string | 是 | 密码，8-16位 |
 | username | string | 是 | 用户名，最多50个字符 |
-| role | string | 是 | 角色，只能填 `STUDENT`（学生）或 `TEACHER`（教师） |
+| role | string | 是 | 角色，只能填 `STUDENT`（学员） |
 
 **请求示例：**
 ```json
@@ -160,9 +160,8 @@ token 无效时返回 `false`。
 ```
 
 **role 字段说明：**
-- `STUDENT`：学生
-- `TEACHER`：教师
-- `ADMIN`：管理员
+- `STUDENT`：学员
+- `ADMIN`：管理员（仅系统内部使用，不能注册）
 
 ---
 
@@ -466,23 +465,6 @@ token 无效时返回 `false`。
 
 ---
 
-### 15. 教师统计看板（给b队友用的）
-
-- **接口地址**：`GET /core/teacher/dashboard`
-- **是否需要登录**：是（仅TEACHER或ADMIN角色）
-- **说明**：获取教师端统计数据，当前是全局聚合，classId暂不生效
-
-**成功响应（200）：**
-```json
-{
-  "totalStudents": 50,
-  "totalSubmissions": 200,
-  "averageAccuracy": 0.75,
-  "errorDistribution": [...],
-  "studentRanking": [...]
-}
-```
-
 ---
 
 ## 三、尚未实现的接口（扩展项，不影响比赛）
@@ -508,8 +490,6 @@ token 无效时返回 `false`。
 | LLM批改结果 | GET /submissions/{id}/review | LLM深度批改结果 |
 | 错题本 | GET /wrong-questions、DELETE /wrong-questions/{id} | 错题列表、移出错题本 |
 | 学习报告 | GET /students/{id}/report | 学生学习报告数据 |
-| 教师端 | 题目管理、作业管理、提交审阅等 | 教师端B负责 |
-| 管理端 | 用户管理、权限管理等 | 管理端B负责 |
 
 > 以上接口地址为预估，实际以后端 Swagger 文档为准。后端实现后会更新本文档。
 
@@ -525,8 +505,8 @@ token 无效时返回 `false`。
    - `401`：未登录或token过期，清除token跳登录页
    - `404`：接口不存在或资源不存在
    - `500`：服务器内部错误
-5. **用户ID从哪来**：登录后可以调用 `/login/validate` 或在本地存用户信息；查询档案时需要用户ID，建议登录后把用户ID存在 localStorage 或 Pinia 里
-6. **角色判断**：登录后获取用户档案，根据 `role` 字段判断是学生/教师/管理员，路由守卫据此跳转对应首页
+5. **用户ID从哪来**：登录响应里直接带 `userId`（注册响应里有 `id`），前端存进 Pinia/localStorage
+6. **角色**：平台为纯学员端，注册即学员，无需角色判断
 
 ---
 

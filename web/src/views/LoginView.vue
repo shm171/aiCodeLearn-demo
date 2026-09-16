@@ -1,4 +1,4 @@
-<!-- 登录/注册页：左侧品牌介绍区 + 右侧表单区 - 深色玻璃风格 -->
+﻿<!-- 登录/注册页：左侧品牌介绍区 + 右侧表单区 - 深色玻璃风格 -->
 <template>
   <div class="login-page">
     <!-- ===== 左侧：品牌介绍区 ===== -->
@@ -66,7 +66,7 @@
         <el-tabs v-model="activeTab" stretch class="login-tabs">
           <!-- 登录Tab -->
           <el-tab-pane label="登录" name="login">
-            <el-form :model="loginForm" :rules="loginRules" ref="loginFormRef">
+            <el-form :model="loginForm" :rules="loginRules" ref="loginFormRef" @keyup.enter="handleLogin">
               <el-form-item prop="email">
                 <el-input v-model="loginForm.email" placeholder="请输入邮箱" size="large" prefix-icon="Message" autocomplete="off" />
               </el-form-item>
@@ -79,7 +79,7 @@
 
           <!-- 注册Tab -->
           <el-tab-pane label="注册" name="register">
-            <el-form :model="registerForm" :rules="registerRules" ref="registerFormRef">
+            <el-form :model="registerForm" :rules="registerRules" ref="registerFormRef" @keyup.enter="handleRegister">
               <el-form-item prop="email">
                 <el-input v-model="registerForm.email" placeholder="请输入邮箱" size="large" prefix-icon="Message" autocomplete="off" />
               </el-form-item>
@@ -91,12 +91,6 @@
               </el-form-item>
               <el-form-item prop="confirmPassword">
                 <el-input v-model="registerForm.confirmPassword" type="password" placeholder="请再次输入密码" size="large" show-password prefix-icon="Lock" autocomplete="new-password" />
-              </el-form-item>
-              <el-form-item prop="role">
-                <el-select v-model="registerForm.role" size="large" class="role-select">
-                  <el-option label="学员" value="STUDENT" />
-                  <el-option label="老师" value="TEACHER" />
-                </el-select>
               </el-form-item>
               <el-button type="primary" size="large" class="submit-btn" :loading="registerLoading" @click="handleRegister">注 册</el-button>
             </el-form>
@@ -136,14 +130,14 @@ async function handleLogin() {
   loginLoading.value = true
   try {
     const data = await loginApi(loginForm.email, loginForm.password)
-    userStore.setLoginInfo(data.token, loginForm.email)
-    // 登录响应只有token，用注册时保存的用户ID拉取真实用户信息
+    userStore.setLoginInfo(data.token, data.userId, loginForm.email)
+    // 登录响应已带用户ID，用它拉取真实用户档案
     await userStore.fetchUserInfo()
     ElMessage.success('登录成功')
     const redirect = typeof router.currentRoute.value.query.redirect === 'string'
       ? router.currentRoute.value.query.redirect
       : ''
-    router.push(redirect || userStore.homePath)
+    router.push(redirect || '/')
   } catch (error) {
     if (error.response?.status === 401) {
       ElMessage.error('邮箱或密码错误')

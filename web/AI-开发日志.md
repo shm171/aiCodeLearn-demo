@@ -4,6 +4,34 @@
 
 ---
 
+## 2026-09-16 第二十二步：首页新增"一条龙学习闭环"弧线流程图
+
+仿照常见 AI 产品首页的流程动效，在首页 Hero 区下方加了一条 S 形弧线串联平台完整学习闭环：
+
+- 6 个环节节点（上传代码作业 → 双层AI批改 → 错题自动归档 → 标记掌握·复习 → 学习报告与建议 → AI生成类似题），上下交替挂在弧线上，每个节点可点击跳转对应真实页面
+- SVG 弧线滚动进入视口时从左往右描边"画出来"（3.8s），节点依次弹出（间隔0.3s），画完后发光点沿弧线无限游走（15s/圈）
+- 底部虚线回环箭头表达"闭环"，从终点绕回起点
+- 节点文字无背景框、纯文字悬挂（第一版是毛玻璃卡片，用户反馈太挤后改为无框+拉开间距），高度压缩到约450px，一屏内完整呈现，无需滚动
+- 移动端（<900px）自动降级为竖直时间线；不支持 IntersectionObserver 的老浏览器直接显示完整弧线
+- 未登录也可查看，点击节点提示先登录并跳登录页
+
+---
+
+## 2026-09-16 第二十一步：删除教师端，改为纯学员自学平台
+
+团队决定砍掉所有教师相关功能，平台定位改为个人自学/自我检测/自我提升，角色只保留学员：
+
+- 后端删除：TeacherDashboardController、TeacherDashboardService/Impl、ClassDashboard、StudentStat、对应单元测试
+- 后端清理：AiLearnOrchestrator 去掉 classDashboard；SecurityConfig 去掉 /core/teacher/** 规则；两个 Store 去掉仅供教师看板用的 findAll()（含 JPA 全量查询方法）
+- 角色枚举：RegistrationRole 只剩 STUDENT（注册接口传 TEACHER 返回 400）；UserRole 去掉 TEACHER（保留 ADMIN 供系统管理）
+- 数据库：profile 表中 1 个 TEACHER 测试账号已迁移为 STUDENT
+- 前端删除：TeacherDashboardView.vue、api/teacher.js
+- 前端清理：router 去掉教师路由和角色守卫；store 去掉 isTeacher/homePath/教师ID环境变量；MainLayout 去掉教师菜单；LoginView 去掉注册角色下拉（固定学员）
+- 登录改进（沿用上一步）：登录响应增加 userId 和 email，前端不用再靠注册响应猜用户ID
+- 验证：后端 93 个测试全过；教师接口带有效token返回404；学生全流程（注册→登录→提交→错题→报告→提交历史）curl 全部通过；前端构建通过
+
+---
+
 ## 2026-09-15 第二十步：新增提交历史功能
 
 补齐"查看提交历史"功能（之前首页的"查看全部"按钮是占位提示）：

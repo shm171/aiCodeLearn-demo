@@ -1,4 +1,4 @@
-// 路由配置：学生端与教师端共用一套应用
+// 路由配置：学员端（个人自学平台）
 import { createRouter, createWebHistory } from 'vue-router'
 import MainLayout from '../layout/MainLayout.vue'
 import { useUserStore } from '../stores/user'
@@ -24,37 +24,31 @@ const routes = [
         path: 'submit',
         name: 'submit',
         component: () => import('../views/student/SubmitView.vue'),
-        meta: { title: '提交作业', requiresAuth: true, roles: ['STUDENT'] },
+        meta: { title: '提交作业', requiresAuth: true },
       },
       {
         path: 'submissions',
         name: 'submissions',
         component: () => import('../views/student/SubmissionHistoryView.vue'),
-        meta: { title: '提交历史', requiresAuth: true, roles: ['STUDENT'] },
+        meta: { title: '提交历史', requiresAuth: true },
       },
       {
         path: 'profile',
         name: 'profile',
         component: () => import('../views/student/ProfileView.vue'),
-        meta: { title: '个人中心', requiresAuth: true, roles: ['STUDENT'] },
+        meta: { title: '个人中心', requiresAuth: true },
       },
       {
         path: 'report',
         name: 'report',
         component: () => import('../views/student/ReportView.vue'),
-        meta: { title: '学习报告', requiresAuth: true, roles: ['STUDENT'] },
+        meta: { title: '学习报告', requiresAuth: true },
       },
       {
         path: 'wrong-questions',
         name: 'wrong-questions',
         component: () => import('../views/student/WrongQuestionsView.vue'),
-        meta: { title: '错题本', requiresAuth: true, roles: ['STUDENT'] },
-      },
-      {
-        path: 'teacher/dashboard',
-        name: 'teacher-dashboard',
-        component: () => import('../views/teacher/TeacherDashboardView.vue'),
-        meta: { title: '班级错题数据', requiresAuth: true, roles: ['TEACHER'] },
+        meta: { title: '错题本', requiresAuth: true },
       },
     ],
   },
@@ -76,31 +70,14 @@ router.beforeEach(async (to) => {
 
   const userStore = useUserStore()
 
+  // 访问需要登录的页面，但没登录 → 跳登录页（带回来时地址）
   if (to.meta.requiresAuth && !userStore.isLoggedIn) {
     return { path: '/login', query: { redirect: to.fullPath } }
   }
 
-  if (userStore.isLoggedIn && !userStore.role) {
-    try {
-      await userStore.fetchUserInfo()
-    } catch {
-      userStore.logout()
-      return { path: '/login', query: { redirect: to.fullPath } }
-    }
-  }
-
+  // 已登录用户访问登录页 → 直接回首页
   if (to.name === 'login' && userStore.isLoggedIn) {
-    return userStore.homePath
-  }
-
-  const effectiveRole = userStore.role || 'STUDENT'
-  const allowedRoles = to.meta.roles
-  if (allowedRoles?.length && !allowedRoles.includes(effectiveRole)) {
-    return userStore.homePath
-  }
-
-  if (to.name === 'home' && userStore.isTeacher) {
-    return '/teacher/dashboard'
+    return '/'
   }
 
   return true

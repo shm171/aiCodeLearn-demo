@@ -127,7 +127,7 @@ const form = ref({
 
 // 角色中文名
 const roleText = computed(() => {
-  const map = { STUDENT: '学员', TEACHER: '教师', ADMIN: '管理员' }
+  const map = { STUDENT: '学员', ADMIN: '管理员' }
   return map[userStore.role] || '学员'
 })
 

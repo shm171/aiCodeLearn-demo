@@ -86,7 +86,97 @@
       </div>
     </section>
 
-    <!-- ===== 2. 数据概览（登录后显示） ===== -->
+    <!-- ===== 2. 一条龙学习闭环：弧线流程图 ===== -->
+    <section class="workflow-section" ref="workflowRef">
+      <div class="workflow-header">
+        <div class="workflow-badge">一条龙学习闭环</div>
+        <h2 class="workflow-title">从提交作业到真正掌握，AI 全程护航</h2>
+        <p class="workflow-sub">六个环节首尾相接——上传、批改、归档、复习、报告、再练，自动流转</p>
+      </div>
+
+      <!-- 桌面端：弧线版 -->
+      <div class="workflow-arc">
+        <svg viewBox="0 0 1140 360" class="workflow-svg" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+          <defs>
+            <linearGradient id="workflow-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#7c3aed" />
+              <stop offset="55%" stop-color="#a78bfa" />
+              <stop offset="100%" stop-color="#c4b5fd" />
+            </linearGradient>
+            <marker id="workflow-arrow" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+              <path d="M0,0 L8,4 L0,8 Z" fill="rgba(196,181,253,0.45)" />
+            </marker>
+          </defs>
+
+          <!-- 主弧线：S 形串联 6 个环节 -->
+          <path
+            id="workflow-path"
+            ref="workflowPathRef"
+            d="M 85 110 C 190 110, 190 250, 283 250 C 380 250, 380 110, 481 110 C 580 110, 580 250, 679 250 C 780 250, 780 110, 877 110 C 975 110, 975 250, 1075 250"
+            fill="none"
+            stroke="url(#workflow-gradient)"
+            stroke-width="2.5"
+            stroke-linecap="round"
+          />
+
+          <!-- 虚线回环：从终点绕回起点，代表闭环 -->
+          <path
+            d="M 1075 250 C 1075 335, 85 335, 85 110"
+            fill="none"
+            stroke="rgba(196,181,253,0.28)"
+            stroke-width="1.5"
+            stroke-dasharray="6 7"
+            stroke-linecap="round"
+            marker-end="url(#workflow-arrow)"
+          />
+
+          <!-- 沿弧线游走的发光点 -->
+          <circle r="5" fill="#e0d5fe" class="travel-dot" style="filter: drop-shadow(0 0 6px #c4b5fd)">
+            <animateMotion dur="15s" repeatCount="indefinite" calcMode="linear">
+              <mpath href="#workflow-path" />
+            </animateMotion>
+          </circle>
+        </svg>
+
+        <div
+          v-for="(step, i) in workflowSteps"
+          :key="i"
+          class="step-node"
+          :class="'node-' + i"
+          :style="{ transitionDelay: (0.3 * i) + 's' }"
+          @click="goStep(step)"
+        >
+          <div class="node-dot">
+            <el-icon :size="18"><component :is="step.icon" /></el-icon>
+            <span class="node-num">{{ i + 1 }}</span>
+          </div>
+          <div class="node-card">
+            <div class="node-title">{{ step.title }}</div>
+            <div class="node-desc">{{ step.desc }}</div>
+            <div class="node-link">去看看 <el-icon :size="10"><ArrowRight /></el-icon></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 移动端：竖直时间线版 -->
+      <div class="workflow-mobile">
+        <div v-for="(step, i) in workflowSteps" :key="'m' + i" class="mobile-step" @click="goStep(step)">
+          <div class="mobile-dot-wrap">
+            <div class="node-dot">
+              <el-icon :size="16"><component :is="step.icon" /></el-icon>
+              <span class="node-num">{{ i + 1 }}</span>
+            </div>
+            <div v-if="i < workflowSteps.length - 1" class="mobile-line"></div>
+          </div>
+          <div class="mobile-card">
+            <div class="node-title">{{ step.title }}</div>
+            <div class="node-desc">{{ step.desc }}</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 3. 数据概览（登录后显示） ===== -->
     <section class="stats-section" v-if="userStore.isLoggedIn">
       <div class="stat-card" v-for="stat in stats" :key="stat.label">
         <div class="stat-icon" :style="{ background: stat.bg, color: stat.color }">
@@ -99,7 +189,7 @@
       </div>
     </section>
 
-    <!-- ===== 3. 最近错题 ===== -->
+    <!-- ===== 4. 最近错题 ===== -->
     <section class="section" v-if="userStore.isLoggedIn">
       <div class="section-header">
         <div>
@@ -160,7 +250,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '../stores/user'
 import { getReportApi, getErrorListApi } from '../api/review'
-import { ArrowRight, Promotion, DocumentChecked, TrendCharts, Warning, Notebook, MagicStick, CircleCheck } from '@element-plus/icons-vue'
+import { ArrowRight, Promotion, DocumentChecked, TrendCharts, Warning, Notebook, MagicStick, CircleCheck, UploadFilled, EditPen } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -168,6 +258,67 @@ const userStore = useUserStore()
 const aiAssistantVisible = ref(false)
 const aiInput = ref('')
 const aiMessages = ref([])
+
+// ===== 一条龙学习闭环：6 个环节 =====
+const workflowSteps = [
+  { icon: UploadFilled, title: '上传代码作业', desc: '拖入 .cpp / .java 源码，或在线写代码', to: '/submit' },
+  { icon: MagicStick, title: '双层 AI 批改', desc: '规则静态检查 + 大模型深度批改，一次提交全搞定', to: '/submit' },
+  { icon: Notebook, title: '错题自动归档', desc: '错误按知识点自动分类，形成专属错题本', to: '/wrong-questions' },
+  { icon: CircleCheck, title: '标记掌握·复习', desc: '复习后标记已掌握，薄弱点逐个击破', to: '/wrong-questions' },
+  { icon: TrendCharts, title: '学习报告与建议', desc: '数据可视化报告 + AI 定制学习建议', to: '/report' },
+  { icon: EditPen, title: 'AI 生成类似题', desc: '针对错题生成同类练习，直到真正掌握', to: '/wrong-questions' },
+]
+
+const workflowRef = ref(null)
+const workflowPathRef = ref(null)
+
+// 点击环节节点：未登录先提示，登录后跳对应页面
+function goStep(step) {
+  if (!userStore.isLoggedIn) {
+    ElMessage.warning('请先登录后使用')
+    router.push('/login')
+    return
+  }
+  router.push(step.to)
+}
+
+// 弧线绘制动画：滚动到该区域时，弧线从左往右"画出来"，节点依次弹出
+function initWorkflowAnimation() {
+  const sectionEl = workflowRef.value
+  const pathEl = workflowPathRef.value
+  if (!sectionEl) return
+
+  // 拿到弧线总长度，用于描边动画
+  if (pathEl && typeof pathEl.getTotalLength === 'function') {
+    const length = pathEl.getTotalLength()
+    pathEl.style.strokeDasharray = String(length)
+    pathEl.style.strokeDashoffset = String(length)
+  }
+
+  // 老浏览器不支持 IntersectionObserver：直接显示完整弧线，不做入场动画
+  if (typeof IntersectionObserver === 'undefined') {
+    sectionEl.classList.add('in-view')
+    if (pathEl) pathEl.style.strokeDashoffset = '0'
+    return
+  }
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          sectionEl.classList.add('in-view')
+          if (pathEl) {
+            pathEl.style.transition = 'stroke-dashoffset 3.8s cubic-bezier(.4, 0, .2, 1)'
+            pathEl.style.strokeDashoffset = '0'
+          }
+          observer.disconnect()
+        }
+      })
+    },
+    { threshold: 0.3 }
+  )
+  observer.observe(sectionEl)
+}
 
 // 数据概览：登录后从学习报告接口拉取真实数据
 const stats = ref([
@@ -241,6 +392,7 @@ const platformFeatures = [
 
 onMounted(() => {
   loadHomeData()
+  initWorkflowAnimation()
 })
 
 function handleFeatureClick(path) {
@@ -811,5 +963,194 @@ function sendAIMessage() {
 }
 .btn-send:hover {
   background: #fff;
+}
+
+/* ===== 一条龙学习闭环：弧线流程图 ===== */
+.workflow-section {
+  margin-bottom: 40px;
+  text-align: center;
+}
+.workflow-header { margin-bottom: 4px; }
+.workflow-badge {
+  display: inline-block;
+  padding: 4px 14px;
+  background: rgba(196, 181, 253, 0.08);
+  border: 1px solid rgba(196, 181, 253, 0.2);
+  border-radius: 20px;
+  font-size: 12px;
+  color: #c4b5fd;
+  margin-bottom: 10px;
+}
+.workflow-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #f4f4f5;
+  margin: 0 0 6px;
+  letter-spacing: -0.3px;
+}
+.workflow-sub {
+  font-size: 13px;
+  color: #a1a1aa;
+  margin: 0;
+}
+
+/* 弧线容器：节点按 viewBox 比例绝对定位 */
+.workflow-arc {
+  position: relative;
+  max-width: 1080px;
+  margin: 0 auto;
+}
+.workflow-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* 游走光点：弧线画完后再出现 */
+.travel-dot {
+  opacity: 0;
+  transition: opacity 0.8s ease 3.4s;
+}
+.workflow-section.in-view .travel-dot { opacity: 1; }
+
+/* 环节节点：以圆心为锚点，缓慢浮现 */
+.step-node {
+  position: absolute;
+  width: 48px;
+  height: 48px;
+  cursor: pointer;
+  opacity: 0;
+  transform: translate(-50%, calc(-50% - 14px));
+  transition: opacity 0.8s ease, transform 0.8s ease;
+  z-index: 2;
+}
+.workflow-section.in-view .step-node {
+  opacity: 1;
+  transform: translate(-50%, -50%);
+}
+
+/* 六个节点的锚点位置（与 SVG 坐标对应：x/1140、y/360） */
+.node-0 { left: 7.46%; top: 30.56%; }
+.node-1 { left: 24.82%; top: 69.44%; }
+.node-2 { left: 42.19%; top: 30.56%; }
+.node-3 { left: 59.56%; top: 69.44%; }
+.node-4 { left: 76.93%; top: 30.56%; }
+.node-5 { left: 94.30%; top: 69.44%; }
+
+.node-dot {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #7c3aed, #a78bfa);
+  color: #f4f4f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  border: 2px solid rgba(196, 181, 253, 0.35);
+  box-shadow: 0 0 22px rgba(139, 92, 246, 0.35);
+  transition: box-shadow 0.25s, transform 0.25s;
+}
+.step-node:hover .node-dot {
+  box-shadow: 0 0 34px rgba(139, 92, 246, 0.6);
+  transform: scale(1.08);
+}
+.node-num {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #0a0a0c;
+  color: #c4b5fd;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(196, 181, 253, 0.4);
+}
+
+/* 节点说明文字：无背景框，交错挂在弧线内侧，与圆点保持呼吸距离 */
+.node-card {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 180px;
+  text-align: center;
+}
+.node-0 .node-card,
+.node-2 .node-card,
+.node-4 .node-card {
+  top: calc(100% + 16px);
+}
+.node-1 .node-card,
+.node-3 .node-card,
+.node-5 .node-card {
+  bottom: calc(100% + 16px);
+}
+.node-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #f4f4f5;
+  margin-bottom: 3px;
+  transition: color 0.2s;
+}
+.step-node:hover .node-title { color: #c4b5fd; }
+.node-desc {
+  font-size: 11px;
+  color: #71717a;
+  line-height: 1.5;
+}
+.node-link {
+  margin-top: 5px;
+  font-size: 11px;
+  color: #a78bfa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: color 0.2s;
+}
+.step-node:hover .node-link { color: #c4b5fd; }
+
+/* 移动端：弧线降级为竖直时间线 */
+.workflow-mobile { display: none; }
+@media (max-width: 900px) {
+  .workflow-arc { display: none; }
+  .workflow-mobile {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px 8px 0;
+    text-align: left;
+  }
+  .mobile-step {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    cursor: pointer;
+  }
+  .mobile-dot-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .mobile-line {
+    width: 2px;
+    min-height: 36px;
+    margin-top: 8px;
+    background: linear-gradient(180deg, rgba(196, 181, 253, 0.5), rgba(196, 181, 253, 0.12));
+  }
+  .mobile-card {
+    flex: 1;
+    padding: 12px 14px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 12px;
+    margin-bottom: 12px;
+  }
 }
 </style>

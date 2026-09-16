@@ -6,7 +6,7 @@ export function loginApi(email, password) {
   return request.post('/login', { email, password })
 }
 
-// 注册：POST /user/register，role 填 "STUDENT"（学员）或 "TEACHER"（老师）
+// 注册：POST /user/register，平台只开放学员注册，role 固定传 "STUDENT"
 // 成功返回 { id, email }，id 需要保存下来，之后查档案要用
 export function registerApi(email, password, username, role) {
   return request.post('/user/register', { email, password, username, role })
