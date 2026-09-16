@@ -53,14 +53,6 @@ public class SourceFileStoreImpl implements SourceFileStore {
                 .toList();
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public List<SourceFile> findAll() {
-        return jpaRepository.findAllByOrderBySubmittedAtDescIdDesc().stream()
-                .map(this::toRecord)
-                .toList();
-    }
-
     private SourceFile toRecord(SourceFileEntity entity) {
         return new SourceFile(
                 entity.getId(),

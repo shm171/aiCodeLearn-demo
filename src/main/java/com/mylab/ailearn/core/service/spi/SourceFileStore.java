@@ -32,6 +32,4 @@ public interface SourceFileStore {
     /** 查询某学生的全部提交；无提交时返回空列表。 */
     List<SourceFile> findByOwnerUserId(Long ownerUserId);
 
-    /** 查询全量源码提交，供教师班级看板统计总提交数。 */
-    List<SourceFile> findAll();
 }

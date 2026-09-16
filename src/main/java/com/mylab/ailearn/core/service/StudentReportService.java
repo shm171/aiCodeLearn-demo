@@ -94,7 +94,7 @@ public interface StudentReportService {
 
     /**
      * 把一批错题聚合成薄弱知识点排行，按权重降序返回前 {@code limit} 条。
-     * 供学生报告与教师看板复用，保证口径统一。
+     * 供学生报告与其他统计复用，保证口径统一。
      *
      * <p>权重 = 每条错题按其分类的扣分权重求和，并做时间衰减（半衰期 30 天）。
      * <b>衰减的时间基准是这批错题里最新的一条 {@code createdAt}，而不是系统当前时间</b>——
@@ -107,7 +107,7 @@ public interface StudentReportService {
     List<WeakPoint> aggregateWeakPoints(List<ErrorRecord> records, int limit);
 
     /**
-     * 生成一句话诊断（指出最薄弱知识点）。供学生报告与教师看板复用。
+     * 生成一句话诊断（指出最薄弱知识点）。供学生报告与其他统计复用。
      *
      * @param weakPoints 已排序的薄弱知识点列表
      * @return 一句话诊断文案

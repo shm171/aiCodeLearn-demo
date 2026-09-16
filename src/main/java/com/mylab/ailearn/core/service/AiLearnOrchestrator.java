@@ -3,18 +3,17 @@ package com.mylab.ailearn.core.service;
 import com.mylab.ailearn.core.model.commonmodel.ErrorRecord;
 import com.mylab.ailearn.core.model.commonmodel.SourceFile;
 import com.mylab.ailearn.core.model.commonmodel.SubmissionGradingResult;
-import com.mylab.ailearn.core.model.specialmodel.ClassDashboard;
 import com.mylab.ailearn.core.model.specialmodel.StudentDashboard;
 
 import java.util.List;
 
 /**
  * 顶层编排入口：把「文件上传、题目匹配、双层批改、错误记录、错题归档、
- * 学生报告、教师看板」这些零散功能串成完整的数据流转，是 Controller 层
+ * 学生报告」这些零散功能串成完整的数据流转，是 Controller 层
  * 唯一需要依赖的业务门面。
  *
  * <p><b>写侧流转</b>：文件上传 → 题目匹配 → 双层批改（规则静态检查 + LLM 深度批改）→ 错误记录落库。</p>
- * <p><b>读侧流转</b>：错题归档 → 学生学习报告 / 教师班级看板。</p>
+ * <p><b>读侧流转</b>：错题归档 → 学生学习报告。</p>
  *
  * <p>Controller 层只需注入本接口即可完成一条龙业务，无需关心内部各 Service 的调用顺序。</p>
  *
@@ -72,11 +71,4 @@ public interface AiLearnOrchestrator {
      * @return 学生个人看板
      */
     StudentDashboard studentDashboard(Long ownerUserId);
-
-    /**
-     * 读侧：生成教师班级看板（全班错题分布、薄弱点排行、每个学生的统计、班级学习曲线等）。
-     *
-     * @return 班级看板
-     */
-    ClassDashboard classDashboard();
 }

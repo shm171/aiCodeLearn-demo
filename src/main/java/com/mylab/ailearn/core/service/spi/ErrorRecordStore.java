@@ -35,9 +35,6 @@ public interface ErrorRecordStore {
     /** 查询某学生的全部错题；无错题时返回空列表。 */
     List<ErrorRecord> findByOwnerUserId(Long ownerUserId);
 
-    /** 查询全量错题，供教师班级看板聚合使用。 */
-    List<ErrorRecord> findAll();
-
     /** 按错题 ID 查询；不存在时返回 {@link Optional#empty()}。 */
     Optional<ErrorRecord> findById(Long id);
 

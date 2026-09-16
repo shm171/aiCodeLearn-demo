@@ -9,5 +9,4 @@ public interface SourceFileJpaRepository extends JpaRepository<SourceFileEntity,
 
     List<SourceFileEntity> findByOwnerUserIdOrderBySubmittedAtDescIdDesc(Long ownerUserId);
 
-    List<SourceFileEntity> findAllByOrderBySubmittedAtDescIdDesc();
 }

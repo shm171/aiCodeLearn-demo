@@ -1,5 +1,7 @@
 package com.mylab.ailearn.base.security.controller;
 
+import com.mylab.ailearn.base.entity.AppUser;
+import com.mylab.ailearn.base.repository.UserRepository;
 import com.mylab.ailearn.base.security.dto.LoginRequest;
 import com.mylab.ailearn.base.security.dto.TokenDto;
 import com.mylab.ailearn.base.security.service.JwtService;
@@ -30,15 +32,17 @@ public class LoginController {
 
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
+    private final UserRepository userRepository;
 
     @PostMapping
-    @Operation(summary = "用户登录", description = "使用邮箱和密码换取 JWT")
+    @Operation(summary = "用户登录", description = "使用邮箱和密码换取 JWT，同时返回用户ID和邮箱")
     public ResponseEntity<TokenDto> login(@Valid @RequestBody LoginRequest request) {
         var authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
 
         String token = jwtService.generateToken(authentication.getName());
-        return ResponseEntity.ok(new TokenDto(token));
+        AppUser user = userRepository.findByEmail(request.getEmail()).orElseThrow();
+        return ResponseEntity.ok(new TokenDto(token, user.getId(), user.getEmail()));
     }
 
     @PostMapping("/validate")

@@ -10,7 +10,7 @@ import java.util.List;
  * 归档的错题记录：一次批改中某一条问题落库后的形态。
  *
  * <p>由 {@code ErrorRecordService} 从 {@link GradedError} 转换而来，供错题归档、学生报告与
- * 教师看板聚合读取。</p>
+ * 业务统计聚合读取。</p>
  *
  * @param id           记录 ID；null 表示尚未落库，由持久化组件回填
  * @param ownerUserId  错题归属的学生用户 ID，由写侧入口传入

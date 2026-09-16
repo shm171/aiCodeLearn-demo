@@ -54,14 +54,6 @@ public class ErrorRecordStoreImpl implements ErrorRecordStore {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ErrorRecord> findAll() {
-        return jpaRepository.findAllByOrderByCreatedAtDescIdDesc().stream()
-                .map(this::toRecord)
-                .toList();
-    }
-
-    @Override
-    @Transactional(readOnly = true)
     public Optional<ErrorRecord> findById(Long id) {
         return jpaRepository.findById(id).map(this::toRecord);
     }

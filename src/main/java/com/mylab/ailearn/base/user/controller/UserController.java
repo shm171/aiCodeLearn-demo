@@ -28,7 +28,7 @@ public class UserController {
     private final UserService userService;
 
     @PostMapping("/register")
-    @Operation(summary = "注册用户", description = "公开接口，只允许注册 STUDENT 或 TEACHER")
+    @Operation(summary = "注册用户", description = "公开接口，只允许注册 STUDENT")
     public ResponseEntity<UserDto> registerUser(
             @Valid @RequestBody UserRegisterRequest userRegisterRequest,
             UriComponentsBuilder uriBuilder

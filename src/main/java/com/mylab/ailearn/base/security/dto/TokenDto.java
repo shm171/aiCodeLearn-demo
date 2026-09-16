@@ -8,4 +8,6 @@ import lombok.Getter;
 public class TokenDto {
 
     private final String token;
+    private final Long userId;
+    private final String email;
 }

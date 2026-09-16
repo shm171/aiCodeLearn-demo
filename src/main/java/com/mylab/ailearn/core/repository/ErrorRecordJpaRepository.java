@@ -9,5 +9,4 @@ public interface ErrorRecordJpaRepository extends JpaRepository<ErrorRecordEntit
 
     List<ErrorRecordEntity> findByOwnerUserIdOrderByCreatedAtDescIdDesc(Long ownerUserId);
 
-    List<ErrorRecordEntity> findAllByOrderByCreatedAtDescIdDesc();
 }

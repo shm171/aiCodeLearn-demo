@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 /**
  * 学生学习报告的默认实现。
  *
- * <p>所有聚合逻辑都是纯函数（只依赖传入的数据），便于单元测试与在教师看板中复用；
+ * <p>所有聚合逻辑都是纯函数（只依赖传入的数据），便于单元测试与在各处复用；
  * 带 {@code ownerUserId} 的重载通过 ErrorRecordStore / SourceFileStore 端口取数后，
  * 走的是同一套纯函数逻辑。</p>
  */
@@ -268,7 +268,7 @@ public class StudentReportServiceImpl implements StudentReportService {
         return cleanSubmissions / (double) submissions.size();
     }
 
-    /** 生成一句话诊断（最薄弱知识点）。供学生报告与教师看板复用。 */
+    /** 生成一句话诊断（最薄弱知识点）。供学生报告与其他统计复用。 */
     @Override
     public String summarizeWeakPoints(List<WeakPoint> weakPoints) {
         List<WeakPoint> data = ServiceSupport.nullToEmpty(weakPoints);
