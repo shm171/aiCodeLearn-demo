@@ -4,6 +4,24 @@
 
 ---
 
+## 2026-09-18 第二十三步：接入AI学习助手（SSE流式对话）
+
+后端 `/core/assistant/chat` 已就绪（SSE流式、多轮会话记忆），本次完成前端接入：
+
+- 新建 `src/api/assistant.js`：因为要带 JWT 不能用 EventSource，用 fetch POST + response.body.getReader() 手动读流；按 SSE 规范解析 data 行（多行拼接、忽略心跳注释、跨 chunk 缓冲拼接），流解析逻辑已导出并用 node 做了 10 项单元断言全过
+- 新建 `src/components/AiAssistantWidget.vue`：全局右下角悬浮按钮（渐变紫圆钮）+ 深色玻璃聊天窗
+  - 消息列表：用户靠右紫色气泡、AI 靠左深色气泡，打字中三点动画，自动滚到底部
+  - 会话ID存 localStorage：首次请求留空，从响应头 X-Conversation-Id 取回后原样传回，多轮记忆跨刷新保留；「新对话」按钮清空重开
+  - 防重复提交（发送中禁用按钮+回车）、空消息拦截、失败时气泡内显示错误原因
+  - 挂在 MainLayout 里（登录页不在该布局，天然不显示）
+  - 其他页面唤起方式：`window.dispatchEvent(new CustomEvent('open-ai-assistant', { detail: { message } }))`
+- SubmitView 加「让AI看看这段代码」按钮：编辑器模式取编辑器内容、上传模式读文件文本，拼成带语言标记的代码块消息唤起助手自动发送；代码超 1500 字截断（后端消息上限2000）
+- WrongQuestionsView 详情弹窗加「问AI这道题」：按 sourceFileId 拉提交详情取源码，带错误类型/修复建议/代码唤起助手；拉不到源码时只带错题信息
+- 联调验证：X-Conversation-Id 响应头正常；空消息400/未登录403/超长conversationId 400；无真实 DeepSeek key 时接口 500，前端显示"请求失败（500）"气泡（真实 key 下为正常流式）
+- 未提交
+
+---
+
 ## 2026-09-16 第二十二步：首页新增"一条龙学习闭环"弧线流程图
 
 仿照常见 AI 产品首页的流程动效，在首页 Hero 区下方加了一条 S 形弧线串联平台完整学习闭环：

@@ -69,17 +69,23 @@
         <div class="editor-tip">提示：直接在上面写代码，支持语法高亮和行号显示</div>
       </div>
 
-      <!-- 提交按钮 -->
-      <el-button
-        type="primary"
-        size="large"
-        class="submit-btn"
-        :loading="submitting"
-        :disabled="!canSubmit"
-        @click="handleSubmit"
-      >
-        {{ submitting ? 'AI 批改中...' : '提交作业' }}
-      </el-button>
+      <!-- 提交按钮 + 问AI -->
+      <div class="submit-row">
+        <el-button
+          type="primary"
+          size="large"
+          class="submit-btn"
+          :loading="submitting"
+          :disabled="!canSubmit"
+          @click="handleSubmit"
+        >
+          {{ submitting ? 'AI 批改中...' : '提交作业' }}
+        </el-button>
+        <el-button size="large" class="ask-ai-btn" :disabled="!canSubmit" @click="askAiAboutCode">
+          <el-icon><MagicStick /></el-icon>
+          让AI看看这段代码
+        </el-button>
+      </div>
 
       <!-- ===== 批改结果展示 ===== -->
       <div v-if="gradingResult" class="result-section">
@@ -199,6 +205,9 @@ const gradingResult = ref(null)
 // 编辑器相关
 const editorRef = ref(null)
 let editorView = null
+// 编辑器内容是否非空（响应式）：editorView 是普通变量，Vue 追踪不到它的变化，
+// 所以用这个 ref 配合 CodeMirror 的 updateListener 来驱动按钮的禁用状态
+const editorNonEmpty = ref(false)
 
 // 编辑器文件名
 const editorFilename = computed(() => {
@@ -210,7 +219,7 @@ const canSubmit = computed(() => {
   if (submitMode.value === 'upload') {
     return !!selectedFile.value
   }
-  return editorView && editorView.state.doc.toString().trim().length > 0
+  return editorNonEmpty.value
 })
 
 // 错误分类 → 严重程度/中文名/标签颜色 映射（后端没有severity字段，按category分档）
@@ -269,6 +278,10 @@ function initEditor() {
       basicSetup,
       langExt,
       oneDark,
+      // 内容变化时同步到响应式变量，按钮的禁用状态才能实时更新
+      EditorView.updateListener.of((update) => {
+        editorNonEmpty.value = update.state.doc.toString().trim().length > 0
+      }),
       EditorView.theme({
         '&': { height: '320px', fontSize: '14px' },
         '.cm-scroller': { overflow: 'auto' },
@@ -280,6 +293,8 @@ function initEditor() {
     state,
     parent: editorRef.value,
   })
+  // 初始化时默认有示例代码，立即同步一次
+  editorNonEmpty.value = state.doc.toString().trim().length > 0
 }
 
 function getDefaultCode() {
@@ -408,6 +423,37 @@ function resetForm() {
       changes: { from: 0, to: editorView.state.doc.length, insert: getDefaultCode() },
     })
   }
+}
+
+// 让AI看看这段代码：把当前代码拼进消息，唤起右下角AI助手自动发送
+async function askAiAboutCode() {
+  let code = ''
+  if (submitMode.value === 'editor') {
+    code = editorView?.state.doc.toString() || ''
+  } else if (selectedFile.value) {
+    // 上传模式下把文件读成文本
+    try {
+      code = await selectedFile.value.text()
+    } catch {
+      code = ''
+    }
+  }
+
+  if (!code.trim()) {
+    ElMessage.warning('请先选择文件或写代码')
+    return
+  }
+
+  // 后端消息上限2000字，代码过长时截断并说明
+  const langName = selectedLang.value === 'JAVA' ? 'Java' : 'C++'
+  const langTag = selectedLang.value === 'JAVA' ? 'java' : 'cpp'
+  const limit = 1500
+  const codePart = code.length > limit
+    ? code.slice(0, limit) + '\n// ……（代码过长，已截断）'
+    : code
+  const message = `请帮我看看这段${langName}代码有什么问题：\n\`\`\`${langTag}\n${codePart}\n\`\`\``
+
+  window.dispatchEvent(new CustomEvent('open-ai-assistant', { detail: { message } }))
 }
 </script>
 
@@ -588,13 +634,29 @@ function resetForm() {
   margin-top: 8px;
 }
 
-/* 提交按钮 */
+/* 提交按钮行：提交为主，问AI为辅 */
+.submit-row {
+  display: flex;
+  gap: 12px;
+}
 .submit-btn {
-  width: 100%;
+  flex: 1;
   height: 46px;
   font-size: 16px;
   letter-spacing: 2px;
   border-radius: 10px;
+}
+.ask-ai-btn {
+  height: 46px;
+  border-radius: 10px;
+  background: rgba(196, 181, 253, 0.08) !important;
+  border: 1px solid rgba(196, 181, 253, 0.3) !important;
+  color: #c4b5fd !important;
+  transition: all 0.2s;
+}
+.ask-ai-btn:hover:not(:disabled) {
+  background: rgba(196, 181, 253, 0.15) !important;
+  border-color: #c4b5fd !important;
 }
 
 /* ===== 批改结果 ===== */

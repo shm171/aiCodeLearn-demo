@@ -134,6 +134,14 @@
           <p class="detail-text">第 {{ currentQuestion.lineText }} 行</p>
         </div>
       </div>
+
+      <!-- 底部：问AI这道题 -->
+      <template #footer>
+        <el-button @click="detailDialogVisible = false">关闭</el-button>
+        <el-button type="primary" :icon="MagicStick" @click="askAiAboutError">
+          问AI这道题
+        </el-button>
+      </template>
     </el-dialog>
 
     <!-- AI 生成类似题弹窗：左右布局，左边题目，右边写代码+提交+批改 -->
@@ -221,7 +229,7 @@ import { ref, computed, onMounted, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
 import { MagicStick, Notebook, Loading, Refresh, View } from '@element-plus/icons-vue'
 import { getErrorListApi, getErrorDetailApi, markMasteredApi } from '../../api/review'
-import { uploadSubmissionApi } from '../../api/submission'
+import { uploadSubmissionApi, getSubmissionDetailApi } from '../../api/submission'
 
 // ========== CodeMirror 导入 ==========
 import { EditorState } from '@codemirror/state'
@@ -292,6 +300,7 @@ function chapterText(chapter) {
 function normalizeError(item) {
   return {
     errorId: item.id,
+    sourceFileId: item.sourceFileId,
     categoryKey: item.category,
     category: categoryMeta(item.category).label,
     chapter: chapterText(item.chapter),
@@ -333,6 +342,37 @@ async function viewDetail(q) {
     currentQuestion.value = q
   }
   detailDialogVisible.value = true
+}
+
+// 问AI这道题：带错误类型/修复建议/源码唤起AI助手自动发送
+async function askAiAboutError() {
+  const q = currentQuestion.value
+  if (!q) return
+
+  // 错题记录本身不含源码，按 sourceFileId 拉提交详情拿代码；失败就只带错题信息
+  let code = ''
+  if (q.sourceFileId) {
+    try {
+      const detail = await getSubmissionDetailApi(q.sourceFileId)
+      code = detail?.content || ''
+    } catch {
+      code = ''
+    }
+  }
+
+  const parts = [`我想问一道错题：${q.errorType || q.category || '代码问题'}`]
+  if (q.fixSuggestion) parts.push(`修复建议：${q.fixSuggestion}`)
+  if (code) {
+    // 后端消息上限2000字，代码过长时截断
+    const limit = 1200
+    const codePart = code.length > limit
+      ? code.slice(0, limit) + '\n// ……（代码过长，已截断）'
+      : code
+    parts.push(`相关代码：\n\`\`\`\n${codePart}\n\`\`\``)
+  }
+
+  detailDialogVisible.value = false
+  window.dispatchEvent(new CustomEvent('open-ai-assistant', { detail: { message: parts.join('\n') } }))
 }
 
 // 标记已掌握：必须调后端接口，成功后更新本地状态

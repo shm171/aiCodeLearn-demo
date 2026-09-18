@@ -70,6 +70,9 @@
     <main class="main">
       <router-view />
     </main>
+
+    <!-- AI 学习助手：全局悬浮按钮 + 聊天窗（登录页不走本布局，天然不显示） -->
+    <AiAssistantWidget />
   </div>
 </template>
 
@@ -79,6 +82,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Cpu, ArrowDown } from '@element-plus/icons-vue'
+import AiAssistantWidget from '../components/AiAssistantWidget.vue'
 
 const route = useRoute()
 const router = useRouter()
