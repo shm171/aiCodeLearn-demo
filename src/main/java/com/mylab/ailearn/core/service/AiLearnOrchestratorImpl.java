@@ -5,9 +5,13 @@ import com.mylab.ailearn.core.model.commonmodel.GradingResult;
 import com.mylab.ailearn.core.model.commonmodel.SourceFile;
 import com.mylab.ailearn.core.model.commonmodel.SubmissionGradingResult;
 import com.mylab.ailearn.core.model.specialmodel.StudentDashboard;
+import com.mylab.ailearn.core.enums.ErrorCategory;
+import com.mylab.ailearn.core.enums.ErrorSeverity;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
@@ -55,11 +59,27 @@ public class AiLearnOrchestratorImpl implements AiLearnOrchestrator {
         return errorArchiveService.listByOwner(ownerUserId);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ErrorRecord> listErrorArchive(
+            Long ownerUserId,
+            ErrorCategory category,
+            ErrorSeverity severity,
+            Pageable pageable) {
+        return errorArchiveService.listByOwner(ownerUserId, category, severity, pageable);
+    }
+
     /** 读侧：查询某学生已归档的全部源码提交（按提交时间倒序）。数据范围由传入的 ownerUserId 决定。 */
     @Override
     @Transactional(readOnly = true)
     public List<SourceFile> listMySubmissions(Long ownerUserId) {
         return fileUploadService.listByOwner(ownerUserId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<SourceFile> listMySubmissions(Long ownerUserId, Pageable pageable) {
+        return fileUploadService.listByOwner(ownerUserId, pageable);
     }
 
     /** 写侧：把某学生的一条错题标记为「已掌握」；归属校验在归档服务内部完成。 */

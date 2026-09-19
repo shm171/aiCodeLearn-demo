@@ -2,6 +2,8 @@ package com.mylab.ailearn.core.service.spi;
 
 
 import com.mylab.ailearn.core.model.commonmodel.SourceFile;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
@@ -31,5 +33,8 @@ public interface SourceFileStore {
 
     /** 查询某学生的全部提交；无提交时返回空列表。 */
     List<SourceFile> findByOwnerUserId(Long ownerUserId);
+
+    /** 在数据库中分页查询某学生的提交。 */
+    Page<SourceFile> findByOwnerUserId(Long ownerUserId, Pageable pageable);
 
 }

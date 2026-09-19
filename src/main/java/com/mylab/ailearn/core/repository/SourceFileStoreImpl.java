@@ -5,6 +5,8 @@ import com.mylab.ailearn.core.service.spi.SourceFileStore;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
@@ -51,6 +53,13 @@ public class SourceFileStoreImpl implements SourceFileStore {
         return jpaRepository.findByOwnerUserIdOrderBySubmittedAtDescIdDesc(ownerUserId).stream()
                 .map(this::toRecord)
                 .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<SourceFile> findByOwnerUserId(Long ownerUserId, Pageable pageable) {
+        return jpaRepository.findByOwnerUserIdOrderBySubmittedAtDescIdDesc(ownerUserId, pageable)
+                .map(this::toRecord);
     }
 
     private SourceFile toRecord(SourceFileEntity entity) {

@@ -118,12 +118,12 @@ class StudentReportServiceImplTest {
     }
 
     private ErrorRecord rec(Long owner, CourseChapter chapter, ErrorCategory category, String errorType, LocalDateTime at) {
-        return new ErrorRecord(null, owner, null, chapter, category, errorType, "E001", "修复建议", List.of(), at, false);
+        return new ErrorRecord(null, owner, null, chapter, category, null, errorType, "E001", "修复建议", List.of(), at, false);
     }
 
     private ErrorRecord recMastered(Long owner, Long sourceFileId, CourseChapter chapter, ErrorCategory category,
                                     String errorType, LocalDateTime at, boolean mastered) {
-        return new ErrorRecord(null, owner, sourceFileId, chapter, category, errorType, "E001", "修复建议", List.of(), at, mastered);
+        return new ErrorRecord(null, owner, sourceFileId, chapter, category, null, errorType, "E001", "修复建议", List.of(), at, mastered);
     }
 
     private LocalDateTime at(String text) {

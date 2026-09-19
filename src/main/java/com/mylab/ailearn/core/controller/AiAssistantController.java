@@ -2,7 +2,10 @@ package com.mylab.ailearn.core.controller;
 
 import com.mylab.ailearn.base.global.configs.CurrentUserResolver;
 import com.mylab.ailearn.core.model.commonmodel.AiChatRequest;
+import com.mylab.ailearn.core.model.commonmodel.PracticeExercise;
+import com.mylab.ailearn.core.model.commonmodel.PracticeGenerationRequest;
 import com.mylab.ailearn.core.service.AiAssistant;
+import com.mylab.ailearn.core.service.PracticeGenerationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -15,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 
 import java.util.UUID;
+import java.util.List;
 
 /*
 * Ai学习对话助手
@@ -27,6 +31,7 @@ import java.util.UUID;
 public class AiAssistantController {
         private final CurrentUserResolver currentUserResolver;
         private final AiAssistant aiAssistant;
+        private final PracticeGenerationService practiceGenerationService;
         @PostMapping(value = "/chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
         @Operation(summary = "AI 学习助手对话", description = "流式返回 AI 回答（SSE），响应头 X-Conversation-Id 返回会话 ID，前端后续对话原样传回")
         @SecurityRequirement(name = "bearerAuth")
@@ -45,5 +50,14 @@ public class AiAssistantController {
                 HttpHeaders headers = new HttpHeaders();
                 headers.set("X-Conversation-Id", conversationId);
                 return ResponseEntity.ok().headers(headers).body(stream);
+        }
+
+        @PostMapping("/practice")
+        @Operation(summary = "根据错题实时生成类似练习")
+        @SecurityRequirement(name = "bearerAuth")
+        public ResponseEntity<List<PracticeExercise>> generatePractice(
+                @Valid @RequestBody PracticeGenerationRequest request) {
+                currentUserResolver.currentUserId();
+                return ResponseEntity.ok(practiceGenerationService.generate(request));
         }
 }

@@ -3,6 +3,7 @@ package com.mylab.ailearn.core.controller;
 import com.mylab.ailearn.base.global.configs.CurrentUserResolver;
 import com.mylab.ailearn.base.global.configs.OpenApiConfig;
 import com.mylab.ailearn.core.enums.ErrorCategory;
+import com.mylab.ailearn.core.enums.ErrorSeverity;
 import com.mylab.ailearn.core.model.commonmodel.ErrorRecord;
 import com.mylab.ailearn.core.model.specialmodel.StudentDashboard;
 import com.mylab.ailearn.core.model.specialmodel.WeakPoint;
@@ -13,7 +14,6 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
@@ -26,7 +26,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
@@ -52,27 +51,16 @@ public class ReviewController {
     public ResponseEntity<Page<ErrorRecord>> listMyErrors(
             @Parameter(description = "错误分类过滤，例如 SYNTAX_ERROR；不传则不过滤")
             @RequestParam(required = false) String category,
-            @Parameter(description = "严重程度过滤（预留参数）：当前版本归档记录未包含严重程度字段，该参数暂不生效")
+            @Parameter(description = "严重程度过滤：ERROR / WARNING / INFO")
             @RequestParam(required = false) String severity,
             @PageableDefault(size = 20) Pageable pageable
     ) {
         Long ownerUserId = currentUserResolver.currentUserId();
 
-        var stream = orchestrator.listErrorArchive(ownerUserId).stream();
-        if (category != null && !category.isBlank()) {
-            ErrorCategory parsed = parseCategory(category);
-            stream = stream.filter(record -> record.category() == parsed);
-        }
-
-
-        List<ErrorRecord> filtered = stream
-                .sorted(Comparator.comparing(ErrorRecord::createdAt,
-                        Comparator.nullsLast(Comparator.naturalOrder())).reversed())
-                .toList();
-
-        int start = (int) Math.min(pageable.getOffset(), filtered.size());
-        int end = Math.min(start + pageable.getPageSize(), filtered.size());
-        return ResponseEntity.ok(new PageImpl<>(filtered.subList(start, end), pageable, filtered.size()));
+        ErrorCategory parsedCategory = category == null || category.isBlank() ? null : parseCategory(category);
+        ErrorSeverity parsedSeverity = severity == null || severity.isBlank() ? null : parseSeverity(severity);
+        return ResponseEntity.ok(orchestrator.listErrorArchive(
+                ownerUserId, parsedCategory, parsedSeverity, pageable));
     }
 
     @GetMapping("/errors/{errorId}")
@@ -122,6 +110,15 @@ public class ReviewController {
         } catch (IllegalArgumentException exception) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "unknown category: " + category + ", expected FORMAT_ERROR / SYNTAX_ERROR / LOGIC_ERROR");
+        }
+    }
+
+    private ErrorSeverity parseSeverity(String severity) {
+        try {
+            return ErrorSeverity.valueOf(severity.trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException exception) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "unknown severity: " + severity + ", expected ERROR / WARNING / INFO");
         }
     }
 }

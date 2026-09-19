@@ -63,7 +63,7 @@
                 <div class="security-desc">定期修改密码更安全</div>
               </div>
             </div>
-            <el-button link type="primary" @click="ElMessage.info('修改密码功能开发中')">修改</el-button>
+            <el-button link type="primary" @click="openPasswordDialog">修改</el-button>
           </div>
 
           <el-divider />
@@ -76,7 +76,7 @@
                 <div class="security-desc">{{ userStore.email }}</div>
               </div>
             </div>
-            <el-tag type="success" size="small">已绑定</el-tag>
+            <el-button link type="primary" @click="openEmailDialog">更换</el-button>
           </div>
         </el-card>
 
@@ -107,6 +107,34 @@
         </el-card>
       </el-col>
     </el-row>
+
+    <el-dialog v-model="passwordDialogVisible" title="修改登录密码" width="420px">
+      <el-form label-position="top">
+        <el-form-item label="新密码">
+          <el-input v-model="passwordForm.password" type="password" show-password maxlength="16" placeholder="8 至 16 位" />
+        </el-form-item>
+        <el-form-item label="确认新密码">
+          <el-input v-model="passwordForm.confirmPassword" type="password" show-password maxlength="16" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="passwordDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="accountSaving" @click="changePassword">确认修改</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog v-model="emailDialogVisible" title="更换登录邮箱" width="420px">
+      <el-form label-position="top">
+        <el-form-item label="新邮箱">
+          <el-input v-model="emailForm.email" placeholder="name@example.com" />
+        </el-form-item>
+      </el-form>
+      <div class="dialog-hint">更换后需要使用新邮箱重新登录。</div>
+      <template #footer>
+        <el-button @click="emailDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="accountSaving" @click="changeEmail">确认更换</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -114,13 +142,18 @@
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '../../stores/user'
-import { getUserProfileApi, updateUserProfileApi } from '../../api/user'
+import { getUserProfileApi, updateUserProfileApi, updateUserInfoApi } from '../../api/user'
 import { getReportApi } from '../../api/review'
 import { User, Setting, Lock, Key, Message, DataAnalysis } from '@element-plus/icons-vue'
 
 const userStore = useUserStore()
 const saving = ref(false)
 const loadingProfile = ref(false)
+const accountSaving = ref(false)
+const passwordDialogVisible = ref(false)
+const emailDialogVisible = ref(false)
+const passwordForm = ref({ password: '', confirmPassword: '' })
+const emailForm = ref({ email: '' })
 const form = ref({
   username: userStore.username || '',
 })
@@ -204,6 +237,65 @@ async function handleSave() {
     }
   } finally {
     saving.value = false
+  }
+}
+
+function openPasswordDialog() {
+  passwordForm.value = { password: '', confirmPassword: '' }
+  passwordDialogVisible.value = true
+}
+
+async function changePassword() {
+  const { password, confirmPassword } = passwordForm.value
+  if (password.length < 8 || password.length > 16) {
+    ElMessage.warning('密码长度必须为 8 至 16 位')
+    return
+  }
+  if (password !== confirmPassword) {
+    ElMessage.warning('两次输入的密码不一致')
+    return
+  }
+  accountSaving.value = true
+  try {
+    await updateUserInfoApi(userStore.userId, { password })
+    passwordDialogVisible.value = false
+    ElMessage.success('密码修改成功')
+  } catch (error) {
+    if (error.response?.status !== 401) {
+      ElMessage.error(error.response?.data?.detail || '密码修改失败')
+    }
+  } finally {
+    accountSaving.value = false
+  }
+}
+
+function openEmailDialog() {
+  emailForm.value = { email: userStore.email }
+  emailDialogVisible.value = true
+}
+
+async function changeEmail() {
+  const email = emailForm.value.email.trim()
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    ElMessage.warning('请输入有效的邮箱地址')
+    return
+  }
+  if (email === userStore.email) {
+    ElMessage.info('新邮箱与当前邮箱相同')
+    return
+  }
+  accountSaving.value = true
+  try {
+    await updateUserInfoApi(userStore.userId, { email })
+    ElMessage.success('邮箱更换成功，请使用新邮箱重新登录')
+    userStore.logout()
+    window.location.href = '/login'
+  } catch (error) {
+    if (error.response?.status !== 401) {
+      ElMessage.error(error.response?.data?.detail || '邮箱更换失败')
+    }
+  } finally {
+    accountSaving.value = false
   }
 }
 
@@ -339,5 +431,10 @@ onMounted(() => {
 }
 .nickname-input:focus-within :deep(.el-input__count) {
   display: flex;
+}
+
+.dialog-hint {
+  color: #a1a1aa;
+  font-size: 13px;
 }
 </style>

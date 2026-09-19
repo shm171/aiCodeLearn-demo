@@ -2,8 +2,11 @@ package com.mylab.ailearn.core.repository;
 
 import com.mylab.ailearn.core.enums.CourseChapter;
 import com.mylab.ailearn.core.enums.ErrorCategory;
+import com.mylab.ailearn.core.enums.ErrorSeverity;
 import com.mylab.ailearn.core.model.commonmodel.ErrorRecord;
 import org.junit.jupiter.api.Test;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -44,6 +47,23 @@ class ErrorRecordStoreImplTest {
         verify(repository).findByOwnerUserIdOrderByCreatedAtDescIdDesc(7L);
     }
 
+    @Test
+    void severityFilterAndPagingAreDelegatedToDatabase() {
+        PageRequest page = PageRequest.of(2, 20);
+        ErrorRecordEntity entity = entity(2L, LocalDateTime.of(2026, 9, 14, 12, 0));
+        when(repository.findByOwnerUserIdAndSeverityOrderByCreatedAtDescIdDesc(
+                7L, ErrorSeverity.WARNING, page))
+                .thenReturn(new PageImpl<>(List.of(entity), page, 41));
+
+        var result = store.findByOwnerUserId(7L, null, ErrorSeverity.WARNING, page);
+
+        assertThat(result.getTotalElements()).isEqualTo(41);
+        assertThat(result.getContent()).extracting(ErrorRecord::severity)
+                .containsExactly(ErrorSeverity.WARNING);
+        verify(repository).findByOwnerUserIdAndSeverityOrderByCreatedAtDescIdDesc(
+                7L, ErrorSeverity.WARNING, page);
+    }
+
     private ErrorRecordEntity entity(Long id, LocalDateTime createdAt) {
         ErrorRecordEntity entity = new ErrorRecordEntity();
         entity.setId(id);
@@ -51,6 +71,7 @@ class ErrorRecordStoreImplTest {
         entity.setSourceFileId(20L);
         entity.setChapter(CourseChapter.ARRAYS);
         entity.setCategory(ErrorCategory.LOGIC_ERROR);
+        entity.setSeverity(ErrorSeverity.WARNING);
         entity.setErrorType("array access");
         entity.setErrorCode("ARRAY_OUT_OF_BOUNDS");
         entity.setFixSuggestion("check bounds");

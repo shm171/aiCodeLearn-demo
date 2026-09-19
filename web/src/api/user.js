@@ -22,7 +22,7 @@ export function getUserInfoApi(userId) {
   return request.get(`/user/${userId}`)
 }
 
-// 修改用户信息（邮箱/密码）：PUT /user/{id}，参数 { email, password }
+// 修改用户信息（邮箱和密码可单独修改）：PUT /user/{id}
 export function updateUserInfoApi(userId, data) {
   return request.put(`/user/${userId}`, data)
 }

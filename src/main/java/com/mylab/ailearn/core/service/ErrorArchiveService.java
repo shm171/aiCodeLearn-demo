@@ -1,6 +1,10 @@
 package com.mylab.ailearn.core.service;
 
 import com.mylab.ailearn.core.model.commonmodel.ErrorRecord;
+import com.mylab.ailearn.core.enums.ErrorCategory;
+import com.mylab.ailearn.core.enums.ErrorSeverity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
@@ -23,6 +27,13 @@ public interface ErrorArchiveService {
      * @throws org.springframework.web.server.ResponseStatusException ownerUserId 无效时抛 400
      */
     List<ErrorRecord> listByOwner(Long ownerUserId);
+
+    /** 在数据库中分页并按可选分类、严重程度过滤错题。 */
+    Page<ErrorRecord> listByOwner(
+            Long ownerUserId,
+            ErrorCategory category,
+            ErrorSeverity severity,
+            Pageable pageable);
 
     /**
      * 把某学生的一条错题标记为「已掌握」。

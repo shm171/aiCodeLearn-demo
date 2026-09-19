@@ -2,6 +2,7 @@ package com.mylab.ailearn.core.repository;
 
 import com.mylab.ailearn.core.enums.CourseChapter;
 import com.mylab.ailearn.core.enums.ErrorCategory;
+import com.mylab.ailearn.core.enums.ErrorSeverity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -44,6 +45,10 @@ public class ErrorRecordEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "category", length = 20)
     private ErrorCategory category;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "severity", nullable = false, length = 10)
+    private ErrorSeverity severity;
 
     @Column(name = "error_type")
     private String errorType;

@@ -2,6 +2,7 @@ package com.mylab.ailearn.core.model.commonmodel;
 
 import com.mylab.ailearn.core.enums.CourseChapter;
 import com.mylab.ailearn.core.enums.ErrorCategory;
+import com.mylab.ailearn.core.enums.ErrorSeverity;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -17,6 +18,7 @@ import java.util.List;
  * @param sourceFileId 产生该错题的源码提交 ID，对应 {@link SourceFile#id()}；用于统计"无错题的提交"
  * @param chapter      该错题所属课程章节，来自提交时的章节匹配结果
  * @param category     错误大类；可能为 null（规则或模型未给出分类时）
+ * @param severity     严重程度，用于前端展示和数据库过滤
  * @param errorType    错误类型名，例如"数组越界访问"
  * @param errorCode    错误代码，例如 ARRAY_OUT_OF_BOUNDS
  * @param fixSuggestion 修改建议文案，可为 null
@@ -30,6 +32,7 @@ public record ErrorRecord(
         Long sourceFileId,
         CourseChapter chapter,
         ErrorCategory category,
+        ErrorSeverity severity,
         String errorType,
         String errorCode,
         String fixSuggestion,
@@ -38,6 +41,7 @@ public record ErrorRecord(
         boolean mastered) {
 
     public ErrorRecord {
+        severity = severity == null ? ErrorSeverity.fromCategory(category) : severity;
         line = line == null ? List.of() : line.stream().distinct().sorted().toList();
     }
 }

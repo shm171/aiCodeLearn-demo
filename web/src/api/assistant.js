@@ -1,4 +1,10 @@
 // AI 学习助手：使用 fetch 读取后端 SSE 流，并将增量文本交给页面展示。
+import request from '../utils/request'
+
+export function generatePracticeApi(errorType, category, language = 'CPP') {
+  return request.post('/core/assistant/practice', { errorType, category, language })
+}
+
 export async function chatWithAssistantApi({ message, conversationId, onChunk, signal }) {
   const token = localStorage.getItem('token')
   const response = await fetch('/api/core/assistant/chat', {
@@ -12,8 +18,11 @@ export async function chatWithAssistantApi({ message, conversationId, onChunk, s
   })
 
   if (!response.ok) {
-    if (response.status === 401 || response.status === 403) {
-      localStorage.removeItem('token')
+    if (response.status === 401) {
+      for (const key of ['token', 'userId', 'email', 'username', 'role']) {
+        localStorage.removeItem(key)
+      }
+      if (window.location.pathname !== '/login') window.location.href = '/login'
       throw new Error('登录状态已失效，请重新登录')
     }
     const detail = await response.text()
