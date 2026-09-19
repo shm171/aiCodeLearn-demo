@@ -63,14 +63,27 @@ public class UserService implements UserDetailsService {
     public UserDto updateUser(long id, UserUpdateRequest request) {
         AppUser user = findUserById(id);
 
-        userRepository.findByEmail(request.getEmail())
-                .filter(existingUser -> existingUser.getId() != id)
-                .ifPresent(existingUser -> {
-                    throw new ResponseStatusException(HttpStatus.CONFLICT, "Email is already registered");
-                });
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPasswordHash())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Current password is incorrect");
+        }
 
-        userMapper.updateEntity(request, user);
-        user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+        boolean updateEmail = request.getEmail() != null && !request.getEmail().isBlank();
+        boolean updatePassword = request.getPassword() != null && !request.getPassword().isBlank();
+        if (!updateEmail && !updatePassword) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email or password is required");
+        }
+
+        if (updateEmail) {
+            userRepository.findByEmail(request.getEmail())
+                    .filter(existingUser -> existingUser.getId() != id)
+                    .ifPresent(existingUser -> {
+                        throw new ResponseStatusException(HttpStatus.CONFLICT, "Email is already registered");
+                    });
+            user.setEmail(request.getEmail());
+        }
+        if (updatePassword) {
+            user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+        }
         AppUser savedUser = userRepository.save(user);
         return userMapper.toDto(savedUser);
     }

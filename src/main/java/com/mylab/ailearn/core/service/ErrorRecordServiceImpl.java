@@ -4,6 +4,7 @@ import com.mylab.ailearn.core.model.commonmodel.ErrorRecord;
 import com.mylab.ailearn.core.model.commonmodel.GradedError;
 import com.mylab.ailearn.core.model.commonmodel.GradingResult;
 import com.mylab.ailearn.core.model.commonmodel.SourceFile;
+import com.mylab.ailearn.core.enums.ErrorSeverity;
 import com.mylab.ailearn.core.service.spi.ErrorRecordStore;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -50,6 +51,7 @@ public class ErrorRecordServiceImpl implements ErrorRecordService {
                 sourceFile.id(),
                 sourceFile.chapter(),
                 error.category(),
+                ErrorSeverity.fromCategory(error.category()),
                 error.errorType(),
                 error.errorCode(),
                 error.fixSuggestion(),

@@ -222,6 +222,7 @@ import { ElMessage } from 'element-plus'
 import { MagicStick, Notebook, Loading, Refresh, View } from '@element-plus/icons-vue'
 import { getErrorListApi, getErrorDetailApi, markMasteredApi } from '../../api/review'
 import { uploadSubmissionApi } from '../../api/submission'
+import { generatePracticeApi } from '../../api/assistant'
 
 // ========== CodeMirror 导入 ==========
 import { EditorState } from '@codemirror/state'
@@ -262,7 +263,7 @@ const filteredQuestions = computed(() => {
   return list
 })
 
-// 错误分类 → 中文名/严重程度/标签颜色 映射（后端没有severity字段，按category分档）
+// 错误分类 → 中文名/严重程度/标签颜色映射；后端也会返回持久化的 severity 字段
 function categoryMeta(category) {
   const map = {
     SYNTAX_ERROR: { label: '语法错误', severity: 'ERROR', tagType: 'danger' },
@@ -351,22 +352,33 @@ async function markMastered(q) {
   }
 }
 
-// AI生成类似题（前端模拟，后端暂无此接口）：根据错题类型生成3道题
-function generateSimilar(q) {
+// 根据错题调用后端模型实时生成 3 道类似题
+async function generateSimilar(q) {
   currentQuestion.value = q
   similarDialogVisible.value = true
   similarLoading.value = true
   currentSimilarIndex.value = 0
   similarGradingResult.value = null
   q.generating = true
-  setTimeout(() => {
-    similarLoading.value = false
-    q.generating = false
-    similarQuestions.value = generateSimilarQuestions(q.errorType || q.category)
+  try {
+    similarQuestions.value = await generatePracticeApi(
+      q.errorType || q.category || '代码问题',
+      q.categoryKey || '',
+      'CPP',
+    )
+    if (!Array.isArray(similarQuestions.value) || similarQuestions.value.length === 0) {
+      throw new Error('未生成练习题')
+    }
     nextTick(() => {
       initSimilarEditor()
     })
-  }, 1500)
+  } catch (error) {
+    similarQuestions.value = []
+    ElMessage.error(error.response?.data?.detail || error.message || 'AI 练习生成失败，请稍后重试')
+  } finally {
+    similarLoading.value = false
+    q.generating = false
+  }
 }
 
 // ========== 类似题编辑器相关 ==========
@@ -467,7 +479,7 @@ function closeSimilarDialog() {
   similarGradingResult.value = null
 }
 
-// 根据错误类型生成类似题目（前端模拟，后端暂无此接口）
+// 旧模板生成器仅保留为开发参考，当前页面实际调用后端 AI 接口
 function generateSimilarQuestions(category) {
   const isCpp = true
   const ext = isCpp ? '.cpp' : '.java'

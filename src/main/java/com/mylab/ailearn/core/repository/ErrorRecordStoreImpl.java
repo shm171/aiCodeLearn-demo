@@ -1,10 +1,14 @@
 package com.mylab.ailearn.core.repository;
 
 import com.mylab.ailearn.core.model.commonmodel.ErrorRecord;
+import com.mylab.ailearn.core.enums.ErrorCategory;
+import com.mylab.ailearn.core.enums.ErrorSeverity;
 import com.mylab.ailearn.core.service.spi.ErrorRecordStore;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.Arrays;
 import java.util.List;
@@ -54,6 +58,29 @@ public class ErrorRecordStoreImpl implements ErrorRecordStore {
 
     @Override
     @Transactional(readOnly = true)
+    public Page<ErrorRecord> findByOwnerUserId(
+            Long ownerUserId,
+            ErrorCategory category,
+            ErrorSeverity severity,
+            Pageable pageable) {
+        Page<ErrorRecordEntity> entities;
+        if (category != null && severity != null) {
+            entities = jpaRepository.findByOwnerUserIdAndCategoryAndSeverityOrderByCreatedAtDescIdDesc(
+                    ownerUserId, category, severity, pageable);
+        } else if (category != null) {
+            entities = jpaRepository.findByOwnerUserIdAndCategoryOrderByCreatedAtDescIdDesc(
+                    ownerUserId, category, pageable);
+        } else if (severity != null) {
+            entities = jpaRepository.findByOwnerUserIdAndSeverityOrderByCreatedAtDescIdDesc(
+                    ownerUserId, severity, pageable);
+        } else {
+            entities = jpaRepository.findByOwnerUserIdOrderByCreatedAtDescIdDesc(ownerUserId, pageable);
+        }
+        return entities.map(this::toRecord);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public Optional<ErrorRecord> findById(Long id) {
         return jpaRepository.findById(id).map(this::toRecord);
     }
@@ -76,6 +103,7 @@ public class ErrorRecordStoreImpl implements ErrorRecordStore {
         entity.setSourceFileId(record.sourceFileId());
         entity.setChapter(record.chapter());
         entity.setCategory(record.category());
+        entity.setSeverity(record.severity());
         entity.setErrorType(record.errorType());
         entity.setErrorCode(record.errorCode());
         entity.setFixSuggestion(record.fixSuggestion());
@@ -116,6 +144,7 @@ public class ErrorRecordStoreImpl implements ErrorRecordStore {
                 entity.getSourceFileId(),
                 entity.getChapter(),
                 entity.getCategory(),
+                entity.getSeverity(),
                 entity.getErrorType(),
                 entity.getErrorCode(),
                 entity.getFixSuggestion(),

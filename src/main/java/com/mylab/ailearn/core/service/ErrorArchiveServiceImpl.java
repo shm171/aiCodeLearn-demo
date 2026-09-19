@@ -1,12 +1,16 @@
 package com.mylab.ailearn.core.service;
 
 import com.mylab.ailearn.core.model.commonmodel.ErrorRecord;
+import com.mylab.ailearn.core.enums.ErrorCategory;
+import com.mylab.ailearn.core.enums.ErrorSeverity;
 import com.mylab.ailearn.core.service.spi.ErrorRecordStore;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
@@ -27,6 +31,17 @@ public class ErrorArchiveServiceImpl implements ErrorArchiveService {
     public List<ErrorRecord> listByOwner(Long ownerUserId) {
         ServiceSupport.requireOwner(ownerUserId);
         return List.copyOf(ServiceSupport.nullToEmpty(errorRecordStore.findByOwnerUserId(ownerUserId)));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ErrorRecord> listByOwner(
+            Long ownerUserId,
+            ErrorCategory category,
+            ErrorSeverity severity,
+            Pageable pageable) {
+        ServiceSupport.requireOwner(ownerUserId);
+        return errorRecordStore.findByOwnerUserId(ownerUserId, category, severity, pageable);
     }
 
     /**

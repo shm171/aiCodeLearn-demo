@@ -10,11 +10,13 @@ import lombok.Setter;
 @Setter
 public class UserUpdateRequest {
 
-    @NotBlank(message = "email is blank")
+    @NotBlank(message = "current password is blank")
+    @Size(min = 8, max = 16, message = "current password length must be in 8 to 16")
+    private String currentPassword;
+
     @Email(message = "not valid email format")
     private String email;
 
-    @NotBlank
     @Size(min = 8, max = 16, message = "length must be in 8 to 16")
     private String password;
 }

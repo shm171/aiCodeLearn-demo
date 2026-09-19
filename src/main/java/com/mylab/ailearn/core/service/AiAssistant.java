@@ -14,10 +14,8 @@ import reactor.core.publisher.Flux;
  * 用于总结薄弱点、推荐训练章节与讲解易错知识点。对话记忆通过
  * {@link ChatMemory#CONVERSATION_ID} 按「用户 + 会话」隔离，避免不同会话串扰。</p>
  *
- * <p><b>安全边界（重要）</b>：{@link #aiChat} 把 {@code ownerUserId} 写进系统提示词，
- * 这只是给模型的上下文，<b>不构成任何数据权限</b>——真正查库时用的是模型自己生成的
- * 工具调用参数。要做数据隔离，必须在 {@link LlmErrorRecordGet} 侧改用服务端可信身份，
- * 而不是模型给出的 ID（当前尚未实现）。</p>
+ * <p><b>安全边界</b>：每次请求都通过 {@link LlmErrorRecordGet#forOwner(Long)} 创建绑定当前
+ * 已认证用户的工具。模型看不到也不能修改归属 ID。</p>
  */
 @Service
 public class AiAssistant {
@@ -46,17 +44,16 @@ public class AiAssistant {
      * 流式 AI 对话：逐段返回助手回答，供 Controller 以 text/event-stream 输出。
      *
      * @param message        用户输入的消息
-     * @param ownerUserId    当前用户 ID，仅作为提示词上下文交给模型，不构成数据权限（见类注释）
+     * @param ownerUserId    当前已认证用户 ID，用于绑定数据工具和隔离会话
      * @param conversationId 会话 ID，用于隔离不同对话的记忆（同一用户不同会话互不串扰）
      * @return 流式回答内容
      */
     public Flux<String> aiChat(String message, Long ownerUserId, String conversationId) {
         String userId = String.valueOf(ownerUserId);
-        String systemPromptFinal = systemPrompt + "该用户ID为：" + userId;
         String uniqueConversationId = userId + "_" + conversationId;
         return chatClient.prompt()
-                .tools(llmErrorRecordGet)
-                .system(systemPromptFinal)
+                .tools(llmErrorRecordGet.forOwner(ownerUserId))
+                .system(systemPrompt)
                 .user(message)
                 .advisors(advisorSpec -> advisorSpec.param(ChatMemory.CONVERSATION_ID, uniqueConversationId))
                 .stream()

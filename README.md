@@ -2,7 +2,7 @@
 
 AI Learn 是面向程序设计课程的学习辅助后端。学生上传 Java 或 C++ 源码后，系统完成文件归档、章节匹配、规则检查、LLM 批改和错题归档，并提供学生复习报告和流式学习助手。
 
-本轮工作只整理后端，分支为 `feature/backend-integration`。前端代码没有修改，也没有并入该分支。AI 批改与助手的核心实现保持原状。
+当前主线包含后端与 Vue 学员端。2026 年 9 月 19 日的测试问题、修复内容、安全核查和回归结果见 [`web/测试与修复记录.md`](web/测试与修复记录.md)。
 
 ## 当前结论
 
@@ -14,7 +14,8 @@ AI Learn 是面向程序设计课程的学习辅助后端。学生上传 Java �
 | 错题归档 | 已完成 | 列表、详情、分类过滤、标记已掌握 |
 | 学生报告 | 已完成 | 错题分布、薄弱点、复习清单、月度曲线、正确率 |
 | 学习助手 | 已完成 | SSE 流式返回，支持会话 ID 和 JDBC 会话记忆 |
-| 邮箱验证码、找回密码、相似题推荐 | 未实现 | 属于扩展项，不影响本轮基础流程验收 |
+| AI 类似题 | 已完成 | 后端模型实时生成 3 道练习，前端可继续提交批改 |
+| 邮箱验证码、找回密码 | 未实现 | 属于扩展项，需要邮件服务和独立需求 |
 
 默认单元测试和编译未发现阻断运行的代码错误。真实 MySQL、Flyway 和 DeepSeek 链路依赖本机服务与密钥，必须在集成环境中另行执行，不能用默认单元测试结果替代联调结论。
 
@@ -70,10 +71,11 @@ Controller 负责 HTTP 边界，Service 管理业务流程和事务，Repository
 | `V3` | 用户名和角色迁移到 `profile` |
 | `V6` | 创建 `source_file` 和用户查询索引 |
 | `V7` | 创建 `error_record` 和用户查询索引 |
+| `V8` | 增加错题严重程度、查询索引及 core 表外键 |
 
 已有迁移文件不能修改、改名或重新编号。需要补表、字段、外键时应新建迁移并先确认版本号。
 
-当前需要注意：`source_file.owner_user_id`、`error_record.owner_user_id` 和 `error_record.source_file_id` 只有业务关联与索引，尚未建立数据库外键。直接补外键可能被历史孤立数据阻断，因此本轮没有擅自修改表结构；合并前应先检查实际库数据，再决定是否新增迁移。
+V8 会在增加外键时检查历史数据。部署前必须先备份数据库并排查孤立记录；若迁移失败，应修复历史数据，不能修改已经发布的 V1—V8。
 
 ## 接口一览
 
@@ -91,7 +93,7 @@ Controller 负责 HTTP 边界，Service 管理业务流程和事务，Repository
 | --- | --- | --- |
 | `GET` | `/user/{id}` | 查询本人账号；管理员可代查 |
 | `GET` | `/user/{id}/profile` | 查询本人档案；管理员可代查 |
-| `PUT` | `/user/{id}` | 修改本人账号；管理员可代改 |
+| `PUT` | `/user/{id}` | 修改本人邮箱或密码，必须复验当前密码 |
 | `PUT` | `/user/{id}/profile` | 修改本人档案；管理员可代改 |
 | `DELETE` | `/user/{id}` | 删除本人账号；管理员可代删 |
 | `POST` | `/core/submissions` | Multipart 上传源码并立即返回完整批改结果 |
@@ -101,6 +103,7 @@ Controller 负责 HTTP 边界，Service 管理业务流程和事务，Repository
 | `GET` | `/core/review/package` | 获取学生复习报告 |
 | `GET` | `/core/review/weak-topics` | 获取薄弱知识点 |
 | `POST` | `/core/assistant/chat` | AI 学习助手，返回 `text/event-stream` |
+| `POST` | `/core/assistant/practice` | 根据错题实时生成类似练习 |
 
 接口字段、校验条件和响应结构以运行中的 Swagger 为准：
 
@@ -142,7 +145,7 @@ mvn spring-boot:run
 mvn clean test
 ```
 
-本轮结果：`Tests run: 94, Failures: 0, Errors: 0, Skipped: 3`。跳过的是 `ProjectApplicationTests`、`AiAssistantTest` 和 `ChatModelTest`，三者会启动完整上下文并可能产生真实模型调用。
+本轮结果：`Tests run: 97, Failures: 0, Errors: 0, Skipped: 3`。跳过的是 `ProjectApplicationTests`、`AiAssistantTest` 和 `ChatModelTest`，三者会启动完整上下文并可能产生真实模型调用。
 
 准备好独立 MySQL、数据库密码和 DeepSeek Key 后，再显式运行集成测试：
 
@@ -157,9 +160,9 @@ mvn test
 
 ## 已知限制与后续建议
 
-- 先用备份库检查孤立数据，再为 core 表补充账号和源码外键；不要直接改 V1—V7。
-- 错题列表目前在 Controller 内完成内存分页。数据量增大后应下推到 Repository，但这属于性能改造，不在本轮正确性补丁范围内。
-- 邮箱验证、找回密码和相似题推荐不是基础流程的一部分，后续需要独立需求和独立分支。
+- 先用备份库检查孤立数据，再执行 V8 外键迁移；不要直接改 V1—V8。
+- 生产环境应增加登录、AI 对话和 AI 出题限流，并确保使用强随机 JWT 密钥。
+- 邮箱验证和找回密码不是基础流程的一部分，后续需要邮件服务、独立需求和独立分支。
 
 ## 分支记录
 

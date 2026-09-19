@@ -4,6 +4,10 @@ import com.mylab.ailearn.core.model.commonmodel.ErrorRecord;
 import com.mylab.ailearn.core.model.commonmodel.SourceFile;
 import com.mylab.ailearn.core.model.commonmodel.SubmissionGradingResult;
 import com.mylab.ailearn.core.model.specialmodel.StudentDashboard;
+import com.mylab.ailearn.core.enums.ErrorCategory;
+import com.mylab.ailearn.core.enums.ErrorSeverity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
@@ -46,6 +50,12 @@ public interface AiLearnOrchestrator {
      */
     List<ErrorRecord> listErrorArchive(Long ownerUserId);
 
+    Page<ErrorRecord> listErrorArchive(
+            Long ownerUserId,
+            ErrorCategory category,
+            ErrorSeverity severity,
+            Pageable pageable);
+
     /**
      * 读侧：查询某学生已归档的全部源码提交（按提交时间倒序），供提交历史展示。
      *
@@ -53,6 +63,8 @@ public interface AiLearnOrchestrator {
      * @return 该学生的提交列表（无提交时返回空列表，不会为 null）
      */
     List<SourceFile> listMySubmissions(Long ownerUserId);
+
+    Page<SourceFile> listMySubmissions(Long ownerUserId, Pageable pageable);
 
     /**
      * 写侧：把某学生的一条错题标记为「已掌握」，标记后该错题不再作为薄弱点重点推荐。

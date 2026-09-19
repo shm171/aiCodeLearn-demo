@@ -1,6 +1,10 @@
 package com.mylab.ailearn.core.service.spi;
 
 import com.mylab.ailearn.core.model.commonmodel.ErrorRecord;
+import com.mylab.ailearn.core.enums.ErrorCategory;
+import com.mylab.ailearn.core.enums.ErrorSeverity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
@@ -34,6 +38,13 @@ public interface ErrorRecordStore {
 
     /** 查询某学生的全部错题；无错题时返回空列表。 */
     List<ErrorRecord> findByOwnerUserId(Long ownerUserId);
+
+    /** 在数据库中分页并按可选分类、严重程度过滤错题。 */
+    Page<ErrorRecord> findByOwnerUserId(
+            Long ownerUserId,
+            ErrorCategory category,
+            ErrorSeverity severity,
+            Pageable pageable);
 
     /** 按错题 ID 查询；不存在时返回 {@link Optional#empty()}。 */
     Optional<ErrorRecord> findById(Long id);

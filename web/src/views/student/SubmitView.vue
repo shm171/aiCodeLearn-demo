@@ -47,7 +47,7 @@
           <el-icon class="upload-icon"><UploadFilled /></el-icon>
           <div class="upload-text">将文件拖到此处，或<em>点击上传</em></div>
           <template #tip>
-            <div class="upload-tip">支持 .java、.cpp、.cc、.cxx 格式，单文件不超过 10MB</div>
+            <div class="upload-tip">支持 .java、.cpp、.cc、.cxx 格式，单文件不超过 256 KB</div>
           </template>
         </el-upload>
 
@@ -213,7 +213,7 @@ const canSubmit = computed(() => {
   return editorView && editorView.state.doc.toString().trim().length > 0
 })
 
-// 错误分类 → 严重程度/中文名/标签颜色 映射（后端没有severity字段，按category分档）
+// 错误分类 → 严重程度/中文名/标签颜色映射
 function categoryMeta(category) {
   const map = {
     SYNTAX_ERROR: { severity: 'ERROR', label: '语法错误', tagType: 'danger' },

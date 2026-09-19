@@ -229,14 +229,14 @@
           <div class="ai-avatar">AI</div>
           <div class="ai-bubble">你好！我是你的编程学习助手，有什么问题可以问我，比如"数组越界怎么解决"、"怎么提高代码效率"等。</div>
         </div>
-        <div class="ai-message ai-bot" v-for="(msg, i) in aiMessages" :key="i">
-          <div class="ai-avatar">AI</div>
-          <div class="ai-bubble">{{ msg }}</div>
+        <div class="ai-message" :class="msg.role === 'user' ? 'ai-user' : 'ai-bot'" v-for="(msg, i) in aiMessages" :key="i">
+          <div class="ai-avatar">{{ msg.role === 'user' ? '我' : 'AI' }}</div>
+          <div class="ai-bubble">{{ msg.content || '正在思考…' }}</div>
         </div>
       </div>
       <div class="ai-input-area">
-        <el-input v-model="aiInput" placeholder="输入你的问题..." @keyup.enter="sendAIMessage" />
-        <button class="btn-send" @click="sendAIMessage">
+        <el-input v-model="aiInput" placeholder="输入你的问题..." :disabled="aiSending" maxlength="2000" @keyup.enter="sendAIMessage" />
+        <button class="btn-send" :disabled="aiSending" @click="sendAIMessage">
           <el-icon :size="16"><Promotion /></el-icon>
         </button>
       </div>
@@ -250,6 +250,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '../stores/user'
 import { getReportApi, getErrorListApi } from '../api/review'
+import { chatWithAssistantApi } from '../api/assistant'
 import { ArrowRight, Promotion, DocumentChecked, TrendCharts, Warning, Notebook, MagicStick, CircleCheck, UploadFilled, EditPen } from '@element-plus/icons-vue'
 
 const router = useRouter()
@@ -258,6 +259,8 @@ const userStore = useUserStore()
 const aiAssistantVisible = ref(false)
 const aiInput = ref('')
 const aiMessages = ref([])
+const aiSending = ref(false)
+const aiConversationId = ref('')
 
 // ===== 一条龙学习闭环：6 个环节 =====
 const workflowSteps = [
@@ -423,13 +426,30 @@ function openAIAssistant() {
   aiAssistantVisible.value = true
 }
 
-function sendAIMessage() {
-  if (!aiInput.value.trim()) return
-  const question = aiInput.value
+async function sendAIMessage() {
+  const question = aiInput.value.trim()
+  if (!question || aiSending.value) return
   aiInput.value = ''
-  setTimeout(() => {
-    aiMessages.value.push(`关于"${question}"，建议你：1. 先理解基本概念；2. 多写代码练习；3. 遇到错误时仔细阅读报错信息。具体问题可以在提交作业后查看AI批改详情。`)
-  }, 500)
+  aiMessages.value.push({ role: 'user', content: question })
+  aiMessages.value.push({ role: 'assistant', content: '' })
+  const answerIndex = aiMessages.value.length - 1
+  aiSending.value = true
+
+  try {
+    const result = await chatWithAssistantApi({
+      message: question,
+      conversationId: aiConversationId.value,
+      onChunk: (chunk) => {
+        aiMessages.value[answerIndex].content += chunk
+      },
+    })
+    aiConversationId.value = result.conversationId
+  } catch (error) {
+    aiMessages.value.pop()
+    ElMessage.error(error.message || 'AI 助手暂时不可用')
+  } finally {
+    aiSending.value = false
+  }
 }
 </script>
 
@@ -919,6 +939,18 @@ function sendAIMessage() {
   gap: 10px;
   margin-bottom: 14px;
 }
+.ai-user {
+  flex-direction: row-reverse;
+}
+.ai-user .ai-avatar {
+  background: rgba(52, 211, 153, 0.12);
+  color: #6ee7b7;
+}
+.ai-user .ai-bubble {
+  background: rgba(52, 211, 153, 0.1);
+  border-radius: 10px 0 10px 10px;
+  color: #d1fae5;
+}
 .ai-avatar {
   width: 28px;
   height: 28px;
@@ -963,6 +995,10 @@ function sendAIMessage() {
 }
 .btn-send:hover {
   background: #fff;
+}
+.btn-send:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 /* ===== 一条龙学习闭环：弧线流程图 ===== */

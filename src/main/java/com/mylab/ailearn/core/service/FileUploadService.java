@@ -1,6 +1,8 @@
 package com.mylab.ailearn.core.service;
 
 import com.mylab.ailearn.core.model.commonmodel.SourceFile;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
@@ -29,4 +31,7 @@ public interface FileUploadService {
      * @throws org.springframework.web.server.ResponseStatusException ownerUserId 无效时抛 400
      */
     List<SourceFile> listByOwner(Long ownerUserId);
+
+    /** 在数据库中分页查询某学生的提交。 */
+    Page<SourceFile> listByOwner(Long ownerUserId, Pageable pageable);
 }

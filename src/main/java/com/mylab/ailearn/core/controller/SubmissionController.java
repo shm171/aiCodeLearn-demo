@@ -10,7 +10,6 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
@@ -26,7 +25,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
@@ -90,11 +88,7 @@ public class SubmissionController {
     ) {
         Long ownerUserId = currentUserResolver.currentUserId();
 
-        // 门面已按提交时间倒序返回全量，分页在适配层内存完成（与错题列表一致）
-        List<SourceFile> all = orchestrator.listMySubmissions(ownerUserId);
-        int start = (int) Math.min(pageable.getOffset(), all.size());
-        int end = Math.min(start + pageable.getPageSize(), all.size());
-        return ResponseEntity.ok(new PageImpl<>(all.subList(start, end), pageable, all.size()));
+        return ResponseEntity.ok(orchestrator.listMySubmissions(ownerUserId, pageable));
     }
 
     @GetMapping("/{submissionId}")

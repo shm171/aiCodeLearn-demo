@@ -8,6 +8,10 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+  servlet:
+    multipart:
+      max-file-size: 256KB
+      max-request-size: 512KB
   jpa:
     hibernate:
       ddl-auto: validate

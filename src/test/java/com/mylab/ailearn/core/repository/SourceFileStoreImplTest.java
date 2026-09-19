@@ -4,6 +4,8 @@ import com.mylab.ailearn.core.enums.CourseChapter;
 import com.mylab.ailearn.core.enums.ProgrammingLanguage;
 import com.mylab.ailearn.core.model.commonmodel.SourceFile;
 import org.junit.jupiter.api.Test;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -50,6 +52,20 @@ class SourceFileStoreImplTest {
 
         assertThat(result).extracting(SourceFile::id).containsExactly(2L, 1L);
         verify(repository).findByOwnerUserIdOrderBySubmittedAtDescIdDesc(7L);
+    }
+
+    @Test
+    void historyPagingIsDelegatedToDatabase() {
+        PageRequest page = PageRequest.of(1, 10);
+        SourceFileEntity entity = entity(2L, LocalDateTime.of(2026, 9, 14, 12, 0));
+        when(repository.findByOwnerUserIdOrderBySubmittedAtDescIdDesc(7L, page))
+                .thenReturn(new PageImpl<>(List.of(entity), page, 11));
+
+        var result = store.findByOwnerUserId(7L, page);
+
+        assertThat(result.getTotalElements()).isEqualTo(11);
+        assertThat(result.getContent()).extracting(SourceFile::id).containsExactly(2L);
+        verify(repository).findByOwnerUserIdOrderBySubmittedAtDescIdDesc(7L, page);
     }
 
     private SourceFileEntity entity(Long id, LocalDateTime submittedAt) {
