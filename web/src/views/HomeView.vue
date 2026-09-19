@@ -20,6 +20,9 @@
           <button class="btn-primary" @click="goToSubmit" v-if="userStore.isLoggedIn">
             立即提交作业
           </button>
+          <button class="btn-ghost" @click="openAIAssistant" v-if="userStore.isLoggedIn">
+            AI 学习助手
+          </button>
           <button class="btn-primary" @click="router.push('/login')" v-else>
             开始使用
           </button>

@@ -1,5 +1,5 @@
 // AI 学习助手：使用 fetch 读取后端 SSE 流，并将增量文本交给页面展示。
-import request from '../utils/request'
+import request from '../utils/request.js'
 
 export function generatePracticeApi(errorType, category, language = 'CPP') {
   return request.post('/core/assistant/practice', { errorType, category, language })
@@ -44,19 +44,31 @@ export async function chatWithAssistantApi({ message, conversationId, onChunk, s
       .filter((line) => line.startsWith('data:'))
       .map((line) => line.slice(5).replace(/^ /, ''))
       .join('\n')
-    if (text && text !== '[DONE]') onChunk?.(text)
+    if (text === '[DONE]') return true
+    if (text) onChunk?.(text)
+    return false
   }
 
+  let streamFinished = false
   while (true) {
     const { value, done } = await reader.read()
     buffer += decoder.decode(value || new Uint8Array(), { stream: !done })
     const events = buffer.split(/\r?\n\r?\n/)
     buffer = events.pop() || ''
-    events.forEach(emitEvent)
+    for (const event of events) {
+      if (emitEvent(event)) {
+        streamFinished = true
+        break
+      }
+    }
+    if (streamFinished) {
+      await reader.cancel()
+      break
+    }
     if (done) break
   }
 
-  if (buffer.trim()) {
+  if (!streamFinished && buffer.trim()) {
     if (buffer.includes('data:')) emitEvent(buffer)
     else onChunk?.(buffer)
   }

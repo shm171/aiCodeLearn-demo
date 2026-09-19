@@ -47,12 +47,14 @@
         </el-table-column>
         <el-table-column label="错题数" width="90">
           <template #default="{ row }">
-            <span class="error-count" :class="row.errorCount > 0 ? 'has-error' : ''">{{ row.errorCount }}</span>
+            <span class="error-count" :class="submissionErrorCount(row.id) > 0 ? 'has-error' : ''">
+              {{ submissionErrorCount(row.id) }}
+            </span>
           </template>
         </el-table-column>
         <el-table-column label="状态" width="110">
           <template #default="{ row }">
-            <el-tag v-if="row.errorCount > 0" type="warning" size="small" effect="dark">有错题</el-tag>
+            <el-tag v-if="submissionErrorCount(row.id) > 0" type="warning" size="small" effect="dark">有错题</el-tag>
             <el-tag v-else type="success" size="small" effect="dark">无错题</el-tag>
           </template>
         </el-table-column>
@@ -135,6 +137,7 @@ import { ElMessage } from 'element-plus'
 import { Document, CircleCheckFilled } from '@element-plus/icons-vue'
 import { getSubmissionListApi, getSubmissionDetailApi } from '../../api/submission'
 import { getErrorListApi } from '../../api/review'
+import { buildSubmissionErrorCounts, cleanSubmissionCount, errorCountForSubmission } from '../../utils/submissionStats.js'
 
 // 状态
 const loading = ref(false)
@@ -148,6 +151,11 @@ const totalSubmissions = ref(0)
 
 // 全部错题（用于按提交ID统计错题数）
 const allErrors = ref([])
+const errorCounts = computed(() => buildSubmissionErrorCounts(allErrors.value))
+
+function submissionErrorCount(submissionId) {
+  return errorCountForSubmission(errorCounts.value, submissionId)
+}
 
 // 当前详情弹窗对应提交的错题
 const currentErrors = computed(() => {
@@ -157,10 +165,7 @@ const currentErrors = computed(() => {
 })
 
 // 统计：无错题提交数 = 总提交 - 有错题的提交数
-const cleanCount = computed(() => {
-  const dirtyIds = new Set(allErrors.value.map((e) => e.sourceFileId).filter(Boolean))
-  return submissions.value.filter((s) => !dirtyIds.has(s.id)).length
-})
+const cleanCount = computed(() => cleanSubmissionCount(totalSubmissions.value, errorCounts.value))
 const totalErrorCount = computed(() => allErrors.value.length)
 
 // 错误分类 → 中文名/标签颜色
@@ -230,9 +235,16 @@ async function loadList() {
 // 加载全部错题（用于统计每次提交的错题数）
 async function loadErrors() {
   try {
-    const data = await getErrorListApi({ page: 0, size: 500 })
-    const list = Array.isArray(data) ? data : (data?.content || [])
-    allErrors.value = list
+    const records = []
+    let currentPage = 0
+    let totalPages = 1
+    do {
+      const data = await getErrorListApi({ page: currentPage, size: 200 })
+      records.push(...(Array.isArray(data) ? data : (data?.content || [])))
+      totalPages = Array.isArray(data) ? 1 : Math.max(1, data?.totalPages || 1)
+      currentPage += 1
+    } while (currentPage < totalPages)
+    allErrors.value = records
   } catch (error) {
     // 错题统计失败不阻塞列表展示
     allErrors.value = []

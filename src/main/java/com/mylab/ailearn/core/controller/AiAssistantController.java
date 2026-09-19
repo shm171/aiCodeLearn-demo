@@ -32,6 +32,8 @@ import java.util.UUID;
         description = "AI 学习助手，支持多轮流式对话和类似练习生成。")
 public class AiAssistantController {
 
+    private static final String STREAM_DONE = "[DONE]";
+
     private final CurrentUserResolver currentUserResolver;
     private final AiAssistant aiAssistant;
     private final PracticeGenerationService practiceGenerationService;
@@ -47,7 +49,8 @@ public class AiAssistantController {
             conversationId = UUID.randomUUID().toString().replace("-", "");
         }
 
-        Flux<String> stream = aiAssistant.aiChat(request.message(), ownerUserId, conversationId);
+        Flux<String> stream = aiAssistant.aiChat(request.message(), ownerUserId, conversationId)
+                .concatWithValues(STREAM_DONE);
         HttpHeaders headers = new HttpHeaders();
         headers.set("X-Conversation-Id", conversationId);
         return ResponseEntity.ok().headers(headers).body(stream);
