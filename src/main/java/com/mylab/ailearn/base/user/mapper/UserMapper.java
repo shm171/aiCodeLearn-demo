@@ -6,7 +6,6 @@ import com.mylab.ailearn.base.user.dtos.sendback.ProfileDto;
 import com.mylab.ailearn.base.user.dtos.sendback.UserDto;
 import com.mylab.ailearn.base.user.dtos.sendto.ProfileUpdateRequest;
 import com.mylab.ailearn.base.user.dtos.sendto.UserRegisterRequest;
-import com.mylab.ailearn.base.user.dtos.sendto.UserUpdateRequest;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
@@ -27,11 +26,6 @@ public interface UserMapper {
     @Mapping(target = "role", source = "request.role")
     @Mapping(target = "createdAt", ignore = true)
     Profile toProfile(UserRegisterRequest request, AppUser user);
-
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "passwordHash", source = "password")
-    @Mapping(target = "createdAt", ignore = true)
-    void updateEntity(UserUpdateRequest request, @MappingTarget AppUser user);
 
     // 普通档案修改只更新同名的 username，账号关联和角色保持不变。
     @Mapping(target = "id", ignore = true)

@@ -1,6 +1,7 @@
 package com.mylab.ailearn.base.user.dtos.sendto;
 
 import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
@@ -8,6 +9,10 @@ import lombok.Setter;
 @Getter
 @Setter
 public class UserUpdateRequest {
+
+    @NotBlank(message = "current password is blank")
+    @Size(min = 8, max = 16, message = "current password length must be in 8 to 16")
+    private String currentPassword;
 
     @Email(message = "not valid email format")
     private String email;

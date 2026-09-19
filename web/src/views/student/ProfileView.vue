@@ -110,8 +110,11 @@
 
     <el-dialog v-model="passwordDialogVisible" title="修改登录密码" width="420px">
       <el-form label-position="top">
+        <el-form-item label="当前密码">
+          <el-input v-model="passwordForm.currentPassword" type="password" show-password autocomplete="current-password" />
+        </el-form-item>
         <el-form-item label="新密码">
-          <el-input v-model="passwordForm.password" type="password" show-password maxlength="16" placeholder="8 至 16 位" />
+          <el-input v-model="passwordForm.password" type="password" show-password maxlength="16" placeholder="8 至 16 位" autocomplete="new-password" />
         </el-form-item>
         <el-form-item label="确认新密码">
           <el-input v-model="passwordForm.confirmPassword" type="password" show-password maxlength="16" />
@@ -125,6 +128,9 @@
 
     <el-dialog v-model="emailDialogVisible" title="更换登录邮箱" width="420px">
       <el-form label-position="top">
+        <el-form-item label="当前密码">
+          <el-input v-model="emailForm.currentPassword" type="password" show-password autocomplete="current-password" />
+        </el-form-item>
         <el-form-item label="新邮箱">
           <el-input v-model="emailForm.email" placeholder="name@example.com" />
         </el-form-item>
@@ -152,8 +158,8 @@ const loadingProfile = ref(false)
 const accountSaving = ref(false)
 const passwordDialogVisible = ref(false)
 const emailDialogVisible = ref(false)
-const passwordForm = ref({ password: '', confirmPassword: '' })
-const emailForm = ref({ email: '' })
+const passwordForm = ref({ currentPassword: '', password: '', confirmPassword: '' })
+const emailForm = ref({ currentPassword: '', email: '' })
 const form = ref({
   username: userStore.username || '',
 })
@@ -241,12 +247,16 @@ async function handleSave() {
 }
 
 function openPasswordDialog() {
-  passwordForm.value = { password: '', confirmPassword: '' }
+  passwordForm.value = { currentPassword: '', password: '', confirmPassword: '' }
   passwordDialogVisible.value = true
 }
 
 async function changePassword() {
-  const { password, confirmPassword } = passwordForm.value
+  const { currentPassword, password, confirmPassword } = passwordForm.value
+  if (!currentPassword) {
+    ElMessage.warning('请输入当前密码')
+    return
+  }
   if (password.length < 8 || password.length > 16) {
     ElMessage.warning('密码长度必须为 8 至 16 位')
     return
@@ -257,9 +267,11 @@ async function changePassword() {
   }
   accountSaving.value = true
   try {
-    await updateUserInfoApi(userStore.userId, { password })
+    await updateUserInfoApi(userStore.userId, { currentPassword, password })
     passwordDialogVisible.value = false
-    ElMessage.success('密码修改成功')
+    ElMessage.success('密码修改成功，请重新登录')
+    userStore.logout()
+    window.location.href = '/login'
   } catch (error) {
     if (error.response?.status !== 401) {
       ElMessage.error(error.response?.data?.detail || '密码修改失败')
@@ -270,12 +282,17 @@ async function changePassword() {
 }
 
 function openEmailDialog() {
-  emailForm.value = { email: userStore.email }
+  emailForm.value = { currentPassword: '', email: userStore.email }
   emailDialogVisible.value = true
 }
 
 async function changeEmail() {
+  const currentPassword = emailForm.value.currentPassword
   const email = emailForm.value.email.trim()
+  if (!currentPassword) {
+    ElMessage.warning('请输入当前密码')
+    return
+  }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     ElMessage.warning('请输入有效的邮箱地址')
     return
@@ -286,7 +303,7 @@ async function changeEmail() {
   }
   accountSaving.value = true
   try {
-    await updateUserInfoApi(userStore.userId, { email })
+    await updateUserInfoApi(userStore.userId, { currentPassword, email })
     ElMessage.success('邮箱更换成功，请使用新邮箱重新登录')
     userStore.logout()
     window.location.href = '/login'

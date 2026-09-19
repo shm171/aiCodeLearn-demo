@@ -63,6 +63,10 @@ public class UserService implements UserDetailsService {
     public UserDto updateUser(long id, UserUpdateRequest request) {
         AppUser user = findUserById(id);
 
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPasswordHash())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Current password is incorrect");
+        }
+
         boolean updateEmail = request.getEmail() != null && !request.getEmail().isBlank();
         boolean updatePassword = request.getPassword() != null && !request.getPassword().isBlank();
         if (!updateEmail && !updatePassword) {

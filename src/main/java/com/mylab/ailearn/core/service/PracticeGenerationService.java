@@ -17,6 +17,10 @@ import java.util.List;
 @Service
 public class PracticeGenerationService {
 
+    private static final int MAX_TITLE_LENGTH = 120;
+    private static final int MAX_DESCRIPTION_LENGTH = 2000;
+    private static final int MAX_TEMPLATE_LENGTH = 65_536;
+
     private static final String SYSTEM_PROMPT = """
             你是程序设计课程出题助手。根据给定错题信息生成恰好 3 道类似但不重复的练习。
             每道题必须包含简短标题、清晰题目描述和可编辑的代码起始模板。
@@ -72,7 +76,10 @@ public class PracticeGenerationService {
     private boolean invalid(PracticeExercise exercise) {
         return exercise == null
                 || exercise.title() == null || exercise.title().isBlank()
+                || exercise.title().length() > MAX_TITLE_LENGTH
                 || exercise.description() == null || exercise.description().isBlank()
-                || exercise.template() == null || exercise.template().isBlank();
+                || exercise.description().length() > MAX_DESCRIPTION_LENGTH
+                || exercise.template() == null || exercise.template().isBlank()
+                || exercise.template().length() > MAX_TEMPLATE_LENGTH;
     }
 }
