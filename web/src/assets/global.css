@@ -185,6 +185,19 @@ html, body, #app {
   border-radius: var(--radius-md) !important;
   font-weight: 500 !important;
 }
+/* 默认（次要）按钮改成深色玻璃，避免深色页面上出现刺眼白块；
+   文字/链接型按钮和主题色按钮保持各自样式，不受影响 */
+.el-button:not(.is-text):not(.is-link):not(.el-button--primary):not(.el-button--success):not(.el-button--warning):not(.el-button--danger):not(.el-button--info) {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: var(--glass-border) !important;
+  color: var(--text-secondary) !important;
+}
+.el-button:not(.is-text):not(.is-link):not(.el-button--primary):not(.el-button--success):not(.el-button--warning):not(.el-button--danger):not(.el-button--info):hover,
+.el-button:not(.is-text):not(.is-link):not(.el-button--primary):not(.el-button--success):not(.el-button--warning):not(.el-button--danger):not(.el-button--info):focus {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(255, 255, 255, 0.22) !important;
+  color: var(--text-primary) !important;
+}
 .el-button--primary {
   background: var(--accent) !important;
   border-color: var(--accent) !important;
@@ -278,4 +291,130 @@ html, body, #app {
 .hover-lift:hover {
   transform: translateY(-3px);
   border-color: var(--accent-border);
+}
+
+/* ========== 深色主题补充覆盖 ========== */
+
+/* 下拉选择面板（弹层 teleport 到 body，scoped 样式管不到，必须全局） */
+.el-select__popper.el-popper {
+  background: rgba(18, 18, 22, 0.98) !important;
+  border: 1px solid var(--glass-border) !important;
+  backdrop-filter: blur(20px);
+}
+.el-select__popper .el-select-dropdown {
+  background: transparent !important;
+  border: none !important;
+}
+.el-select-dropdown__item {
+  color: var(--text-secondary) !important;
+  border-radius: var(--radius-sm);
+}
+.el-select-dropdown__item.is-hovering,
+.el-select-dropdown__item:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: var(--text-primary) !important;
+}
+.el-select-dropdown__item.selected {
+  color: var(--accent) !important;
+  background: var(--accent-dim) !important;
+  font-weight: 600;
+}
+.el-select-dropdown__empty {
+  color: var(--text-muted) !important;
+}
+.el-select__popper.el-popper.is-light .el-popper__arrow::before {
+  background: rgba(18, 18, 22, 0.98) !important;
+  border-color: var(--glass-border) !important;
+}
+
+/* 警告提示 el-alert：默认是浅色底，改成深色半透明 */
+.el-alert {
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+}
+.el-alert.is-light {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: var(--glass-border) !important;
+}
+.el-alert--warning.is-light {
+  background: rgba(251, 191, 36, 0.1) !important;
+  border-color: rgba(251, 191, 36, 0.28) !important;
+}
+.el-alert--error.is-light,
+.el-alert--danger.is-light {
+  background: rgba(248, 113, 113, 0.1) !important;
+  border-color: rgba(248, 113, 113, 0.28) !important;
+}
+.el-alert--success.is-light {
+  background: rgba(52, 211, 153, 0.1) !important;
+  border-color: rgba(52, 211, 153, 0.28) !important;
+}
+.el-alert--info.is-light {
+  background: rgba(161, 161, 170, 0.1) !important;
+  border-color: rgba(161, 161, 170, 0.28) !important;
+}
+.el-alert__title {
+  color: var(--text-primary) !important;
+}
+.el-alert__description {
+  color: var(--text-secondary) !important;
+}
+.el-alert--warning.is-light .el-alert__title {
+  color: #fcd34d !important;
+}
+.el-alert--error.is-light .el-alert__title,
+.el-alert--danger.is-light .el-alert__title {
+  color: #fca5a5 !important;
+}
+.el-alert--success.is-light .el-alert__title {
+  color: #6ee7b7 !important;
+}
+
+/* 分割线：去掉中间文字默认白底，横线改暗（个人中心等页面） */
+.el-divider__text {
+  background: transparent !important;
+  color: var(--text-secondary) !important;
+}
+.el-divider__hr {
+  border-top-color: rgba(255, 255, 255, 0.12) !important;
+}
+.el-divider--horizontal {
+  border-top-color: rgba(255, 255, 255, 0.12) !important;
+  background-color: transparent !important;
+}
+.el-divider--vertical {
+  border-left-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* 表单标签文字（个人中心、各弹窗表单） */
+.el-form-item__label {
+  color: var(--text-secondary) !important;
+}
+
+/* 弹窗 / 消息框右上角关闭按钮：默认黑色，深底上看不见 */
+.el-dialog__headerbtn .el-dialog__close,
+.el-message-box__headerbtn .el-message-box__close {
+  color: var(--text-muted) !important;
+}
+.el-dialog__headerbtn:hover .el-dialog__close,
+.el-message-box__headerbtn:hover .el-message-box__close {
+  color: var(--text-primary) !important;
+}
+
+/* 分页"共 X 条 / 前往"等文字 */
+.el-pagination__total,
+.el-pagination__jump {
+  color: var(--text-muted) !important;
+}
+
+/* 表格空数据文字、空状态 */
+.el-table__empty-text {
+  color: var(--text-muted) !important;
+}
+.el-table__empty-block {
+  background: transparent !important;
+}
+.el-empty__description,
+.el-empty__description p {
+  color: var(--text-muted) !important;
 }
