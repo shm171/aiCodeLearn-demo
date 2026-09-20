@@ -620,10 +620,15 @@ function resetForm() {
   margin-bottom: 16px;
   border-radius: 10px;
 }
-.divider-text {
+/* divider 在深色下去掉默认白底，避免露出一块白 */
+.result-section :deep(.el-divider__text) {
+  background-color: transparent;
   font-size: 16px;
   font-weight: 700;
   color: #f4f4f5;
+}
+.result-section :deep(.el-divider__hr) {
+  border-top-color: rgba(255, 255, 255, 0.12);
 }
 
 /* 得分概览 */
