@@ -172,7 +172,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
 import {
   Upload, UploadFilled, Document, Edit,
@@ -199,6 +199,7 @@ const gradingResult = ref(null)
 // 编辑器相关
 const editorRef = ref(null)
 let editorView = null
+const editorCode = ref('') // 编辑器当前内容（响应式，用来驱动提交按钮是否可用）
 
 // 编辑器文件名
 const editorFilename = computed(() => {
@@ -210,7 +211,7 @@ const canSubmit = computed(() => {
   if (submitMode.value === 'upload') {
     return !!selectedFile.value
   }
-  return editorView && editorView.state.doc.toString().trim().length > 0
+  return editorCode.value.trim().length > 0
 })
 
 // 错误分类 → 严重程度/中文名/标签颜色映射
@@ -262,13 +263,18 @@ function initEditor() {
   if (!editorRef.value) return
 
   const langExt = selectedLang.value === 'JAVA' ? java() : cpp()
+  const doc = getDefaultCode()
 
   const state = EditorState.create({
-    doc: getDefaultCode(),
+    doc,
     extensions: [
       basicSetup,
       langExt,
       oneDark,
+      // 内容变化时同步到响应式变量，提交按钮状态才会跟着更新
+      EditorView.updateListener.of((update) => {
+        if (update.docChanged) editorCode.value = update.state.doc.toString()
+      }),
       EditorView.theme({
         '&': { height: '320px', fontSize: '14px' },
         '.cm-scroller': { overflow: 'auto' },
@@ -280,6 +286,7 @@ function initEditor() {
     state,
     parent: editorRef.value,
   })
+  editorCode.value = doc
 }
 
 function getDefaultCode() {
@@ -305,6 +312,7 @@ int main() {
 watch(selectedLang, () => {
   if (submitMode.value === 'editor' && editorView) {
     editorView.destroy()
+    editorView = null
     initEditor()
   }
 })
@@ -320,10 +328,13 @@ onBeforeUnmount(() => {
   }
 })
 
-// 切换到在线写代码时初始化编辑器
+// 在线写代码用 v-if 控制：切走时销毁编辑器实例，切回时等新 DOM 就绪再重建
 watch(submitMode, (newMode) => {
-  if (newMode === 'editor' && !editorView) {
-    setTimeout(() => initEditor(), 50)
+  if (newMode === 'editor') {
+    nextTick(() => initEditor())
+  } else if (editorView) {
+    editorView.destroy()
+    editorView = null
   }
 })
 
@@ -371,7 +382,11 @@ async function handleSubmit() {
 
     // 如果是在线写代码，把代码内容转成Blob文件
     if (submitMode.value === 'editor') {
-      const code = editorView.state.doc.toString()
+      const code = editorCode.value
+      if (!code.trim()) {
+        ElMessage.warning('代码内容不能为空')
+        return
+      }
       const blob = new Blob([code], { type: 'text/plain' })
       fileToUpload = new File([blob], editorFilename.value, { type: 'text/plain' })
     }
